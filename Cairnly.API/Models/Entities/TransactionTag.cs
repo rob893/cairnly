@@ -3,7 +3,7 @@ namespace Cairnly.API.Models.Entities;
 /// <summary>
 /// Join entity linking a <see cref="Entities.Transaction"/> to a <see cref="Entities.Tag"/>.
 /// </summary>
-public sealed class TransactionTag
+public sealed class TransactionTag : ITagLink
 {
     /// <summary>Gets or sets the transaction ID.</summary>
     public int TransactionId { get; set; }

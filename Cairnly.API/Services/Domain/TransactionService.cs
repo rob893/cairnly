@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,9 +26,7 @@ public sealed class TransactionService : ITransactionService
 
     private readonly IAccountRepository accountRepository;
 
-    private readonly ICategoryRepository categoryRepository;
-
-    private readonly ITagRepository tagRepository;
+    private readonly ICategoryTagValidator categoryTagValidator;
 
     private readonly ICurrentUserService currentUserService;
 
@@ -39,22 +36,19 @@ public sealed class TransactionService : ITransactionService
     /// <param name="logger">The logger.</param>
     /// <param name="transactionRepository">The transaction repository.</param>
     /// <param name="accountRepository">The account repository.</param>
-    /// <param name="categoryRepository">The category repository.</param>
-    /// <param name="tagRepository">The tag repository.</param>
+    /// <param name="categoryTagValidator">The category/tag validator.</param>
     /// <param name="currentUserService">The current user service.</param>
     public TransactionService(
         ILogger<TransactionService> logger,
         ITransactionRepository transactionRepository,
         IAccountRepository accountRepository,
-        ICategoryRepository categoryRepository,
-        ITagRepository tagRepository,
+        ICategoryTagValidator categoryTagValidator,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
         this.accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
-        this.categoryRepository = categoryRepository ?? throw new ArgumentNullException(nameof(categoryRepository));
-        this.tagRepository = tagRepository ?? throw new ArgumentNullException(nameof(tagRepository));
+        this.categoryTagValidator = categoryTagValidator ?? throw new ArgumentNullException(nameof(categoryTagValidator));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -85,7 +79,7 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(DomainErrorType.NotFound, "Transaction not found");
         }
 
-        if (!this.CanAccess(transaction))
+        if (!this.currentUserService.IsUserAuthorizedForResource(transaction))
         {
             this.logger.LogWarning("User {UserId} attempted to access transaction {TransactionId} owned by {OwnerId}", this.currentUserService.UserId, id, transaction.UserId);
             return Result<TransactionDto>.Failure(DomainErrorType.Forbidden, "You can only access your own transactions");
@@ -107,7 +101,7 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(accountResult.ErrorType!.Value, accountResult.ErrorMessage!);
         }
 
-        var categoryResult = await this.ValidateCategoryAsync(request.CategoryId, cancellationToken);
+        var categoryResult = await this.categoryTagValidator.ValidateCategoryAsync(request.CategoryId, cancellationToken);
         if (!categoryResult.IsSuccess)
         {
             return Result<TransactionDto>.Failure(categoryResult.ErrorType!.Value, categoryResult.ErrorMessage!);
@@ -119,8 +113,8 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(parentResult.ErrorType!.Value, parentResult.ErrorMessage!);
         }
 
-        var tagIds = NormalizeTagIds(request.TagIds);
-        var tagResult = await this.ValidateTagsAsync(tagIds, userId, cancellationToken);
+        var tagIds = TagLinkUtilities.Normalize(request.TagIds);
+        var tagResult = await this.categoryTagValidator.ValidateTagsAsync(tagIds, userId, cancellationToken);
         if (!tagResult.IsSuccess)
         {
             return Result<TransactionDto>.Failure(tagResult.ErrorType!.Value, tagResult.ErrorMessage!);
@@ -171,7 +165,7 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(DomainErrorType.NotFound, "Transaction not found");
         }
 
-        if (!this.CanAccess(transaction))
+        if (!this.currentUserService.IsUserAuthorizedForResource(transaction))
         {
             this.logger.LogWarning("User {UserId} attempted to update transaction {TransactionId} owned by {OwnerId}", this.currentUserService.UserId, id, transaction.UserId);
             return Result<TransactionDto>.Failure(DomainErrorType.Forbidden, "You can only update your own transactions");
@@ -188,14 +182,14 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(accountResult.ErrorType!.Value, accountResult.ErrorMessage!);
         }
 
-        var categoryResult = await this.ValidateCategoryAsync(request.CategoryId, cancellationToken);
+        var categoryResult = await this.categoryTagValidator.ValidateCategoryAsync(request.CategoryId, cancellationToken);
         if (!categoryResult.IsSuccess)
         {
             return Result<TransactionDto>.Failure(categoryResult.ErrorType!.Value, categoryResult.ErrorMessage!);
         }
 
-        var tagIds = NormalizeTagIds(request.TagIds);
-        var tagResult = await this.ValidateTagsAsync(tagIds, transaction.UserId, cancellationToken);
+        var tagIds = TagLinkUtilities.Normalize(request.TagIds);
+        var tagResult = await this.categoryTagValidator.ValidateTagsAsync(tagIds, transaction.UserId, cancellationToken);
         if (!tagResult.IsSuccess)
         {
             return Result<TransactionDto>.Failure(tagResult.ErrorType!.Value, tagResult.ErrorMessage!);
@@ -211,7 +205,7 @@ public sealed class TransactionService : ITransactionService
         transaction.Metadata = request.Metadata ?? [];
         transaction.UpdatedById = this.currentUserService.UserId;
 
-        SyncTags(transaction, tagIds);
+        TagLinkUtilities.Sync(transaction.TransactionTags, tagIds, tagId => new TransactionTag { TransactionId = transaction.Id, TagId = tagId });
 
         await this.transactionRepository.SaveChangesAsync(cancellationToken);
 
@@ -229,7 +223,7 @@ public sealed class TransactionService : ITransactionService
             return Result<bool>.Failure(DomainErrorType.NotFound, "Transaction not found");
         }
 
-        if (!this.CanAccess(transaction))
+        if (!this.currentUserService.IsUserAuthorizedForResource(transaction))
         {
             this.logger.LogWarning("User {UserId} attempted to delete transaction {TransactionId} owned by {OwnerId}", this.currentUserService.UserId, id, transaction.UserId);
             return Result<bool>.Failure(DomainErrorType.Forbidden, "You can only delete your own transactions");
@@ -260,7 +254,7 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(DomainErrorType.NotFound, "Transaction not found");
         }
 
-        if (!this.CanAccess(transaction))
+        if (!this.currentUserService.IsUserAuthorizedForResource(transaction))
         {
             this.logger.LogWarning("User {UserId} attempted to patch transaction {TransactionId} owned by {OwnerId}", this.currentUserService.UserId, id, transaction.UserId);
             return Result<TransactionDto>.Failure(DomainErrorType.Forbidden, "You can only update your own transactions");
@@ -281,29 +275,6 @@ public sealed class TransactionService : ITransactionService
         return await this.UpdateTransactionAsync(id, request, cancellationToken);
     }
 
-    private static List<int> NormalizeTagIds(IReadOnlyList<int>? tagIds)
-    {
-        return tagIds == null ? [] : tagIds.Distinct().ToList();
-    }
-
-    private static void SyncTags(Transaction transaction, List<int> desiredTagIds)
-    {
-        var desired = desiredTagIds.ToHashSet();
-        var existing = transaction.TransactionTags.Select(tt => tt.TagId).ToHashSet();
-
-        transaction.TransactionTags.RemoveAll(tt => !desired.Contains(tt.TagId));
-
-        foreach (var tagId in desired.Where(tagId => !existing.Contains(tagId)))
-        {
-            transaction.TransactionTags.Add(new TransactionTag { TransactionId = transaction.Id, TagId = tagId });
-        }
-    }
-
-    private bool CanAccess(Transaction transaction)
-    {
-        return transaction.UserId == this.currentUserService.UserId || this.currentUserService.IsAdmin;
-    }
-
     private async Task<Result<bool>> ValidateAccountAsync(int accountId, CancellationToken cancellationToken)
     {
         var account = await this.accountRepository.GetByIdAsync(accountId, track: false, cancellationToken);
@@ -311,26 +282,6 @@ public sealed class TransactionService : ITransactionService
         if (account == null || (account.UserId != this.currentUserService.UserId && !this.currentUserService.IsAdmin))
         {
             return Result<bool>.Failure(DomainErrorType.Validation, "The specified account does not exist");
-        }
-
-        return Result<bool>.Success(true);
-    }
-
-    private async Task<Result<bool>> ValidateCategoryAsync(int? categoryId, CancellationToken cancellationToken)
-    {
-        if (categoryId == null)
-        {
-            return Result<bool>.Success(true);
-        }
-
-        var category = await this.categoryRepository.GetByIdAsync(categoryId.Value, track: false, cancellationToken);
-
-        var accessible = category != null
-            && (category.UserId == this.currentUserService.UserId || category.IsSystem || this.currentUserService.IsAdmin);
-
-        if (!accessible)
-        {
-            return Result<bool>.Failure(DomainErrorType.Validation, "The specified category does not exist");
         }
 
         return Result<bool>.Success(true);
@@ -345,7 +296,7 @@ public sealed class TransactionService : ITransactionService
 
         var parent = await this.transactionRepository.GetByIdAsync(parentId.Value, track: true, cancellationToken);
 
-        if (parent == null || (parent.UserId != this.currentUserService.UserId && !this.currentUserService.IsAdmin))
+        if (parent == null || !this.currentUserService.IsUserAuthorizedForResource(parent))
         {
             return Result<Transaction?>.Failure(DomainErrorType.Validation, "The specified parent transaction does not exist");
         }
@@ -361,25 +312,5 @@ public sealed class TransactionService : ITransactionService
         }
 
         return Result<Transaction?>.Success(parent);
-    }
-
-    private async Task<Result<bool>> ValidateTagsAsync(List<int> tagIds, int ownerUserId, CancellationToken cancellationToken)
-    {
-        if (tagIds.Count == 0)
-        {
-            return Result<bool>.Success(true);
-        }
-
-        var tags = await this.tagRepository.SearchAsync(
-            t => tagIds.Contains(t.Id) && t.UserId == ownerUserId,
-            track: false,
-            cancellationToken);
-
-        if (tags.Count != tagIds.Count)
-        {
-            return Result<bool>.Failure(DomainErrorType.Validation, "One or more of the specified tags do not exist");
-        }
-
-        return Result<bool>.Success(true);
     }
 }

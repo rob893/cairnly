@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
 using Cairnly.API.Data.Repositories;
+using Cairnly.API.Models;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Models.Requests.BudgetExpenses;
 using Cairnly.API.Services.Auth;
@@ -25,8 +26,7 @@ public sealed class BudgetExpenseServiceTests
 
     private readonly Mock<IBudgetExpenseRepository> expenseRepositoryMock;
     private readonly Mock<IBudgetRepository> budgetRepositoryMock;
-    private readonly Mock<ICategoryRepository> categoryRepositoryMock;
-    private readonly Mock<ITagRepository> tagRepositoryMock;
+    private readonly Mock<ICategoryTagValidator> validatorMock;
     private readonly Mock<ICurrentUserService> currentUserServiceMock;
     private readonly BudgetExpenseService sut;
 
@@ -34,18 +34,25 @@ public sealed class BudgetExpenseServiceTests
     {
         this.expenseRepositoryMock = new Mock<IBudgetExpenseRepository>();
         this.budgetRepositoryMock = new Mock<IBudgetRepository>();
-        this.categoryRepositoryMock = new Mock<ICategoryRepository>();
-        this.tagRepositoryMock = new Mock<ITagRepository>();
+        this.validatorMock = new Mock<ICategoryTagValidator>();
         this.currentUserServiceMock = new Mock<ICurrentUserService>();
         this.currentUserServiceMock.Setup(s => s.UserId).Returns(UserId);
         this.currentUserServiceMock.Setup(s => s.IsAdmin).Returns(false);
+        this.currentUserServiceMock
+            .Setup(s => s.IsUserAuthorizedForResource(It.IsAny<IOwnedByUser<int>>(), It.IsAny<bool>()))
+            .Returns((IOwnedByUser<int> resource, bool _) => resource.UserId == UserId);
+        this.validatorMock
+            .Setup(v => v.ValidateCategoryAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Success(true));
+        this.validatorMock
+            .Setup(v => v.ValidateTagsAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Success(true));
 
         this.sut = new BudgetExpenseService(
             NullLogger<BudgetExpenseService>.Instance,
             this.expenseRepositoryMock.Object,
             this.budgetRepositoryMock.Object,
-            this.categoryRepositoryMock.Object,
-            this.tagRepositoryMock.Object,
+            this.validatorMock.Object,
             this.currentUserServiceMock.Object);
     }
 
@@ -83,9 +90,9 @@ public sealed class BudgetExpenseServiceTests
         this.budgetRepositoryMock
             .Setup(r => r.GetByIdAsync(BudgetId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildBudget(UserId));
-        this.tagRepositoryMock
-            .Setup(r => r.SearchAsync(It.IsAny<Expression<Func<Tag, bool>>>(), false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Tag>());
+        this.validatorMock
+            .Setup(v => v.ValidateTagsAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Failure(DomainErrorType.Validation, "One or more of the specified tags do not exist"));
 
         var request = BuildCreateRequest() with { TagIds = new[] { 3 } };
         var result = await this.sut.CreateExpenseAsync(BudgetId, request, CancellationToken.None);

@@ -3,7 +3,7 @@ namespace Cairnly.API.Models.Entities;
 /// <summary>
 /// Join entity linking a <see cref="Entities.BudgetExpense"/> to a <see cref="Entities.Tag"/>.
 /// </summary>
-public sealed class BudgetExpenseTag
+public sealed class BudgetExpenseTag : ITagLink
 {
     /// <summary>Gets or sets the budget expense ID.</summary>
     public int BudgetExpenseId { get; set; }

@@ -4,13 +4,6 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
-using Moq;
 using Cairnly.API.Constants;
 using Cairnly.API.Controllers.V1;
 using Cairnly.API.Core;
@@ -21,6 +14,13 @@ using Cairnly.API.Models.Settings;
 using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Core;
 using Cairnly.API.Services.Domain;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Moq;
 
 namespace Cairnly.API.Tests.Controllers;
 
@@ -238,7 +238,7 @@ public sealed class AuthControllerTests
     {
         var user = BuildUser();
         this.userRepositoryMock
-            .Setup(r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         this.userRepositoryMock
             .Setup(r => r.CheckPasswordAsync(user, "Password1!", It.IsAny<CancellationToken>()))
@@ -252,13 +252,13 @@ public sealed class AuthControllerTests
         // The combined username-or-email query must be used exactly once, and the legacy
         // two-call lookup must not be invoked on the login path.
         this.userRepositoryMock.Verify(
-            r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Once);
         this.userRepositoryMock.Verify(
-            r => r.GetByUsernameAsync(It.IsAny<string>(), It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByUsernameAsync(It.IsAny<string>(), It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Never);
         this.userRepositoryMock.Verify(
-            r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -267,7 +267,7 @@ public sealed class AuthControllerTests
     {
         var user = BuildUser();
         this.userRepositoryMock
-            .Setup(r => r.GetByUsernameOrEmailAsync("jane@example.com", It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUsernameOrEmailAsync("jane@example.com", It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         this.userRepositoryMock
             .Setup(r => r.CheckPasswordAsync(user, "Password1!", It.IsAny<CancellationToken>()))
@@ -279,7 +279,7 @@ public sealed class AuthControllerTests
         Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
 
         this.userRepositoryMock.Verify(
-            r => r.GetByUsernameOrEmailAsync("jane@example.com", It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByUsernameOrEmailAsync("jane@example.com", It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -291,7 +291,7 @@ public sealed class AuthControllerTests
         this.userRepositoryMock.Setup(r => r.UserManager).Returns(userManagerMock.Object);
 
         this.userRepositoryMock
-            .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await this.sut.LoginAsync(new LoginRequest { UserName = "ghost", Password = "x", DeviceId = DeviceId }, CancellationToken.None);
@@ -302,10 +302,10 @@ public sealed class AuthControllerTests
         // The not-found path must still invoke the dummy-hash verification to equalize timing,
         // and must not fall back to the legacy username/email lookups.
         this.userRepositoryMock.Verify(
-            r => r.GetByUsernameAsync(It.IsAny<string>(), It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByUsernameAsync(It.IsAny<string>(), It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Never);
         this.userRepositoryMock.Verify(
-            r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
+            r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -314,7 +314,7 @@ public sealed class AuthControllerTests
     {
         var user = BuildUser();
         this.userRepositoryMock
-            .Setup(r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<System.Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUsernameOrEmailAsync("jane", It.IsAny<Expression<Func<User, object>>[]>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         this.userRepositoryMock
             .Setup(r => r.CheckPasswordAsync(user, It.IsAny<string>(), It.IsAny<CancellationToken>()))

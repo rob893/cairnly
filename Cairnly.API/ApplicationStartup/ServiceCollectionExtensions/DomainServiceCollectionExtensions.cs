@@ -19,6 +19,7 @@ public static class DomainServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ICategoryTagValidator, CategoryTagValidator>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITagService, TagService>();

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,9 +26,7 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
 
     private readonly IBudgetRepository budgetRepository;
 
-    private readonly ICategoryRepository categoryRepository;
-
-    private readonly ITagRepository tagRepository;
+    private readonly ICategoryTagValidator categoryTagValidator;
 
     private readonly ICurrentUserService currentUserService;
 
@@ -39,22 +36,19 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
     /// <param name="logger">The logger.</param>
     /// <param name="incomeRepository">The budget income repository.</param>
     /// <param name="budgetRepository">The budget repository.</param>
-    /// <param name="categoryRepository">The category repository.</param>
-    /// <param name="tagRepository">The tag repository.</param>
+    /// <param name="categoryTagValidator">The category/tag validator.</param>
     /// <param name="currentUserService">The current user service.</param>
     public BudgetIncomeService(
         ILogger<BudgetIncomeService> logger,
         IBudgetIncomeRepository incomeRepository,
         IBudgetRepository budgetRepository,
-        ICategoryRepository categoryRepository,
-        ITagRepository tagRepository,
+        ICategoryTagValidator categoryTagValidator,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.incomeRepository = incomeRepository ?? throw new ArgumentNullException(nameof(incomeRepository));
         this.budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
-        this.categoryRepository = categoryRepository ?? throw new ArgumentNullException(nameof(categoryRepository));
-        this.tagRepository = tagRepository ?? throw new ArgumentNullException(nameof(tagRepository));
+        this.categoryTagValidator = categoryTagValidator ?? throw new ArgumentNullException(nameof(categoryTagValidator));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -108,14 +102,14 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
 
         var budget = budgetResult.ValueOrThrow;
 
-        var categoryResult = await this.ValidateCategoryAsync(request.CategoryId, cancellationToken);
+        var categoryResult = await this.categoryTagValidator.ValidateCategoryAsync(request.CategoryId, cancellationToken);
         if (!categoryResult.IsSuccess)
         {
             return Result<BudgetIncomeDto>.Failure(categoryResult.ErrorType!.Value, categoryResult.ErrorMessage!);
         }
 
-        var tagIds = NormalizeTagIds(request.TagIds);
-        var tagResult = await this.ValidateTagsAsync(tagIds, budget.UserId, cancellationToken);
+        var tagIds = TagLinkUtilities.Normalize(request.TagIds);
+        var tagResult = await this.categoryTagValidator.ValidateTagsAsync(tagIds, budget.UserId, cancellationToken);
         if (!tagResult.IsSuccess)
         {
             return Result<BudgetIncomeDto>.Failure(tagResult.ErrorType!.Value, tagResult.ErrorMessage!);
@@ -158,14 +152,14 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
             return Result<BudgetIncomeDto>.Failure(notFound.Value, error);
         }
 
-        var categoryResult = await this.ValidateCategoryAsync(request.CategoryId, cancellationToken);
+        var categoryResult = await this.categoryTagValidator.ValidateCategoryAsync(request.CategoryId, cancellationToken);
         if (!categoryResult.IsSuccess)
         {
             return Result<BudgetIncomeDto>.Failure(categoryResult.ErrorType!.Value, categoryResult.ErrorMessage!);
         }
 
-        var tagIds = NormalizeTagIds(request.TagIds);
-        var tagResult = await this.ValidateTagsAsync(tagIds, income!.UserId, cancellationToken);
+        var tagIds = TagLinkUtilities.Normalize(request.TagIds);
+        var tagResult = await this.categoryTagValidator.ValidateTagsAsync(tagIds, income!.UserId, cancellationToken);
         if (!tagResult.IsSuccess)
         {
             return Result<BudgetIncomeDto>.Failure(tagResult.ErrorType!.Value, tagResult.ErrorMessage!);
@@ -180,7 +174,7 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
         income.Metadata = request.Metadata ?? [];
         income.UpdatedById = this.currentUserService.UserId;
 
-        SyncTags(income, tagIds);
+        TagLinkUtilities.Sync(income.BudgetIncomeTags, tagIds, tagId => new BudgetIncomeTag { BudgetIncomeId = income.Id, TagId = tagId });
 
         await this.incomeRepository.SaveChangesAsync(cancellationToken);
 
@@ -239,24 +233,6 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
         return Result<bool>.Success(true);
     }
 
-    private static List<int> NormalizeTagIds(IReadOnlyList<int>? tagIds)
-    {
-        return tagIds == null ? [] : tagIds.Distinct().ToList();
-    }
-
-    private static void SyncTags(BudgetIncome income, List<int> desiredTagIds)
-    {
-        var desired = desiredTagIds.ToHashSet();
-        var existing = income.BudgetIncomeTags.Select(it => it.TagId).ToHashSet();
-
-        income.BudgetIncomeTags.RemoveAll(it => !desired.Contains(it.TagId));
-
-        foreach (var tagId in desired.Where(tagId => !existing.Contains(tagId)))
-        {
-            income.BudgetIncomeTags.Add(new BudgetIncomeTag { BudgetIncomeId = income.Id, TagId = tagId });
-        }
-    }
-
     /// <summary>
     /// Validates that a line item exists, belongs to the given budget, and is accessible. Returns the
     /// failure error type (with message) when invalid, or <c>null</c> when valid.
@@ -269,7 +245,7 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
             return DomainErrorType.NotFound;
         }
 
-        if (income.UserId != this.currentUserService.UserId && !this.currentUserService.IsAdmin)
+        if (!this.currentUserService.IsUserAuthorizedForResource(income))
         {
             this.logger.LogWarning("User {UserId} attempted to access budget income {IncomeId} owned by {OwnerId}", this.currentUserService.UserId, income.Id, income.UserId);
             error = "You can only access your own budget income";
@@ -289,52 +265,12 @@ public sealed class BudgetIncomeService : IBudgetIncomeService
             return Result<Budget>.Failure(DomainErrorType.NotFound, "Budget not found");
         }
 
-        if (budget.UserId != this.currentUserService.UserId && !this.currentUserService.IsAdmin)
+        if (!this.currentUserService.IsUserAuthorizedForResource(budget))
         {
             this.logger.LogWarning("User {UserId} attempted to access budget {BudgetId} owned by {OwnerId}", this.currentUserService.UserId, budgetId, budget.UserId);
             return Result<Budget>.Failure(DomainErrorType.Forbidden, "You can only access your own budgets");
         }
 
         return Result<Budget>.Success(budget);
-    }
-
-    private async Task<Result<bool>> ValidateCategoryAsync(int? categoryId, CancellationToken cancellationToken)
-    {
-        if (categoryId == null)
-        {
-            return Result<bool>.Success(true);
-        }
-
-        var category = await this.categoryRepository.GetByIdAsync(categoryId.Value, track: false, cancellationToken);
-
-        var accessible = category != null
-            && (category.UserId == this.currentUserService.UserId || category.IsSystem || this.currentUserService.IsAdmin);
-
-        if (!accessible)
-        {
-            return Result<bool>.Failure(DomainErrorType.Validation, "The specified category does not exist");
-        }
-
-        return Result<bool>.Success(true);
-    }
-
-    private async Task<Result<bool>> ValidateTagsAsync(List<int> tagIds, int ownerUserId, CancellationToken cancellationToken)
-    {
-        if (tagIds.Count == 0)
-        {
-            return Result<bool>.Success(true);
-        }
-
-        var tags = await this.tagRepository.SearchAsync(
-            t => tagIds.Contains(t.Id) && t.UserId == ownerUserId,
-            track: false,
-            cancellationToken);
-
-        if (tags.Count != tagIds.Count)
-        {
-            return Result<bool>.Failure(DomainErrorType.Validation, "One or more of the specified tags do not exist");
-        }
-
-        return Result<bool>.Success(true);
     }
 }

@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Cairnly.API.Constants;
+using Cairnly.API.Middleware;
+using Cairnly.API.Models.Settings;
+using Cairnly.API.Services.Core;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using Cairnly.API.Constants;
-using Cairnly.API.Middleware;
-using Cairnly.API.Models.Settings;
-using Cairnly.API.Services.Core;
 
 namespace Cairnly.API.Tests.Middleware;
 
@@ -186,12 +186,12 @@ public sealed class MiddlewareTests
         return context;
     }
 
-    private static Microsoft.Extensions.Options.IOptions<Cairnly.API.Models.Settings.OpenApiSettings> BuildOpenApiOptions()
+    private static IOptions<OpenApiSettings> BuildOpenApiOptions()
     {
-        return Microsoft.Extensions.Options.Options.Create(new Cairnly.API.Models.Settings.OpenApiSettings
+        return Microsoft.Extensions.Options.Options.Create(new OpenApiSettings
         {
             Enabled = true,
-            AuthSettings = new Cairnly.API.Models.Settings.OpenApiAuthSettings
+            AuthSettings = new OpenApiAuthSettings
             {
                 RequireAuth = true,
                 Username = "admin",
