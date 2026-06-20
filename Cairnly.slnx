@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Cairnly.API.Tests/Cairnly.API.Tests.csproj" />
+  <Project Path="Cairnly.API/Cairnly.API.csproj" />
+</Solution>

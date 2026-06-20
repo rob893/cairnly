@@ -1,0 +1,12 @@
+{
+  "name": "cairnly-template",
+  "private": true,
+  "scripts": {
+    "start": "cd Cairnly.API && dotnet watch run --launch-profile https",
+    "build-api": "cd Cairnly.API && dotnet build",
+    "test-api": "dotnet test",
+    "publish-api": "cd Cairnly.API && dotnet publish -c Release -o dist",
+    "start-ui": "cd cairnly-ui && npm run dev",
+    "build-ui": "cd cairnly-ui && npm run build"
+  }
+}
