@@ -109,6 +109,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
     {
         this.context.TransactionTags.Clear();
         this.context.Transactions.Clear();
+        this.context.Budgets.Clear();
         this.context.Tags.Clear();
         this.context.Categories.Clear();
         this.context.Accounts.Clear();

@@ -23,6 +23,9 @@ public static class DomainServiceCollectionExtensions
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<IBudgetService, BudgetService>();
+        services.AddScoped<IBudgetIncomeService, BudgetIncomeService>();
+        services.AddScoped<IBudgetExpenseService, BudgetExpenseService>();
 
         return services;
     }

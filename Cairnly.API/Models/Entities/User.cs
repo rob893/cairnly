@@ -22,6 +22,8 @@ public sealed class User : IdentityUser<int>, IIdentifiable<int>
 
     public List<Transaction> Transactions { get; set; } = [];
 
+    public List<Budget> Budgets { get; set; } = [];
+
     public DateTimeOffset? LastLogin { get; set; }
 
     public DateTimeOffset LastPasswordChange { get; set; }

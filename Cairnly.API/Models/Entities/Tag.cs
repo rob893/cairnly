@@ -45,4 +45,10 @@ public sealed class Tag : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntit
     /// taggable entities (e.g. budgets) would add their own join collections.
     /// </summary>
     public List<TransactionTag> TransactionTags { get; set; } = [];
+
+    /// <summary>Gets or sets the budget-income-tag join rows.</summary>
+    public List<BudgetIncomeTag> BudgetIncomeTags { get; set; } = [];
+
+    /// <summary>Gets or sets the budget-expense-tag join rows.</summary>
+    public List<BudgetExpenseTag> BudgetExpenseTags { get; set; } = [];
 }
