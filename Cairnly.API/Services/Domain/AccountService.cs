@@ -98,7 +98,9 @@ public sealed class AccountService : IAccountService
             OpeningBalance = request.OpeningBalance,
             CurrentBalance = request.IsManual ? request.CurrentBalance : 0,
             IsManual = request.IsManual,
-            Metadata = request.Metadata ?? []
+            Metadata = request.Metadata ?? [],
+            CreatedById = this.currentUserService.UserId,
+            UpdatedById = this.currentUserService.UserId
         };
 
         this.accountRepository.Add(account);
@@ -138,6 +140,7 @@ public sealed class AccountService : IAccountService
         account.IsManual = request.IsManual;
         account.CurrentBalance = request.IsManual ? request.CurrentBalance : 0;
         account.Metadata = request.Metadata ?? [];
+        account.UpdatedById = this.currentUserService.UserId;
 
         await this.accountRepository.SaveChangesAsync(cancellationToken);
 

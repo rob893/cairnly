@@ -97,7 +97,9 @@ public sealed class CategoryService : ICategoryService
             Kind = request.Kind,
             ParentId = request.ParentId,
             IsSystem = false,
-            Metadata = request.Metadata ?? []
+            Metadata = request.Metadata ?? [],
+            CreatedById = this.currentUserService.UserId,
+            UpdatedById = this.currentUserService.UserId
         };
 
         this.categoryRepository.Add(category);
@@ -143,6 +145,7 @@ public sealed class CategoryService : ICategoryService
         category.Kind = request.Kind;
         category.ParentId = request.ParentId;
         category.Metadata = request.Metadata ?? [];
+        category.UpdatedById = this.currentUserService.UserId;
 
         await this.categoryRepository.SaveChangesAsync(cancellationToken);
 

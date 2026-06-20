@@ -62,6 +62,12 @@ public sealed class Account : IIdentifiable<int>, IOwnedByUser<int>, IAuditableE
     /// <summary>Gets or sets when the account was last updated (UTC).</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>Gets or sets the ID of the user who created the account.</summary>
+    public int? CreatedById { get; set; }
+
+    /// <summary>Gets or sets the ID of the user who last updated the account.</summary>
+    public int? UpdatedById { get; set; }
+
     /// <summary>Gets or sets the transactions belonging to this account.</summary>
     public List<Transaction> Transactions { get; set; } = [];
 }

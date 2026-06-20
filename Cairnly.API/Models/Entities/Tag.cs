@@ -5,7 +5,8 @@ using System.ComponentModel.DataAnnotations;
 namespace Cairnly.API.Models.Entities;
 
 /// <summary>
-/// Represents a free-form label that can be applied to transactions, owned by a user.
+/// Represents a generic, free-form label owned by a user. Tags can be applied to any taggable
+/// entity (currently transactions; budgets, expenses, and other entities in the future).
 /// </summary>
 public sealed class Tag : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntity
 {
@@ -33,6 +34,15 @@ public sealed class Tag : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntit
     /// <summary>Gets or sets when the tag was last updated (UTC).</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-    /// <summary>Gets or sets the transaction-tag join rows linking this tag to transactions.</summary>
+    /// <summary>Gets or sets the ID of the user who created the tag.</summary>
+    public int? CreatedById { get; set; }
+
+    /// <summary>Gets or sets the ID of the user who last updated the tag.</summary>
+    public int? UpdatedById { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction-tag join rows. This is the transaction-specific link; future
+    /// taggable entities (e.g. budgets) would add their own join collections.
+    /// </summary>
     public List<TransactionTag> TransactionTags { get; set; } = [];
 }

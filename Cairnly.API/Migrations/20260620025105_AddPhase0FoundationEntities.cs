@@ -32,7 +32,9 @@ namespace Cairnly.API.Migrations
                     IsManual = table.Column<bool>(type: "boolean", nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedById = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedById = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -58,7 +60,9 @@ namespace Cairnly.API.Migrations
                     IsSystem = table.Column<bool>(type: "boolean", nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedById = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedById = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -87,7 +91,9 @@ namespace Cairnly.API.Migrations
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedById = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedById = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -118,7 +124,9 @@ namespace Cairnly.API.Migrations
                     ParentTransactionId = table.Column<int>(type: "integer", nullable: true),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedById = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedById = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {

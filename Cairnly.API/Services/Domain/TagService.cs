@@ -95,7 +95,9 @@ public sealed class TagService : ITagService
         {
             UserId = userId,
             Name = request.Name,
-            Metadata = request.Metadata ?? []
+            Metadata = request.Metadata ?? [],
+            CreatedById = this.currentUserService.UserId,
+            UpdatedById = this.currentUserService.UserId
         };
 
         this.tagRepository.Add(tag);
@@ -134,6 +136,7 @@ public sealed class TagService : ITagService
 
         tag.Name = request.Name;
         tag.Metadata = request.Metadata ?? [];
+        tag.UpdatedById = this.currentUserService.UserId;
 
         await this.tagRepository.SaveChangesAsync(cancellationToken);
 

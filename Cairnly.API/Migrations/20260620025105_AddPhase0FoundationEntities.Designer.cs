@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cairnly.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260620020132_AddPhase0FoundationEntities")]
+    [Migration("20260620025105_AddPhase0FoundationEntities")]
     partial class AddPhase0FoundationEntities
     {
         /// <inheritdoc />
@@ -43,6 +43,9 @@ namespace Cairnly.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Currency")
                         .IsRequired()
@@ -77,6 +80,9 @@ namespace Cairnly.API.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
@@ -99,6 +105,9 @@ namespace Cairnly.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean");
@@ -124,6 +133,9 @@ namespace Cairnly.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -233,6 +245,9 @@ namespace Cairnly.API.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
                     b.Property<Dictionary<string, object>>("Metadata")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -246,6 +261,9 @@ namespace Cairnly.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -280,6 +298,9 @@ namespace Cairnly.API.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("Date")
                         .HasColumnType("timestamp with time zone");
 
@@ -310,6 +331,9 @@ namespace Cairnly.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");

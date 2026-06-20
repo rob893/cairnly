@@ -54,6 +54,12 @@ public sealed class Category : IIdentifiable<int>, IOwnedByUser<int>, IAuditable
     /// <summary>Gets or sets when the category was last updated (UTC).</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>Gets or sets the ID of the user who created the category.</summary>
+    public int? CreatedById { get; set; }
+
+    /// <summary>Gets or sets the ID of the user who last updated the category.</summary>
+    public int? UpdatedById { get; set; }
+
     /// <summary>Gets or sets the transactions assigned to this category.</summary>
     public List<Transaction> Transactions { get; set; } = [];
 }

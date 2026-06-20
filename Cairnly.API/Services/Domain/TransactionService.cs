@@ -139,6 +139,8 @@ public sealed class TransactionService : ITransactionService
             ParentTransactionId = request.ParentTransactionId,
             IsSplit = false,
             Metadata = request.Metadata ?? [],
+            CreatedById = this.currentUserService.UserId,
+            UpdatedById = this.currentUserService.UserId,
             TransactionTags = tagIds.Select(tagId => new TransactionTag { TagId = tagId }).ToList()
         };
 
@@ -207,6 +209,7 @@ public sealed class TransactionService : ITransactionService
         transaction.CategoryId = request.CategoryId;
         transaction.Source = request.Source;
         transaction.Metadata = request.Metadata ?? [];
+        transaction.UpdatedById = this.currentUserService.UserId;
 
         SyncTags(transaction, tagIds);
 

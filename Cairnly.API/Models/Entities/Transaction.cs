@@ -75,4 +75,10 @@ public sealed class Transaction : IIdentifiable<int>, IOwnedByUser<int>, IAudita
 
     /// <summary>Gets or sets when the transaction record was last updated (UTC).</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>Gets or sets the ID of the user who created the transaction.</summary>
+    public int? CreatedById { get; set; }
+
+    /// <summary>Gets or sets the ID of the user who last updated the transaction.</summary>
+    public int? UpdatedById { get; set; }
 }

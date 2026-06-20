@@ -118,7 +118,7 @@ public sealed class AccountServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal("USD", result.ValueOrThrow.Currency);
         Assert.Equal(UserId, result.ValueOrThrow.UserId);
-        this.accountRepositoryMock.Verify(r => r.Add(It.Is<Account>(a => a.Currency == "USD")), Times.Once);
+        this.accountRepositoryMock.Verify(r => r.Add(It.Is<Account>(a => a.Currency == "USD" && a.CreatedById == UserId && a.UpdatedById == UserId)), Times.Once);
         this.accountRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
