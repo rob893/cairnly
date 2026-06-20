@@ -1,47 +1,49 @@
 import apiClient from './axiosConfig';
 import type {
-  CursorPaginatedResponse,
-  CursorPaginationQueryParameters,
-  Note,
-  CreateNoteRequest,
-  UpdateNoteRequest,
-  HelloResponse
+  LinkedAccountType,
+  UpdatePasswordRequest,
+  UpdateUsernameRequest,
+  UserDetails,
+  UserPreferences,
+  UpdateUserPreferencesRequest
 } from '../types/models';
 
-export const helloApi = {
-  async getHelloV1(): Promise<HelloResponse> {
-    const response = await apiClient.get<HelloResponse>('/api/v1/hello');
+export const usersApi = {
+  async getUser(id: number): Promise<UserDetails> {
+    const response = await apiClient.get<UserDetails>(`/api/v1/users/${id}`);
     return response.data;
   },
 
-  async getHelloV2(): Promise<HelloResponse> {
-    const response = await apiClient.get<HelloResponse>('/api/v2/hello');
+  async updateUsername(id: number, request: UpdateUsernameRequest): Promise<UserDetails> {
+    const response = await apiClient.put<UserDetails>(`/api/v1/users/${id}/username`, request);
     return response.data;
+  },
+
+  async updatePassword(id: number, request: UpdatePasswordRequest): Promise<void> {
+    await apiClient.put(`/api/v1/users/${id}/password`, request);
+  },
+
+  async deleteUser(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${id}`);
+  },
+
+  async unlinkAccount(id: number, linkedAccountType: LinkedAccountType): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${id}/linkedAccounts/${linkedAccountType}`);
+  },
+
+  async sendEmailConfirmation(id: number): Promise<void> {
+    await apiClient.post(`/api/v1/users/${id}/emailConfirmations`);
   }
 };
 
-export const notesApi = {
-  async getNotes(params?: CursorPaginationQueryParameters): Promise<CursorPaginatedResponse<Note>> {
-    const response = await apiClient.get<CursorPaginatedResponse<Note>>('/api/v1/notes', { params });
+export const preferencesApi = {
+  async getPreferences(userId: number): Promise<UserPreferences> {
+    const response = await apiClient.get<UserPreferences>(`/api/v1/users/${userId}/preferences`);
     return response.data;
   },
 
-  async getNote(id: number): Promise<Note> {
-    const response = await apiClient.get<Note>(`/api/v1/notes/${id}`);
+  async updatePreferences(userId: number, request: UpdateUserPreferencesRequest): Promise<UserPreferences> {
+    const response = await apiClient.put<UserPreferences>(`/api/v1/users/${userId}/preferences`, request);
     return response.data;
-  },
-
-  async createNote(data: CreateNoteRequest): Promise<Note> {
-    const response = await apiClient.post<Note>('/api/v1/notes', data);
-    return response.data;
-  },
-
-  async updateNote(id: number, data: UpdateNoteRequest): Promise<Note> {
-    const response = await apiClient.put<Note>(`/api/v1/notes/${id}`, data);
-    return response.data;
-  },
-
-  async deleteNote(id: number): Promise<void> {
-    await apiClient.delete(`/api/v1/notes/${id}`);
   }
 };

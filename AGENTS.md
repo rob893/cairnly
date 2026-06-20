@@ -53,6 +53,11 @@ Run from repo root unless noted.
   Always go through the shared `apiClient` (never raw `fetch`); gate authed queries on `isAuthenticated && !isAuthLoading`.
 - Routing uses `HashRouter` (works on GitHub Pages). HeroUI v3 needs no provider; styles via `@heroui/styles`.
 
+## UI Components
+
+- The UI uses heroui v3 components. See docs https://heroui.com/react/llms.txt
+- Never create custom controls when there is a heroui component that can be used instead
+
 ## Performance
 
 - **Frontend:** lazy-load routes (`React.lazy` + `Suspense`); gate dev-only tooling behind `import.meta.env.DEV` so it tree-shakes out of prod; set a global React Query `staleTime`; use `useInfiniteQuery` for cursor pagination (don't hand-roll); memoize derived arrays; split vendor chunks in `vite.config.ts` (Vite 8/Rolldown → `build.rollupOptions.output.codeSplitting.groups`).

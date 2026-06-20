@@ -1,76 +1,97 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { helloApi, notesApi } from '../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { preferencesApi, usersApi } from '../services/api';
 import { useAuth } from './useAuth';
-import type { CreateNoteRequest } from '../types/models';
+import type {
+  LinkedAccountType,
+  UpdatePasswordRequest,
+  UpdateUsernameRequest,
+  UpdateUserPreferencesRequest
+} from '../types/models';
 
 export const queryKeys = {
-  helloV1: ['hello', 'v1'] as const,
-  helloV2: ['hello', 'v2'] as const,
-  notesInfinite: (pageSize: number) => ['notes', 'infinite', pageSize] as const,
-  note: (id: number) => ['notes', id] as const
+  userDetails: (id: number) => ['users', id] as const,
+  preferences: (userId: number) => ['users', userId, 'preferences'] as const
 } as const;
 
-// Hello hooks
-export function useHelloV1() {
+/**
+ * Fetches the full details of a user (account page). Gated on authentication.
+ *
+ * @param id The user ID, or `undefined` when not yet known.
+ */
+export function useUserDetails(id: number | undefined) {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.helloV1,
-    queryFn: () => helloApi.getHelloV1(),
-    enabled: isAuthenticated && !isAuthLoading,
+    queryKey: queryKeys.userDetails(id ?? 0),
+    queryFn: () => usersApi.getUser(id as number),
+    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
     staleTime: 60 * 1000
   });
 }
 
-export function useHelloV2() {
+export function useUpdateUsername(id: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: UpdateUsernameRequest) => usersApi.updateUsername(id, request),
+    onSuccess: updated => {
+      queryClient.setQueryData(queryKeys.userDetails(id), updated);
+    }
+  });
+}
+
+export function useUpdatePassword(id: number) {
+  return useMutation({
+    mutationFn: (request: UpdatePasswordRequest) => usersApi.updatePassword(id, request)
+  });
+}
+
+export function useDeleteUser(id: number) {
+  return useMutation({
+    mutationFn: () => usersApi.deleteUser(id)
+  });
+}
+
+export function useUnlinkAccount(id: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (linkedAccountType: LinkedAccountType) => usersApi.unlinkAccount(id, linkedAccountType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.userDetails(id) });
+    }
+  });
+}
+
+export function useSendEmailConfirmation(id: number) {
+  return useMutation({
+    mutationFn: () => usersApi.sendEmailConfirmation(id)
+  });
+}
+
+/**
+ * Fetches the current user's saved preferences. Gated on authentication.
+ *
+ * @param userId The user ID, or `undefined` when not yet known.
+ */
+export function usePreferences(userId: number | undefined) {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.helloV2,
-    queryFn: () => helloApi.getHelloV2(),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 60 * 1000
-  });
-}
-
-// Notes hooks
-export function useCreateNote() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: CreateNoteRequest) => notesApi.createNote(data),
-    onSuccess: newNote => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.setQueryData(queryKeys.note(newNote.id), newNote);
-    }
-  });
-}
-
-export function useDeleteNote() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => notesApi.deleteNote(id),
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.removeQueries({ queryKey: queryKeys.note(id) });
-    }
-  });
-}
-
-// Cursor-paginated notes with "load more" support, cached via React Query's
-// infinite query. Created/deleted notes invalidate the `['notes']` key, which
-// also refreshes this query so the list stays in sync.
-export function useInfiniteNotes(pageSize = 10) {
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
-
-  return useInfiniteQuery({
-    queryKey: queryKeys.notesInfinite(pageSize),
-    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      notesApi.getNotes({ first: pageSize, after: pageParam }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: lastPage => (lastPage.pageInfo?.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
+    queryKey: queryKeys.preferences(userId ?? 0),
+    queryFn: () => preferencesApi.getPreferences(userId as number),
+    enabled: isAuthenticated && !isAuthLoading && typeof userId === 'number',
     staleTime: 5 * 60 * 1000
+  });
+}
+
+export function useUpdatePreferences(userId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: UpdateUserPreferencesRequest) => preferencesApi.updatePreferences(userId, request),
+    onSuccess: updated => {
+      queryClient.setQueryData(queryKeys.preferences(userId), updated);
+    }
   });
 }

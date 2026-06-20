@@ -3,10 +3,13 @@ import { Routes, Route, Navigate } from 'react-router';
 import { Spinner } from '@heroui/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ThemeSync } from './components/ThemeSync';
 import { AppLayout } from './layouts/AppLayout';
 import { routePaths } from './constants/routes';
 
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const AccountPage = lazy(() => import('./pages/AccountPage').then(m => ({ default: m.AccountPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.OAuthCallbackPage })));
@@ -24,9 +27,13 @@ function PageFallback() {
 function App() {
   return (
     <AuthProvider>
+      <ThemeSync />
       <div className="app min-h-screen bg-background text-foreground">
         <Suspense fallback={<PageFallback />}>
           <Routes>
+            {/* Public landing */}
+            <Route path={routePaths.landing} element={<LandingPage />} />
+
             {/* Auth routes (unauthenticated) */}
             <Route path={routePaths.login} element={<LoginPage />} />
             <Route path={routePaths.register} element={<RegisterPage />} />
@@ -37,7 +44,7 @@ function App() {
 
             {/* Protected routes */}
             <Route
-              path={routePaths.home}
+              path={routePaths.dashboard}
               element={
                 <ProtectedRoute>
                   <AppLayout>
@@ -46,9 +53,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path={routePaths.account}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AccountPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={routePaths.landing} replace />} />
           </Routes>
         </Suspense>
       </div>

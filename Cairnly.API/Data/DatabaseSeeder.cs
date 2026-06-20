@@ -113,6 +113,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         this.context.Tags.Clear();
         this.context.Categories.Clear();
         this.context.Accounts.Clear();
+        this.context.UserPreferences.Clear();
         this.context.RefreshTokens.Clear();
         this.context.LinkedAccounts.Clear();
         this.context.Users.Clear();

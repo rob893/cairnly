@@ -26,6 +26,7 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<IBudgetIncomeRepository, BudgetIncomeRepository>();
         services.AddScoped<IBudgetExpenseRepository, BudgetExpenseRepository>();
+        services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
         return services;
     }

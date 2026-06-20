@@ -80,7 +80,7 @@ export function OAuthCallbackPage({ provider }: { provider: OAuthProvider }) {
 
         setStep('success');
         await new Promise(resolve => setTimeout(resolve, 800));
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : `${providerConfig?.name || 'OAuth'} login failed`);
         setStep('error');

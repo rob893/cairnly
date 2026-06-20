@@ -5,7 +5,9 @@
  * (`AuthContext`) so route definitions stay in one place.
  */
 export const routePaths = {
-  home: '/',
+  landing: '/',
+  dashboard: '/dashboard',
+  account: '/account',
   login: '/login',
   register: '/register',
   forgotPassword: '/forgot-password',

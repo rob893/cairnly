@@ -4,6 +4,7 @@ import { HashRouter as Router } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 
 // HeroUI v3 — styles imported via @import "@heroui/styles" in index.css, no provider needed.
@@ -34,15 +35,17 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-        <Suspense>
-          <DevTools />
-        </Suspense>
-      </Router>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+          <Suspense>
+            <DevTools />
+          </Suspense>
+        </Router>
+      </QueryClientProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

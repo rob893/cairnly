@@ -24,6 +24,11 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
         value => StringComparer.Ordinal.GetHashCode(JsonSerializer.Serialize(value, (JsonSerializerOptions?)null)),
         value => JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(value, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null) ?? new Dictionary<string, object>());
 
+    private static readonly ValueComparer<UserPreferencesData> userPreferencesComparer = new(
+        (left, right) => left == right,
+        value => value == null ? 0 : value.GetHashCode(),
+        value => value);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DataContext"/> class.
     /// </summary>
@@ -59,6 +64,9 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
 
     /// <summary>Gets the transaction-tag join DbSet.</summary>
     public DbSet<TransactionTag> TransactionTags => this.Set<TransactionTag>();
+
+    /// <summary>Gets the user preferences DbSet.</summary>
+    public DbSet<UserPreferences> UserPreferences => this.Set<UserPreferences>();
 
     /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
@@ -334,6 +342,20 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             expenseTag.HasOne(et => et.Tag)
                 .WithMany(t => t.BudgetExpenseTags)
                 .HasForeignKey(et => et.TagId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<UserPreferences>(preferences =>
+        {
+            preferences.Property(p => p.Data).HasColumnType("jsonb").Metadata.SetValueComparer(userPreferencesComparer);
+            preferences.Property(p => p.CreatedAt).HasDefaultValueSql("now()");
+            preferences.Property(p => p.UpdatedAt).HasDefaultValueSql("now()");
+
+            preferences.HasIndex(p => p.UserId).IsUnique();
+
+            preferences.HasOne(p => p.User)
+                .WithOne(u => u.Preferences)
+                .HasForeignKey<UserPreferences>(p => p.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

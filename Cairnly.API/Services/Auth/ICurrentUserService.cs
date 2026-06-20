@@ -30,6 +30,13 @@ public interface ICurrentUserService
     /// <summary>Returns true if the current user is authorized to access the given resource.</summary>
     bool IsUserAuthorizedForResource(IOwnedByUser<int> resource, bool isAdminAuthorized = true);
 
+    /// <summary>
+    /// Returns true if the current user is authorized to act on data owned by the given user id
+    /// (i.e. they are that user, or an authorized administrator).
+    /// </summary>
+    bool IsUserAuthorizedForResource(int ownerUserId, bool isAdminAuthorized = true) =>
+        (isAdminAuthorized && this.IsAdmin) || ownerUserId == this.UserId;
+
     /// <summary>Overrides the current user identity (used by the database seeder).</summary>
     void SetOverrideUser(User user);
 
