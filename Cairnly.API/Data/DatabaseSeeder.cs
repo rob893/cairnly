@@ -66,6 +66,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         {
             await this.SeedRolesAsync(cancellationToken);
             await this.SeedAdminUserAsync(cancellationToken);
+            await this.SeedSystemCategoriesAsync(cancellationToken);
 
             await FixSequenceAsync(this.context, "AspNetRoles", "Id", cancellationToken);
             await FixSequenceAsync(this.context, "AspNetUsers", "Id", cancellationToken);
@@ -106,7 +107,11 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
     private async Task ClearAllDataAsync(CancellationToken cancellationToken = default)
     {
-        this.context.Notes.Clear();
+        this.context.TransactionTags.Clear();
+        this.context.Transactions.Clear();
+        this.context.Tags.Clear();
+        this.context.Categories.Clear();
+        this.context.Accounts.Clear();
         this.context.RefreshTokens.Clear();
         this.context.LinkedAccounts.Clear();
         this.context.Users.Clear();
@@ -126,6 +131,57 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         {
             await this.roleManager.CreateAsync(new Role { Name = roleName });
         }
+    }
+
+    private async Task SeedSystemCategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        if (await this.context.Categories.AnyAsync(c => c.IsSystem, cancellationToken))
+        {
+            return;
+        }
+
+        var systemCategories = new (string Name, CategoryKind Kind)[]
+        {
+            ("Salary", CategoryKind.Income),
+            ("Interest", CategoryKind.Income),
+            ("Dividends", CategoryKind.Income),
+            ("Refunds", CategoryKind.Income),
+            ("Other Income", CategoryKind.Income),
+            ("Housing", CategoryKind.Expense),
+            ("Utilities", CategoryKind.Expense),
+            ("Groceries", CategoryKind.Expense),
+            ("Dining", CategoryKind.Expense),
+            ("Transportation", CategoryKind.Expense),
+            ("Insurance", CategoryKind.Expense),
+            ("Healthcare", CategoryKind.Expense),
+            ("Entertainment", CategoryKind.Expense),
+            ("Shopping", CategoryKind.Expense),
+            ("Travel", CategoryKind.Expense),
+            ("Education", CategoryKind.Expense),
+            ("Subscriptions", CategoryKind.Expense),
+            ("Fees & Charges", CategoryKind.Expense),
+            ("Taxes", CategoryKind.Expense),
+            ("Gifts & Donations", CategoryKind.Expense),
+            ("Other Expense", CategoryKind.Expense),
+            ("Transfer", CategoryKind.Transfer),
+            ("Credit Card Payment", CategoryKind.Transfer),
+            ("Savings", CategoryKind.Transfer)
+        };
+
+        this.logger.LogInformation("Seeding {Count} system categories...", systemCategories.Length);
+
+        foreach (var (name, kind) in systemCategories)
+        {
+            this.context.Categories.Add(new Category
+            {
+                UserId = ApplicationSettings.SystemUserId,
+                Name = name,
+                Kind = kind,
+                IsSystem = true
+            });
+        }
+
+        await this.context.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedAdminUserAsync(CancellationToken cancellationToken = default)

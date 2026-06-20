@@ -19,7 +19,10 @@ public static class DomainServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IUserService, UserService>();
-        services.AddScoped<INoteService, NoteService>();
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ITagService, TagService>();
+        services.AddScoped<ITransactionService, TransactionService>();
 
         return services;
     }

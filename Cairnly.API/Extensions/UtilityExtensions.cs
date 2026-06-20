@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Claims;
@@ -31,6 +32,25 @@ public static class UtilityExtensions
 
             return false;
         }
+    }
+
+    /// <summary>
+    /// Validates an object against its data-annotation attributes. Useful after applying a JSON
+    /// patch, which bypasses MVC model validation.
+    /// </summary>
+    /// <param name="instance">The object to validate.</param>
+    /// <param name="error">The combined validation error message when invalid; otherwise empty.</param>
+    /// <returns><c>true</c> if the object is valid; otherwise <c>false</c>.</returns>
+    public static bool TryValidate(this object instance, out string error)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+
+        var results = new List<ValidationResult>();
+        var isValid = Validator.TryValidateObject(instance, new ValidationContext(instance), results, validateAllProperties: true);
+
+        error = isValid ? string.Empty : string.Join(" ", results.Select(r => r.ErrorMessage));
+
+        return isValid;
     }
 
     public static bool TryGetUserId(this ClaimsPrincipal principal, [NotNullWhen(true)] out int? userId)
