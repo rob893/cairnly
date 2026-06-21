@@ -42,14 +42,14 @@ describe('ThemeProvider', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('defaults to system mode and the green accent', () => {
+  it('defaults to dark mode and the green accent', () => {
     render(
       <ThemeProvider>
         <Consumer />
       </ThemeProvider>
     );
 
-    expect(screen.getByTestId('mode').textContent).toBe('system');
+    expect(screen.getByTestId('mode').textContent).toBe('dark');
     expect(screen.getByTestId('accent').textContent).toBe('green');
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe(getAccentPreset('green').accent);
   });

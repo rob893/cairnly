@@ -1,36 +1,15 @@
-import { Tabs } from '@heroui/react';
 import { AccountSection } from '../components/account/AccountSection';
-import { PreferencesSection } from '../components/account/PreferencesSection';
 
 export function AccountPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="text-muted mt-1">Manage your account information and settings.</p>
+    <div className="space-y-8">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-secondary/40 p-8 cairnly-aurora">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent">Settings</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Account</h1>
+        <p className="text-muted mt-1">Manage your account information, linked logins, and preferences.</p>
       </div>
 
-      <Tabs defaultSelectedKey="account" orientation="vertical" className="flex flex-col md:flex-row gap-6">
-        <Tabs.ListContainer className="md:w-56 shrink-0">
-          <Tabs.List aria-label="Account settings sections" className="md:flex-col md:items-stretch">
-            <Tabs.Tab id="account">
-              Account
-              <Tabs.Indicator />
-            </Tabs.Tab>
-            <Tabs.Tab id="preferences">
-              Preferences
-              <Tabs.Indicator />
-            </Tabs.Tab>
-          </Tabs.List>
-        </Tabs.ListContainer>
-
-        <Tabs.Panel id="account" className="flex-1 min-w-0">
-          <AccountSection />
-        </Tabs.Panel>
-        <Tabs.Panel id="preferences" className="flex-1 min-w-0">
-          <PreferencesSection />
-        </Tabs.Panel>
-      </Tabs>
+      <AccountSection />
     </div>
   );
 }

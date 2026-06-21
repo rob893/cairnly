@@ -105,3 +105,75 @@
 * {
   box-sizing: border-box;
 }
+
+/*
+ * Cairnly marketing / auth visual system.
+ * Layered aurora gradients, a faint grid, floating accents, and scroll-reveal
+ * transitions used by the landing and auth pages. All colors derive from the
+ * active theme tokens (var(--accent), var(--foreground)) so they respect the
+ * user's chosen accent and color scheme.
+ */
+
+.cairnly-text-gradient {
+  background-image: linear-gradient(115deg, var(--accent), color-mix(in oklch, var(--accent) 45%, var(--foreground)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cairnly-aurora {
+  background:
+    radial-gradient(55% 55% at 18% 22%, color-mix(in oklch, var(--accent) 24%, transparent), transparent 70%),
+    radial-gradient(45% 45% at 85% 12%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(60% 60% at 72% 92%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 72%);
+}
+
+.cairnly-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--foreground) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 7%, transparent) 1px, transparent 1px);
+  background-size: 52px 52px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, black, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, black, transparent 78%);
+}
+
+.cairnly-orb {
+  border-radius: 9999px;
+  filter: blur(72px);
+  background: color-mix(in oklch, var(--accent) 42%, transparent);
+}
+
+@keyframes cairnly-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+
+@keyframes cairnly-float-slow {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(18px) translateX(10px);
+  }
+}
+
+.cairnly-float {
+  animation: cairnly-float 7s ease-in-out infinite;
+}
+
+.cairnly-float-slow {
+  animation: cairnly-float-slow 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cairnly-float,
+  .cairnly-float-slow {
+    animation: none;
+  }
+}

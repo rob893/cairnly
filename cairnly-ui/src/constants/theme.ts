@@ -16,7 +16,7 @@ export interface AccentPreset {
   accentForeground: string;
 }
 
-export const DEFAULT_MODE: ThemeMode = 'system';
+export const DEFAULT_MODE: ThemeMode = 'dark';
 export const DEFAULT_ACCENT_ID = 'green';
 
 /**

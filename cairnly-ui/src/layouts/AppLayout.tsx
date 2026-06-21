@@ -10,7 +10,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-background flex flex-col">
       <AppHeader />
       <main className="flex-1 py-8">
-        <div className="w-full max-w-6xl mx-auto px-4">{children}</div>
+        <div className="w-full max-w-[2000px] mx-auto px-6 lg:px-10">{children}</div>
       </main>
     </div>
   );

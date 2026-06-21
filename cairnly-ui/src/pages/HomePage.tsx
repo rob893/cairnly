@@ -37,12 +37,13 @@ export function HomePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome back, {user?.userName ?? 'there'}.</h1>
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-secondary/40 p-8 cairnly-aurora">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent">Dashboard</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Welcome back, {user?.userName ?? 'there'}.</h1>
         <p className="text-muted mt-1">Here's your financial home base.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {overviewCards.map(card => {
           const inner = (
             <Card className="h-full bg-surface border border-border transition-colors hover:border-accent/50">

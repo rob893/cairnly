@@ -12,6 +12,7 @@ import {
 } from '../../hooks/api';
 import { FormField } from '../FormField';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
+import { PreferencesSection } from './PreferencesSection';
 import { GitHubIcon, GoogleIcon } from '../oauthIcons';
 import { showErrorDetails } from '../../utils/environment';
 import type { LinkedAccount } from '../../types/models';
@@ -96,7 +97,7 @@ export function AccountSection() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       {/* User Information */}
       <Card className="bg-surface border border-border">
         <CardHeader className="px-6 pt-6">
@@ -248,8 +249,11 @@ export function AccountSection() {
         </CardContent>
       </Card>
 
+      {/* Preferences */}
+      <PreferencesSection />
+
       {/* Danger Zone */}
-      <Card className="bg-surface border border-danger/40">
+      <Card className="bg-surface border border-danger/40 lg:col-span-2">
         <CardHeader className="px-6 pt-6">
           <h2 className="text-lg font-semibold text-danger">Danger Zone</h2>
         </CardHeader>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { Card, CardContent, CardHeader, Button, Separator, Spinner } from '@heroui/react';
+import { Button, Separator, Spinner } from '@heroui/react';
 import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
 import { showErrorDetails } from '../utils/environment';
 import { FormField } from '../components/FormField';
 import { SocialLoginButtons } from '../components/SocialLoginButtons';
+import { AuthShell } from '../components/AuthShell';
 import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
@@ -35,76 +36,73 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background to-content1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="flex flex-col items-center pb-6 pt-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">Cairnly</h1>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Sign In</h2>
-          <p className="text-default-600 text-center">Welcome back! Please sign in to your account.</p>
-        </CardHeader>
+    <AuthShell
+      heading="Sign in to your account"
+      subheading="Welcome back. Pick up right where you left off."
+      topPrompt={
+        <>
+          New to Cairnly?
+          <Link to="/register" className="font-semibold text-accent hover:opacity-80 transition-opacity">
+            Create an account
+          </Link>
+        </>
+      }
+      brandTitle={
+        <>
+          Financial clarity for the <span className="cairnly-text-gradient">long journey</span>.
+        </>
+      }
+      brandSubtitle="Budgets, accounts, and spending in one calm, clear place. Build wealth one marker at a time."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && <ApiErrorDisplay error={error} title="Login Failed" showDetails={showErrorDetails} />}
 
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && <ApiErrorDisplay error={error} title="Login Failed" showDetails={showErrorDetails} />}
+        <FormField
+          label="Username or Email"
+          value={username}
+          onChange={setUsername}
+          isRequired
+          isDisabled={isLoading}
+          placeholder="Enter your username or email"
+          autoComplete="username"
+        />
 
-            <FormField
-              label="Username or Email"
-              value={username}
-              onChange={setUsername}
-              isRequired
-              isDisabled={isLoading}
-              placeholder="Enter your username or email"
-              autoComplete="username"
-            />
+        <FormField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          isRequired
+          isDisabled={isLoading}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+        />
 
-            <FormField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              isRequired
-              isDisabled={isLoading}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-            />
+        <div className="flex justify-end">
+          <Link to="/forgot-password" className="text-sm text-accent hover:opacity-80 transition-opacity">
+            Forgot your password?
+          </Link>
+        </div>
 
-            <Button
-              type="submit"
-              fullWidth
-              className="font-semibold"
-              isPending={isLoading}
-              isDisabled={!username || !password}
-            >
-              {({ isPending }) => (
-                <>
-                  {isPending && <Spinner color="current" size="sm" className="mr-2" />}
-                  {isPending ? 'Signing In...' : 'Sign In'}
-                </>
-              )}
-            </Button>
-          </form>
+        <Button
+          type="submit"
+          fullWidth
+          className="font-semibold"
+          isPending={isLoading}
+          isDisabled={!username || !password}
+        >
+          {({ isPending }) => (
+            <>
+              {isPending && <Spinner color="current" size="sm" className="mr-2" />}
+              {isPending ? 'Signing In...' : 'Sign In'}
+            </>
+          )}
+        </Button>
+      </form>
 
-          <Separator className="my-6" />
+      <Separator className="my-6" />
 
-          <SocialLoginButtons isDisabled={isLoading} onError={setError} />
-
-          <Separator className="my-6" />
-
-          <div className="text-center space-y-2">
-            <p className="text-default-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:text-primary-600 font-medium transition-colors">
-                Sign up
-              </Link>
-            </p>
-            <div>
-              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-600 transition-colors">
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <SocialLoginButtons isDisabled={isLoading} onError={setError} />
+    </AuthShell>
   );
 }

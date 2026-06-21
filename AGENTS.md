@@ -56,7 +56,7 @@ Run from repo root unless noted.
 ## UI Components
 
 - The UI uses heroui v3 components. See docs https://heroui.com/react/llms.txt
-- Never create custom controls when there is a heroui component that can be used instead
+- Prefer built in components from heroui when available but feel free to make custom components when the heroui components are not suitable.
 
 ## Performance
 
