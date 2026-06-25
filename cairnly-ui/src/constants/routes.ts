@@ -7,6 +7,8 @@
 export const routePaths = {
   landing: '/',
   dashboard: '/dashboard',
+  budgets: '/budgets',
+  budgetDetail: '/budgets/:budgetId',
   account: '/account',
   login: '/login',
   register: '/register',

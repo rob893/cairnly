@@ -18,7 +18,7 @@ const overviewCards: OverviewCard[] = [
   {
     title: 'Budgets',
     description: 'Plan income and expenses across any cadence and watch your remaining budget.',
-    comingSoon: true
+    to: '/budgets'
   },
   {
     title: 'Transactions',

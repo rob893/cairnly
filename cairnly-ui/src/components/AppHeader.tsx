@@ -45,6 +45,9 @@ export function AppHeader() {
                 <NavLink to="/dashboard" className={navLinkClass}>
                   Dashboard
                 </NavLink>
+                <NavLink to="/budgets" className={navLinkClass}>
+                  Budgets
+                </NavLink>
               </div>
 
               <div className="hidden sm:block h-6 w-px bg-border" aria-hidden="true" />
