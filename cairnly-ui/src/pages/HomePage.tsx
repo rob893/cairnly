@@ -1,75 +1,160 @@
-import { Link } from 'react-router';
-import { Card, CardContent, Chip } from '@heroui/react';
-import { useAuth } from '../hooks/useAuth';
-
-interface OverviewCard {
-  title: string;
-  description: string;
-  to?: string;
-  comingSoon?: boolean;
-}
-
-const overviewCards: OverviewCard[] = [
-  {
-    title: 'Accounts',
-    description: 'Track checking, savings, brokerage, and more — assets and liabilities in one place.',
-    comingSoon: true
-  },
-  {
-    title: 'Budgets',
-    description: 'Plan income and expenses across any cadence and watch your remaining budget.',
-    to: '/budgets'
-  },
-  {
-    title: 'Transactions',
-    description: 'Log and categorize spending so every dollar is accounted for.',
-    comingSoon: true
-  },
-  {
-    title: 'Account & preferences',
-    description: 'Manage your profile, linked logins, and theme.',
-    to: '/account'
-  }
-];
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Button, Card, CardContent, Spinner } from '@heroui/react';
+import { useBudgets, useBudgetSummaries } from '../hooks/budgets';
+import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
+import { StatCard } from '../components/dashboard/StatCard';
+import { SpendingChartCard, type SpendingDatum } from '../components/dashboard/SpendingChartCard';
+import { BudgetsListCard, type BudgetListItem } from '../components/dashboard/BudgetsListCard';
+import { TrendDownIcon, TrendUpIcon, WalletIcon } from '../components/icons/NavIcons';
+import { formatMoney, minorToMajor } from '../utils/money';
+import { showErrorDetails } from '../utils/environment';
+import { dashboardCadenceLabel, type DashboardCadence } from '../utils/dashboard';
+import type { Budget } from '../types/budgets';
 
 export function HomePage() {
-  const { user } = useAuth();
+  const budgetsQuery = useBudgets();
+  const navigate = useNavigate();
+  const [cadence, setCadence] = useState<DashboardCadence>('monthly');
+
+  const budgets: Budget[] = useMemo(
+    () => budgetsQuery.data?.pages.flatMap(page => page.nodes ?? []) ?? [],
+    [budgetsQuery.data]
+  );
+
+  const budgetIds = useMemo(() => budgets.map(b => b.id), [budgets]);
+  const { results, isLoading: summariesLoading } = useBudgetSummaries(budgetIds);
+
+  const primaryCurrency = budgets[0]?.currency ?? 'USD';
+
+  const summaryByBudgetId = useMemo(() => {
+    const map = new Map<number, (typeof results)[number]['summary']>();
+    for (const result of results) {
+      map.set(result.budgetId, result.summary);
+    }
+    return map;
+  }, [results]);
+
+  const totals = useMemo(() => {
+    let income = 0;
+    let expenses = 0;
+    let remaining = 0;
+
+    for (const result of results) {
+      if (!result.summary) {
+        continue;
+      }
+      income += result.summary.income[cadence];
+      expenses += result.summary.expenses[cadence];
+      remaining += result.summary.remaining[cadence];
+    }
+
+    return { income, expenses, remaining };
+  }, [results, cadence]);
+
+  const chartData: SpendingDatum[] = useMemo(
+    () =>
+      budgets.map(budget => {
+        const summary = summaryByBudgetId.get(budget.id);
+        return {
+          name: budget.name,
+          income: summary ? minorToMajor(summary.income[cadence], budget.currency) : 0,
+          expenses: summary ? minorToMajor(summary.expenses[cadence], budget.currency) : 0
+        };
+      }),
+    [budgets, summaryByBudgetId, cadence]
+  );
+
+  const listItems: BudgetListItem[] = useMemo(
+    () =>
+      budgets.map(budget => {
+        const summary = summaryByBudgetId.get(budget.id);
+        return {
+          id: budget.id,
+          name: budget.name,
+          currency: budget.currency,
+          income: summary?.income[cadence] ?? 0,
+          expenses: summary?.expenses[cadence] ?? 0,
+          remaining: summary?.remaining[cadence] ?? 0
+        };
+      }),
+    [budgets, summaryByBudgetId, cadence]
+  );
+
+  const budgetCountHint = `Across ${budgets.length} ${budgets.length === 1 ? 'budget' : 'budgets'}`;
+
+  if (budgetsQuery.isLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Spinner size="lg" color="accent" />
+      </div>
+    );
+  }
+
+  if (budgetsQuery.isError) {
+    return (
+      <ApiErrorDisplay
+        error={budgetsQuery.error as Error}
+        title="Failed to load your dashboard"
+        showDetails={showErrorDetails}
+      />
+    );
+  }
+
+  if (budgets.length === 0) {
+    return (
+      <Card className="bg-surface border border-border">
+        <CardContent className="space-y-3 p-10 text-center">
+          <p className="text-lg font-semibold">No budgets yet</p>
+          <p className="text-sm text-muted">
+            Create your first budget to see income, expenses, and remaining at a glance.
+          </p>
+          <div className="pt-2">
+            <Button onPress={() => navigate('/budgets')}>Create a budget</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-secondary/40 p-8 cairnly-aurora">
-        <p className="text-sm font-semibold uppercase tracking-widest text-accent">Dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Welcome back, {user?.userName ?? 'there'}.</h1>
-        <p className="text-muted mt-1">Here's your financial home base.</p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label={`${dashboardCadenceLabel[cadence]} income`}
+          value={formatMoney(totals.income, primaryCurrency)}
+          hint={budgetCountHint}
+          tone="income"
+          icon={<TrendUpIcon className="size-5" />}
+        />
+        <StatCard
+          label={`${dashboardCadenceLabel[cadence]} expenses`}
+          value={formatMoney(totals.expenses, primaryCurrency)}
+          hint={budgetCountHint}
+          tone="expense"
+          icon={<TrendDownIcon className="size-5" />}
+        />
+        <StatCard
+          label={`${dashboardCadenceLabel[cadence]} remaining`}
+          value={formatMoney(totals.remaining, primaryCurrency)}
+          hint={totals.remaining < 0 ? 'Over budget' : 'Left to allocate'}
+          tone="neutral"
+          icon={<WalletIcon className="size-5" />}
+        />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {overviewCards.map(card => {
-          const inner = (
-            <Card className="h-full bg-surface border border-border transition-colors hover:border-accent/50">
-              <CardContent className="p-6 flex flex-col gap-2 h-full">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-lg font-semibold">{card.title}</h2>
-                  {card.comingSoon && (
-                    <Chip variant="soft" size="sm">
-                      Coming soon
-                    </Chip>
-                  )}
-                </div>
-                <p className="text-sm text-muted leading-relaxed">{card.description}</p>
-                {card.to && <span className="mt-auto text-sm font-medium text-accent">Manage →</span>}
-              </CardContent>
-            </Card>
-          );
-
-          return card.to ? (
-            <Link key={card.title} to={card.to} className="no-underline">
-              {inner}
-            </Link>
-          ) : (
-            <div key={card.title}>{inner}</div>
-          );
-        })}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <SpendingChartCard
+            data={chartData}
+            currency={primaryCurrency}
+            cadence={cadence}
+            onCadenceChange={setCadence}
+          />
+        </div>
+        <div className="xl:col-span-1">
+          <BudgetsListCard items={listItems} isLoading={summariesLoading} />
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { budgetExpensesApi, budgetIncomesApi, budgetsApi } from '../services/budgets';
 import { useAuth } from './useAuth';
 import type {
+  BudgetSummary,
   CreateBudgetExpenseRequest,
   CreateBudgetIncomeRequest,
   CreateBudgetRequest,
@@ -69,6 +70,43 @@ export function useBudgetSummary(id: number | undefined) {
     enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
     staleTime: 30 * 1000
   });
+}
+
+/** A budget summary paired with the originating budget id. */
+export interface BudgetSummaryResult {
+  budgetId: number;
+  summary: BudgetSummary | undefined;
+}
+
+/**
+ * Fetches the cadence summary for several budgets in parallel and reports a
+ * combined loading/error state. Used by the dashboard to aggregate totals across
+ * all of the user's budgets. Gated on authentication.
+ *
+ * @param budgetIds The budget IDs to fetch summaries for.
+ */
+export function useBudgetSummaries(budgetIds: number[]): {
+  results: BudgetSummaryResult[];
+  isLoading: boolean;
+  isError: boolean;
+} {
+  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const enabled = isAuthenticated && !isAuthLoading;
+
+  const queries = useQueries({
+    queries: budgetIds.map(id => ({
+      queryKey: budgetQueryKeys.summary(id),
+      queryFn: () => budgetsApi.getBudgetSummary(id),
+      enabled,
+      staleTime: 30 * 1000
+    }))
+  });
+
+  return {
+    results: budgetIds.map((budgetId, index) => ({ budgetId, summary: queries[index]?.data })),
+    isLoading: enabled && queries.some(q => q.isLoading),
+    isError: queries.some(q => q.isError)
+  };
 }
 
 export function useCreateBudget() {

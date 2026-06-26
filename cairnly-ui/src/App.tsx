@@ -9,6 +9,9 @@ import { routePaths } from './constants/routes';
 
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const AccountsPage = lazy(() => import('./pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
+const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
+const CashFlowPage = lazy(() => import('./pages/CashFlowPage').then(m => ({ default: m.CashFlowPage })));
 const BudgetsPage = lazy(() => import('./pages/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
 const BudgetDetailPage = lazy(() => import('./pages/BudgetDetailPage').then(m => ({ default: m.BudgetDetailPage })));
 const AccountPage = lazy(() => import('./pages/AccountPage').then(m => ({ default: m.AccountPage })));
@@ -51,6 +54,36 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <HomePage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={routePaths.accounts}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AccountsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={routePaths.transactions}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <TransactionsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={routePaths.cashFlow}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CashFlowPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

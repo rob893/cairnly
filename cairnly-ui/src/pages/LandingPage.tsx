@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Link, Navigate } from 'react-router';
 import { Spinner } from '@heroui/react';
 import { useAuth } from '../hooks/useAuth';
-import { AppHeader } from '../components/AppHeader';
+import { LandingHeader } from '../components/LandingHeader';
 import { CairnMark } from '../components/CairnMark';
 import { Reveal } from '../components/Reveal';
 
@@ -84,7 +84,7 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
-      <AppHeader />
+      <LandingHeader />
 
       <main className="flex-1">
         {/* Hero */}

@@ -1,15 +1,52 @@
+import { useCallback, useMemo, useState } from 'react';
+import { Button } from '@heroui/react';
 import { BudgetsSection } from '../components/budgets/BudgetsSection';
+import { BudgetFormModal } from '../components/budgets/BudgetFormModal';
+import { usePageHeader } from '../hooks/usePageHeader';
+import { useCreateBudget } from '../hooks/budgets';
+import { PlusIcon } from '../components/icons/NavIcons';
+import type { CreateBudgetRequest } from '../types/budgets';
 
 export function BudgetsPage() {
-  return (
-    <div className="space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-secondary/40 p-8 cairnly-aurora">
-        <p className="text-sm font-semibold uppercase tracking-widest text-accent">Planning</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Budgets</h1>
-        <p className="text-muted mt-1">Plan income and expenses across any cadence and watch your remaining budget.</p>
-      </div>
+  const createBudget = useCreateBudget();
+  const [formOpen, setFormOpen] = useState(false);
 
-      <BudgetsSection />
-    </div>
+  const openCreate = useCallback(() => {
+    createBudget.reset();
+    setFormOpen(true);
+  }, [createBudget]);
+
+  const handleCreate = async (payload: CreateBudgetRequest) => {
+    await createBudget.mutateAsync(payload);
+    setFormOpen(false);
+  };
+
+  const header = useMemo(
+    () => ({
+      title: 'Budgets',
+      actions: (
+        <Button size="sm" onPress={openCreate}>
+          <PlusIcon className="size-4" />
+          New budget
+        </Button>
+      )
+    }),
+    [openCreate]
+  );
+
+  usePageHeader(header);
+
+  return (
+    <>
+      <BudgetsSection onCreate={openCreate} />
+
+      <BudgetFormModal
+        isOpen={formOpen}
+        onOpenChange={setFormOpen}
+        onSubmit={handleCreate}
+        isPending={createBudget.isPending}
+        error={createBudget.error as Error | null}
+      />
+    </>
   );
 }

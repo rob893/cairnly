@@ -4,37 +4,22 @@ import { Button, Card, CardContent, Modal, Spinner } from '@heroui/react';
 import { BudgetFormModal } from './BudgetFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { showErrorDetails } from '../../utils/environment';
-import { useBudgets, useCreateBudget, useDeleteBudget, useUpdateBudget } from '../../hooks/budgets';
+import { useBudgets, useDeleteBudget, useUpdateBudget } from '../../hooks/budgets';
 import type { Budget, CreateBudgetRequest } from '../../types/budgets';
 
-/** Lists the current user's budgets as cards with create, edit, and delete controls. */
-export function BudgetsSection() {
-  const budgetsQuery = useBudgets();
-  const createBudget = useCreateBudget();
+interface BudgetsSectionProps {
+  /** Opens the create-budget flow (the trigger lives in the page top bar). */
+  onCreate: () => void;
+}
 
-  const [formOpen, setFormOpen] = useState(false);
+/** Lists the current user's budgets as cards with edit and delete controls. */
+export function BudgetsSection({ onCreate }: BudgetsSectionProps) {
+  const budgetsQuery = useBudgets();
 
   const budgets: Budget[] = budgetsQuery.data?.pages.flatMap(page => page.nodes ?? []) ?? [];
 
-  const openCreate = () => {
-    createBudget.reset();
-    setFormOpen(true);
-  };
-
-  const handleCreate = async (payload: CreateBudgetRequest) => {
-    await createBudget.mutateAsync(payload);
-    setFormOpen(false);
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted">
-          {budgets.length === 1 ? '1 budget' : `${budgets.length} budgets`}
-        </p>
-        <Button onPress={openCreate}>New budget</Button>
-      </div>
-
       {budgetsQuery.isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner size="lg" color="accent" />
@@ -47,7 +32,7 @@ export function BudgetsSection() {
             <p className="text-lg font-semibold">No budgets yet</p>
             <p className="text-sm text-muted">Create your first budget to start planning income and expenses.</p>
             <div className="pt-2">
-              <Button onPress={openCreate}>New budget</Button>
+              <Button onPress={onCreate}>New budget</Button>
             </div>
           </CardContent>
         </Card>
@@ -70,14 +55,6 @@ export function BudgetsSection() {
           </Button>
         </div>
       )}
-
-      <BudgetFormModal
-        isOpen={formOpen}
-        onOpenChange={setFormOpen}
-        onSubmit={handleCreate}
-        isPending={createBudget.isPending}
-        error={createBudget.error as Error | null}
-      />
     </div>
   );
 }
