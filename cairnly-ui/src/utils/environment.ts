@@ -6,5 +6,4 @@
  * including a production build — is served from `localhost` / `127.0.0.1`, so the
  * owner can inspect them locally. False for real end users on a deployed domain.
  */
-export const showErrorDetails =
-  import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+export const showErrorDetails = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);

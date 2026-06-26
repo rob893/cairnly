@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
@@ -144,7 +142,7 @@ public sealed class SpendingPlanIncomeServiceTests
 
     private static CreateSpendingPlanIncomeRequest BuildCreateRequest()
     {
-        return new CreateSpendingPlanIncomeRequest { Name = "Salary", Type = IncomeType.W2, Amount = 100000, Cadence = SpendingPlanCadence.Annual };
+        return new CreateSpendingPlanIncomeRequest { Name = "Salary", Amount = 100000, Cadence = SpendingPlanCadence.Annual, CategoryId = 1 };
     }
 
     private static SpendingPlan BuildSpendingPlan(int userId)

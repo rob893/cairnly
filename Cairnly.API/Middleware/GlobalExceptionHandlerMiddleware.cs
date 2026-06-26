@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Cairnly.API.Core;
 using Cairnly.API.Extensions;
 using Cairnly.API.Services.Core;
 using Cairnly.API.Utilities;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Cairnly.API.Middleware;
 

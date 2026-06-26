@@ -30,7 +30,9 @@ export function ForgotPasswordPage() {
         <Card className="w-full max-w-md shadow-2xl">
           <CardHeader className="flex flex-col items-center pb-6 pt-8">
             <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
-            <Chip color="success" variant="soft">✅ Email Sent</Chip>
+            <Chip color="success" variant="soft">
+              ✅ Email Sent
+            </Chip>
           </CardHeader>
 
           <CardContent className="px-8 pb-8 text-center">
@@ -38,11 +40,22 @@ export function ForgotPasswordPage() {
             <p className="text-default-600 mb-6 leading-relaxed">
               If an account with that email exists, we've sent a password reset link. Please check your inbox.
             </p>
-            <p className="text-sm text-default-500 mb-8">Didn't receive an email? Check your spam folder or try again.</p>
+            <p className="text-sm text-default-500 mb-8">
+              Didn't receive an email? Check your spam folder or try again.
+            </p>
 
             <div className="space-y-3">
-              <Button fullWidth onPress={() => navigate('/login')}>Back to Sign In</Button>
-              <Button variant="ghost" fullWidth onPress={() => { setIsSubmitted(false); setEmail(''); }}>
+              <Button fullWidth onPress={() => navigate('/login')}>
+                Back to Sign In
+              </Button>
+              <Button
+                variant="ghost"
+                fullWidth
+                onPress={() => {
+                  setIsSubmitted(false);
+                  setEmail('');
+                }}
+              >
                 Try Different Email
               </Button>
             </div>

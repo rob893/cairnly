@@ -91,20 +91,12 @@ export function SpendingChartCard({ data, currency, cadence, onCadenceChange }: 
                 tickLine={false}
                 axisLine={{ stroke: 'var(--border)' }}
               />
-              <YAxis
-                tick={{ fill: 'var(--muted)', fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                width={48}
-              />
+              <YAxis tick={{ fill: 'var(--muted)', fontSize: 12 }} tickLine={false} axisLine={false} width={48} />
               <Tooltip
                 cursor={{ fill: 'var(--surface-secondary)', opacity: 0.5 }}
                 content={<ChartTooltip currency={currency} />}
               />
-              <Legend
-                wrapperStyle={{ fontSize: 12, textTransform: 'capitalize' }}
-                iconType="circle"
-              />
+              <Legend wrapperStyle={{ fontSize: 12, textTransform: 'capitalize' }} iconType="circle" />
               <Bar dataKey="income" fill="var(--success)" radius={[4, 4, 0, 0]} maxBarSize={36} />
               <Bar dataKey="expenses" fill="var(--danger)" radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>

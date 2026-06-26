@@ -19,7 +19,7 @@ describe('buildContentSecurityPolicy', () => {
     const csp = buildContentSecurityPolicy(undefined);
 
     expect(csp).toContain("connect-src 'self'");
-    expect(csp).not.toContain('connect-src \'self\' http');
+    expect(csp).not.toContain("connect-src 'self' http");
   });
 
   it("falls back to 'self' for a relative/malformed API base URL", () => {

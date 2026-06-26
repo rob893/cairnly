@@ -121,7 +121,6 @@ public sealed class SpendingPlanIncomeService : ISpendingPlanIncomeService
             SpendingPlanId = spendingPlan.Id,
             Name = request.Name,
             Description = request.Description,
-            Type = request.Type,
             Amount = request.Amount,
             Cadence = request.Cadence,
             CategoryId = request.CategoryId,
@@ -167,7 +166,6 @@ public sealed class SpendingPlanIncomeService : ISpendingPlanIncomeService
 
         income.Name = request.Name;
         income.Description = request.Description;
-        income.Type = request.Type;
         income.Amount = request.Amount;
         income.Cadence = request.Cadence;
         income.CategoryId = request.CategoryId;

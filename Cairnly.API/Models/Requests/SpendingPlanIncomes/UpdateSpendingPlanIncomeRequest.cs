@@ -20,10 +20,6 @@ public sealed record UpdateSpendingPlanIncomeRequest
     [MaxLength(1024)]
     public string? Description { get; init; }
 
-    /// <summary>Gets the income type.</summary>
-    [Required]
-    public IncomeType Type { get; init; }
-
     /// <summary>Gets the amount per cadence period, in integer minor units.</summary>
     [Required]
     public long Amount { get; init; }
@@ -31,8 +27,9 @@ public sealed record UpdateSpendingPlanIncomeRequest
     /// <summary>Gets how often the income occurs.</summary>
     public SpendingPlanCadence Cadence { get; init; } = SpendingPlanCadence.Annual;
 
-    /// <summary>Gets the optional category ID to map this income to.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category ID to map this income to.</summary>
+    [Required]
+    public int CategoryId { get; init; }
 
     /// <summary>Gets the IDs of tags to apply to the income line (replaces the existing set).</summary>
     public IReadOnlyList<int>? TagIds { get; init; }
@@ -54,7 +51,6 @@ public sealed record UpdateSpendingPlanIncomeRequest
         {
             Name = income.Name,
             Description = income.Description,
-            Type = income.Type,
             Amount = income.Amount,
             Cadence = income.Cadence,
             CategoryId = income.CategoryId,

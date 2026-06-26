@@ -13,12 +13,16 @@ const AccountsPage = lazy(() => import('./pages/AccountsPage').then(m => ({ defa
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
 const CashFlowPage = lazy(() => import('./pages/CashFlowPage').then(m => ({ default: m.CashFlowPage })));
 const SpendingPlansPage = lazy(() => import('./pages/SpendingPlansPage').then(m => ({ default: m.SpendingPlansPage })));
-const SpendingPlanDetailPage = lazy(() => import('./pages/SpendingPlanDetailPage').then(m => ({ default: m.SpendingPlanDetailPage })));
+const SpendingPlanDetailPage = lazy(() =>
+  import('./pages/SpendingPlanDetailPage').then(m => ({ default: m.SpendingPlanDetailPage }))
+);
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.OAuthCallbackPage })));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ForgotPasswordPage = lazy(() =>
+  import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage }))
+);
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 
 function PageFallback() {

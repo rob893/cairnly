@@ -1,12 +1,5 @@
 import apiClient from './axiosConfig';
-import type {
-  LinkedAccountType,
-  UpdatePasswordRequest,
-  UpdateUsernameRequest,
-  UserDetails,
-  UserPreferences,
-  UpdateUserPreferencesRequest
-} from '../types/models';
+import type { LinkedAccountType, UpdatePasswordRequest, UpdateUsernameRequest, UserDetails } from '../types/users';
 
 export const usersApi = {
   async getUser(id: number): Promise<UserDetails> {
@@ -33,17 +26,5 @@ export const usersApi = {
 
   async sendEmailConfirmation(id: number): Promise<void> {
     await apiClient.post(`/api/v1/users/${id}/emailConfirmations`);
-  }
-};
-
-export const preferencesApi = {
-  async getPreferences(userId: number): Promise<UserPreferences> {
-    const response = await apiClient.get<UserPreferences>(`/api/v1/users/${userId}/preferences`);
-    return response.data;
-  },
-
-  async updatePreferences(userId: number, request: UpdateUserPreferencesRequest): Promise<UserPreferences> {
-    const response = await apiClient.put<UserPreferences>(`/api/v1/users/${userId}/preferences`, request);
-    return response.data;
   }
 };

@@ -37,13 +37,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-border bg-background/80 backdrop-blur">
       <div className="flex h-full items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label="Open navigation menu"
-          className="lg:hidden"
-          onPress={onMenuClick}
-        >
+        <Button variant="ghost" size="sm" aria-label="Open navigation menu" className="lg:hidden" onPress={onMenuClick}>
           <Menu className="size-5" />
         </Button>
 

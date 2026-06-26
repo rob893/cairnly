@@ -31,8 +31,8 @@ public sealed record TransactionDto : IIdentifiable<int>, IOwnedByUser<int>
     /// <summary>Gets the free-text description.</summary>
     public string? Description { get; init; }
 
-    /// <summary>Gets the optional category ID assigned to this transaction.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category ID assigned to this transaction.</summary>
+    public required int CategoryId { get; init; }
 
     /// <summary>Gets how the transaction entered the system.</summary>
     public required TransactionSource Source { get; init; }

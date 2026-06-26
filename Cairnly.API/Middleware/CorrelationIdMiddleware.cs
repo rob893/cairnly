@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Cairnly.API.Constants;
 using Cairnly.API.Extensions;
 using Cairnly.API.Services.Core;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Cairnly.API.Middleware;
 

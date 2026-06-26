@@ -1,11 +1,5 @@
 import { createContext, useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  ACCENT_PRESETS,
-  DEFAULT_ACCENT_ID,
-  DEFAULT_MODE,
-  getAccentPreset,
-  type ThemeMode
-} from '../constants/theme';
+import { ACCENT_PRESETS, DEFAULT_ACCENT_ID, DEFAULT_MODE, getAccentPreset, type ThemeMode } from '../constants/theme';
 
 const STORAGE_KEY = 'cairnly_theme';
 
@@ -32,7 +26,8 @@ function readStoredTheme(): ThemeState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ThemeState>;
-      const mode = parsed.mode === 'light' || parsed.mode === 'dark' || parsed.mode === 'system' ? parsed.mode : DEFAULT_MODE;
+      const mode =
+        parsed.mode === 'light' || parsed.mode === 'dark' || parsed.mode === 'system' ? parsed.mode : DEFAULT_MODE;
       const accent = ACCENT_PRESETS.some(p => p.id === parsed.accent) ? (parsed.accent as string) : DEFAULT_ACCENT_ID;
       return { mode, accent };
     }

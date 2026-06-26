@@ -31,8 +31,8 @@ public sealed record SpendingPlanExpenseDto : IIdentifiable<int>, IOwnedByUser<i
     /// <summary>Gets how often the expense occurs.</summary>
     public required SpendingPlanCadence Cadence { get; init; }
 
-    /// <summary>Gets the optional category this expense maps to.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category this expense maps to.</summary>
+    public required int CategoryId { get; init; }
 
     /// <summary>Gets the IDs of the tags applied to this expense line.</summary>
     public required IReadOnlyList<int> TagIds { get; init; }

@@ -1,5 +1,5 @@
 import apiClient from './axiosConfig';
-import type { CursorPaginatedResponse } from '../types/models';
+import type { CursorPaginatedResponse } from '../types/pagination';
 import type {
   SpendingPlan,
   SpendingPlanExpense,
@@ -74,7 +74,10 @@ export const spendingPlanIncomesApi = {
   },
 
   async createIncome(spendingPlanId: number, request: CreateSpendingPlanIncomeRequest): Promise<SpendingPlanIncome> {
-    const response = await apiClient.post<SpendingPlanIncome>(`/api/v1/spending-plans/${spendingPlanId}/income`, request);
+    const response = await apiClient.post<SpendingPlanIncome>(
+      `/api/v1/spending-plans/${spendingPlanId}/income`,
+      request
+    );
     return response.data;
   },
 
@@ -83,7 +86,10 @@ export const spendingPlanIncomesApi = {
     incomeId: number,
     request: UpdateSpendingPlanIncomeRequest
   ): Promise<SpendingPlanIncome> {
-    const response = await apiClient.put<SpendingPlanIncome>(`/api/v1/spending-plans/${spendingPlanId}/income/${incomeId}`, request);
+    const response = await apiClient.put<SpendingPlanIncome>(
+      `/api/v1/spending-plans/${spendingPlanId}/income/${incomeId}`,
+      request
+    );
     return response.data;
   },
 
@@ -105,7 +111,10 @@ export const spendingPlanExpensesApi = {
   },
 
   async createExpense(spendingPlanId: number, request: CreateSpendingPlanExpenseRequest): Promise<SpendingPlanExpense> {
-    const response = await apiClient.post<SpendingPlanExpense>(`/api/v1/spending-plans/${spendingPlanId}/expenses`, request);
+    const response = await apiClient.post<SpendingPlanExpense>(
+      `/api/v1/spending-plans/${spendingPlanId}/expenses`,
+      request
+    );
     return response.data;
   },
 

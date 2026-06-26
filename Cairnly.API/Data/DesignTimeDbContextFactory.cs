@@ -1,10 +1,10 @@
 using System;
 using System.IO;
+using Cairnly.API.Constants;
+using Cairnly.API.Models.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using Cairnly.API.Constants;
-using Cairnly.API.Models.Settings;
 
 namespace Cairnly.API.Data;
 

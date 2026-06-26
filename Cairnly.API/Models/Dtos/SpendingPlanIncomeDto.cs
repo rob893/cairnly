@@ -25,17 +25,14 @@ public sealed record SpendingPlanIncomeDto : IIdentifiable<int>, IOwnedByUser<in
     /// <summary>Gets the optional description.</summary>
     public string? Description { get; init; }
 
-    /// <summary>Gets the income type.</summary>
-    public required IncomeType Type { get; init; }
-
     /// <summary>Gets the amount per cadence period, in integer minor units.</summary>
     public required long Amount { get; init; }
 
     /// <summary>Gets how often the income occurs.</summary>
     public required SpendingPlanCadence Cadence { get; init; }
 
-    /// <summary>Gets the optional category this income maps to.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category this income maps to.</summary>
+    public required int CategoryId { get; init; }
 
     /// <summary>Gets the IDs of the tags applied to this income line.</summary>
     public required IReadOnlyList<int> TagIds { get; init; }
@@ -66,7 +63,6 @@ public sealed record SpendingPlanIncomeDto : IIdentifiable<int>, IOwnedByUser<in
             SpendingPlanId = income.SpendingPlanId,
             Name = income.Name,
             Description = income.Description,
-            Type = income.Type,
             Amount = income.Amount,
             Cadence = income.Cadence,
             CategoryId = income.CategoryId,

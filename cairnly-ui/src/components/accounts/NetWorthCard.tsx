@@ -51,7 +51,9 @@ export function NetWorthCard({ total, change, changePercent, series, currency }:
           <p className="text-xs font-semibold uppercase tracking-widest text-muted">Net worth</p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <span className="text-3xl font-bold tabular-nums">{formatMoney(total, currency)}</span>
-            <span className={`flex items-center gap-1 text-sm font-medium ${positive ? 'text-success' : 'text-danger'}`}>
+            <span
+              className={`flex items-center gap-1 text-sm font-medium ${positive ? 'text-success' : 'text-danger'}`}
+            >
               <TrendingUp className="size-4" />
               {formatMoney(change, currency)} ({changePercent.toFixed(1)}%)
             </span>
@@ -99,15 +101,9 @@ export function NetWorthCard({ total, change, changePercent, series, currency }:
                   borderRadius: 8,
                   color: 'var(--foreground)'
                 }}
-                formatter={(value) => [formatMoney(Math.round(Number(value) * 100), currency), 'Net worth']}
+                formatter={value => [formatMoney(Math.round(Number(value) * 100), currency), 'Net worth']}
               />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="var(--accent)"
-                strokeWidth={2}
-                fill="url(#netWorthFill)"
-              />
+              <Area type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} fill="url(#netWorthFill)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

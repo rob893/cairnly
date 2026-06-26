@@ -1,13 +1,10 @@
-import type { CursorPaginationQueryParameters } from './models';
+import type { CursorPaginationQueryParameters } from './pagination';
 
 /**
  * How often a spendingPlan income or expense line item recurs. Serialized as a string
  * by the API (`JsonStringEnumConverter`).
  */
 export type SpendingPlanCadence = 'Daily' | 'Weekly' | 'BiWeekly' | 'SemiMonthly' | 'Monthly' | 'Quarterly' | 'Annual';
-
-/** Classifies the source/type of a spendingPlan income line item. */
-export type IncomeType = 'W2' | 'Form1099' | 'SelfEmployment' | 'Investment' | 'Other';
 
 /** Ordered list of cadences with human-readable labels for selects/tables. */
 export const spendingPlanCadences: ReadonlyArray<{ value: SpendingPlanCadence; label: string }> = [
@@ -20,23 +17,9 @@ export const spendingPlanCadences: ReadonlyArray<{ value: SpendingPlanCadence; l
   { value: 'Annual', label: 'Annual' }
 ];
 
-/** Income types with human-readable labels for selects/tables. */
-export const incomeTypes: ReadonlyArray<{ value: IncomeType; label: string }> = [
-  { value: 'W2', label: 'W-2 employment' },
-  { value: 'Form1099', label: '1099 / contractor' },
-  { value: 'SelfEmployment', label: 'Self-employment' },
-  { value: 'Investment', label: 'Investment' },
-  { value: 'Other', label: 'Other' }
-];
-
 /** Looks up the display label for a cadence value. */
 export function cadenceLabel(cadence: SpendingPlanCadence): string {
   return spendingPlanCadences.find(c => c.value === cadence)?.label ?? cadence;
-}
-
-/** Looks up the display label for an income type value. */
-export function incomeTypeLabel(type: IncomeType): string {
-  return incomeTypes.find(t => t.value === type)?.label ?? type;
 }
 
 /** A spendingPlan owned by the current user. */
@@ -58,10 +41,9 @@ export interface SpendingPlanIncome {
   spendingPlanId: number;
   name: string;
   description?: string | null;
-  type: IncomeType;
   amount: number;
   cadence: SpendingPlanCadence;
-  categoryId?: number | null;
+  categoryId: number;
   tagIds: number[];
   metadata: Record<string, unknown>;
   createdAt: string;
@@ -77,7 +59,7 @@ export interface SpendingPlanExpense {
   description?: string | null;
   amount: number;
   cadence: SpendingPlanCadence;
-  categoryId?: number | null;
+  categoryId: number;
   tagIds: number[];
   metadata: Record<string, unknown>;
   createdAt: string;
@@ -123,10 +105,9 @@ export interface UpdateSpendingPlanRequest {
 export interface CreateSpendingPlanIncomeRequest {
   name: string;
   description?: string | null;
-  type: IncomeType;
   amount: number;
   cadence: SpendingPlanCadence;
-  categoryId?: number | null;
+  categoryId: number;
   tagIds?: number[] | null;
   metadata?: Record<string, unknown> | null;
 }
@@ -140,7 +121,7 @@ export interface CreateSpendingPlanExpenseRequest {
   description?: string | null;
   amount: number;
   cadence: SpendingPlanCadence;
-  categoryId?: number | null;
+  categoryId: number;
   tagIds?: number[] | null;
   metadata?: Record<string, unknown> | null;
 }
@@ -158,7 +139,6 @@ export interface SpendingPlanQueryParameters extends CursorPaginationQueryParame
 /** Query parameters for listing a spendingPlan's income line items. */
 export interface SpendingPlanIncomeQueryParameters extends CursorPaginationQueryParameters {
   name?: string;
-  type?: IncomeType;
 }
 
 /** Query parameters for listing a spendingPlan's expense line items. */

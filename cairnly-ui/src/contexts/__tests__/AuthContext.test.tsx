@@ -75,9 +75,7 @@ describe('AuthProvider / useAuth', () => {
     const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
 
     await act(async () => {
-      await expect(result.current.login({ userName: 'alice', password: 'bad' })).rejects.toThrow(
-        'invalid credentials'
-      );
+      await expect(result.current.login({ userName: 'alice', password: 'bad' })).rejects.toThrow('invalid credentials');
     });
 
     expect(result.current.isAuthenticated).toBe(false);

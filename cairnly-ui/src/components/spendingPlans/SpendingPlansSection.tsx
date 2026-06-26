@@ -25,7 +25,11 @@ export function SpendingPlansSection({ onCreate }: SpendingPlansSectionProps) {
           <Spinner size="lg" color="accent" />
         </div>
       ) : spendingPlansQuery.isError ? (
-        <ApiErrorDisplay error={spendingPlansQuery.error as Error} title="Failed to load spending plans" showDetails={showErrorDetails} />
+        <ApiErrorDisplay
+          error={spendingPlansQuery.error as Error}
+          title="Failed to load spending plans"
+          showDetails={showErrorDetails}
+        />
       ) : spendingPlans.length === 0 ? (
         <Card className="bg-surface border border-border">
           <CardContent className="p-10 text-center space-y-3">
@@ -128,11 +132,15 @@ function SpendingPlanCard({ spendingPlan }: { spendingPlan: SpendingPlan }) {
               </Modal.Header>
               <Modal.Body className="space-y-4">
                 {deleteSpendingPlan.error && (
-                  <ApiErrorDisplay error={deleteSpendingPlan.error as Error} title="Delete failed" showDetails={showErrorDetails} />
+                  <ApiErrorDisplay
+                    error={deleteSpendingPlan.error as Error}
+                    title="Delete failed"
+                    showDetails={showErrorDetails}
+                  />
                 )}
                 <p className="text-sm text-muted">
-                  Permanently delete <span className="font-medium text-foreground">{spendingPlan.name}</span> and all of its
-                  income and expense line items? This cannot be undone.
+                  Permanently delete <span className="font-medium text-foreground">{spendingPlan.name}</span> and all of
+                  its income and expense line items? This cannot be undone.
                 </p>
               </Modal.Body>
               <Modal.Footer>

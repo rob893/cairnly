@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Button, Card, CardContent, CardHeader, Chip, Modal, Separator, Spinner } from '@heroui/react';
 import { useAuth } from '../../hooks/useAuth';
-import { useDeleteUser, useUnlinkAccount, useUpdatePassword, useUserDetails } from '../../hooks/api';
+import { useDeleteUser, useUnlinkAccount, useUpdatePassword, useUserDetails } from '../../hooks/users';
 import { FormField } from '../FormField';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { GitHubIcon, GoogleIcon } from '../oauthIcons';
 import { showErrorDetails } from '../../utils/environment';
-import type { LinkedAccount } from '../../types/models';
+import type { LinkedAccount } from '../../types/users';
 
 /**
  * The Security settings section: password management, linked sign-in providers,
@@ -89,16 +89,43 @@ export function SecuritySection() {
                       <Modal.Heading>Change password</Modal.Heading>
                     </Modal.Header>
                     <Modal.Body className="space-y-4">
-                      {passwordError && <ApiErrorDisplay error={passwordError} title="Update failed" showDetails={showErrorDetails} />}
-                      <FormField label="Current password" type="password" value={oldPassword} onChange={setOldPassword} isRequired autoComplete="current-password" />
-                      <FormField label="New password" type="password" value={newPassword} onChange={setNewPassword} isRequired autoComplete="new-password" />
-                      <FormField label="Confirm new password" type="password" value={confirmPassword} onChange={setConfirmPassword} isRequired autoComplete="new-password" />
+                      {passwordError && (
+                        <ApiErrorDisplay error={passwordError} title="Update failed" showDetails={showErrorDetails} />
+                      )}
+                      <FormField
+                        label="Current password"
+                        type="password"
+                        value={oldPassword}
+                        onChange={setOldPassword}
+                        isRequired
+                        autoComplete="current-password"
+                      />
+                      <FormField
+                        label="New password"
+                        type="password"
+                        value={newPassword}
+                        onChange={setNewPassword}
+                        isRequired
+                        autoComplete="new-password"
+                      />
+                      <FormField
+                        label="Confirm new password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={setConfirmPassword}
+                        isRequired
+                        autoComplete="new-password"
+                      />
                     </Modal.Body>
                     <Modal.Footer>
                       <Button slot="close" variant="outline">
                         Cancel
                       </Button>
-                      <Button onPress={handlePasswordSubmit} isPending={updatePassword.isPending} isDisabled={!oldPassword || !newPassword || !confirmPassword}>
+                      <Button
+                        onPress={handlePasswordSubmit}
+                        isPending={updatePassword.isPending}
+                        isDisabled={!oldPassword || !newPassword || !confirmPassword}
+                      >
                         Update password
                       </Button>
                     </Modal.Footer>
@@ -154,7 +181,9 @@ export function SecuritySection() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <p className="font-semibold text-sm">Delete Account</p>
-              <p className="text-sm text-muted">Permanently delete your account and all associated data. This action cannot be undone.</p>
+              <p className="text-sm text-muted">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
             </div>
             <Modal isOpen={deleteOpen} onOpenChange={setDeleteOpen}>
               <Button variant="danger" onPress={() => setDeleteOpen(true)}>
@@ -168,7 +197,13 @@ export function SecuritySection() {
                       <Modal.Heading>Delete account?</Modal.Heading>
                     </Modal.Header>
                     <Modal.Body className="space-y-4">
-                      {deleteUser.error && <ApiErrorDisplay error={deleteUser.error as Error} title="Delete failed" showDetails={showErrorDetails} />}
+                      {deleteUser.error && (
+                        <ApiErrorDisplay
+                          error={deleteUser.error as Error}
+                          title="Delete failed"
+                          showDetails={showErrorDetails}
+                        />
+                      )}
                       <p className="text-sm text-muted">
                         This permanently deletes your account and all associated data. This action cannot be undone.
                       </p>

@@ -16,7 +16,14 @@ interface SpendingPlanFormModalProps {
 }
 
 /** Modal form for creating or editing a spendingPlan's name, currency, and description. */
-export function SpendingPlanFormModal({ isOpen, onOpenChange, spendingPlan, onSubmit, isPending, error }: SpendingPlanFormModalProps) {
+export function SpendingPlanFormModal({
+  isOpen,
+  onOpenChange,
+  spendingPlan,
+  onSubmit,
+  isPending,
+  error
+}: SpendingPlanFormModalProps) {
   const isEdit = spendingPlan !== undefined;
 
   const [name, setName] = useState('');

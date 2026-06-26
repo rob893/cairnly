@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  currencyFractionDigits,
-  minorToMajor,
-  majorToMinor,
-  formatMoney,
-  parseMoneyToMinor
-} from '../money';
+import { currencyFractionDigits, minorToMajor, majorToMinor, formatMoney, parseMoneyToMinor } from '../money';
 import { cadenceBreakdown, periodsPerYear } from '../cadence';
 
 describe('currencyFractionDigits', () => {

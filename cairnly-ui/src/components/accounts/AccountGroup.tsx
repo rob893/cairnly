@@ -25,9 +25,7 @@ export function AccountGroup({ group, currency }: AccountGroupProps) {
         aria-expanded={open}
         className="flex w-full items-center gap-3 px-5 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
-        <ChevronDown
-          className={`size-4 shrink-0 text-muted transition-transform ${open ? '' : '-rotate-90'}`}
-        />
+        <ChevronDown className={`size-4 shrink-0 text-muted transition-transform ${open ? '' : '-rotate-90'}`} />
         <span className="font-semibold text-foreground">{group.name}</span>
         <span className={`flex items-center gap-1 text-sm font-medium ${positive ? 'text-success' : 'text-danger'}`}>
           {positive ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
@@ -51,9 +49,7 @@ export function AccountGroup({ group, currency }: AccountGroupProps) {
               </div>
               <Sparkline points={account.trend} className="hidden shrink-0 sm:block" />
               <div className="w-32 shrink-0 text-right">
-                <p className="font-semibold tabular-nums text-foreground">
-                  {formatMoney(account.balance, currency)}
-                </p>
+                <p className="font-semibold tabular-nums text-foreground">{formatMoney(account.balance, currency)}</p>
                 <p className="text-xs text-muted">{account.updated}</p>
               </div>
             </li>

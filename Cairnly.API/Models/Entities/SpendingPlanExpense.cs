@@ -38,11 +38,11 @@ public sealed class SpendingPlanExpense : IIdentifiable<int>, IOwnedByUser<int>,
     /// <summary>Gets or sets how often the expense occurs.</summary>
     public SpendingPlanCadence Cadence { get; set; }
 
-    /// <summary>Gets or sets the optional category this expense maps to.</summary>
-    public int? CategoryId { get; set; }
+    /// <summary>Gets or sets the category this expense maps to.</summary>
+    public int CategoryId { get; set; }
 
     /// <summary>Gets or sets the category navigation property.</summary>
-    public Category? Category { get; set; }
+    public Category Category { get; set; } = default!;
 
     /// <summary>Gets or sets the tag join rows linking this expense to tags.</summary>
     public List<SpendingPlanExpenseTag> SpendingPlanExpenseTags { get; set; } = [];

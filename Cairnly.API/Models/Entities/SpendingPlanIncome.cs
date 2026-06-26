@@ -32,20 +32,17 @@ public sealed class SpendingPlanIncome : IIdentifiable<int>, IOwnedByUser<int>, 
     [MaxLength(1024)]
     public string? Description { get; set; }
 
-    /// <summary>Gets or sets the income type.</summary>
-    public IncomeType Type { get; set; }
-
     /// <summary>Gets or sets the amount per cadence period, in integer minor units.</summary>
     public long Amount { get; set; }
 
     /// <summary>Gets or sets how often the income occurs.</summary>
     public SpendingPlanCadence Cadence { get; set; }
 
-    /// <summary>Gets or sets the optional category this income maps to.</summary>
-    public int? CategoryId { get; set; }
+    /// <summary>Gets or sets the category this income maps to.</summary>
+    public int CategoryId { get; set; }
 
     /// <summary>Gets or sets the category navigation property.</summary>
-    public Category? Category { get; set; }
+    public Category Category { get; set; } = default!;
 
     /// <summary>Gets or sets the tag join rows linking this income to tags.</summary>
     public List<SpendingPlanIncomeTag> SpendingPlanIncomeTags { get; set; } = [];

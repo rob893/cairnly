@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
-import { usePreferences } from '../hooks/api';
+import { usePreferences } from '../hooks/preferences';
 
 /**
  * Reconciles the locally-applied theme with the server-saved preferences once the authenticated

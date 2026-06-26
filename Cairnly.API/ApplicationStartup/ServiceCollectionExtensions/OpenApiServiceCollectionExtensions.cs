@@ -4,15 +4,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Cairnly.API.Constants;
+using Cairnly.API.Extensions;
+using Cairnly.API.Models.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
-using Cairnly.API.Constants;
-using Cairnly.API.Extensions;
-using Cairnly.API.Models.Settings;
 
 namespace Cairnly.API.ApplicationStartup.ServiceCollectionExtensions;
 

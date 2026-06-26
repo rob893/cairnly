@@ -27,8 +27,9 @@ public sealed record UpdateSpendingPlanExpenseRequest
     /// <summary>Gets how often the expense occurs.</summary>
     public SpendingPlanCadence Cadence { get; init; } = SpendingPlanCadence.Monthly;
 
-    /// <summary>Gets the optional category ID to map this expense to.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category ID to map this expense to.</summary>
+    [Required]
+    public int CategoryId { get; init; }
 
     /// <summary>Gets the IDs of tags to apply to the expense line (replaces the existing set).</summary>
     public IReadOnlyList<int>? TagIds { get; init; }

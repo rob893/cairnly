@@ -1,17 +1,17 @@
 using System;
 using System.Net;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Cairnly.API.ApplicationStartup.ApplicationBuilderExtensions;
 using Cairnly.API.ApplicationStartup.ServiceCollectionExtensions;
 using Cairnly.API.Constants;
 using Cairnly.API.Extensions;
 using Cairnly.API.Middleware;
 using Cairnly.API.Models.Settings;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Cairnly.API.ApplicationStartup;
 

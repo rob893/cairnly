@@ -33,8 +33,7 @@ export function useSpendingPlans() {
     queryKey: spendingPlanQueryKeys.spendingPlans(),
     queryFn: ({ pageParam }) => spendingPlansApi.getSpendingPlans({ first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: lastPage =>
-      lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined,
+    getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
     enabled: isAuthenticated && !isAuthLoading,
     staleTime: 60 * 1000
   });
@@ -157,8 +156,7 @@ export function useSpendingPlanIncomes(spendingPlanId: number | undefined) {
     queryFn: ({ pageParam }) =>
       spendingPlanIncomesApi.getIncomes(spendingPlanId as number, { first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: lastPage =>
-      lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined,
+    getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
     enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number',
     staleTime: 30 * 1000
   });
@@ -168,7 +166,8 @@ export function useCreateIncome(spendingPlanId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateSpendingPlanIncomeRequest) => spendingPlanIncomesApi.createIncome(spendingPlanId, request),
+    mutationFn: (request: CreateSpendingPlanIncomeRequest) =>
+      spendingPlanIncomesApi.createIncome(spendingPlanId, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.incomes(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
@@ -214,8 +213,7 @@ export function useSpendingPlanExpenses(spendingPlanId: number | undefined) {
     queryFn: ({ pageParam }) =>
       spendingPlanExpensesApi.getExpenses(spendingPlanId as number, { first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: lastPage =>
-      lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined,
+    getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
     enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number',
     staleTime: 30 * 1000
   });
@@ -225,7 +223,8 @@ export function useCreateExpense(spendingPlanId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateSpendingPlanExpenseRequest) => spendingPlanExpensesApi.createExpense(spendingPlanId, request),
+    mutationFn: (request: CreateSpendingPlanExpenseRequest) =>
+      spendingPlanExpensesApi.createExpense(spendingPlanId, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.expenses(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });

@@ -1,13 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Scalar.AspNetCore;
 using Cairnly.API.Constants;
 using Cairnly.API.Extensions;
 using Cairnly.API.Middleware;
 using Cairnly.API.Models.Settings;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Scalar.AspNetCore;
 
 namespace Cairnly.API.ApplicationStartup.ApplicationBuilderExtensions;
 

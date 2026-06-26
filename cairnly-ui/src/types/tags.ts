@@ -1,4 +1,4 @@
-import type { CursorPaginationQueryParameters } from './models';
+import type { CursorPaginationQueryParameters } from './pagination';
 
 /** A user-scoped tag that can be linked to spendingPlan income/expense line items. */
 export interface Tag {

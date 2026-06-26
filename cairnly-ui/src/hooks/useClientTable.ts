@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 /** Sort direction for a {@link useClientTable} column. */
 export type SortDirection = 'asc' | 'desc';
@@ -94,33 +94,35 @@ export function useClientTable<T>(items: T[], config: UseClientTableConfig<T>): 
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const clampedPage = Math.min(page, pageCount - 1);
   const start = clampedPage * pageSize;
-  const pageItems = sorted.slice(start, start + pageSize);
+  const pageItems = useMemo(() => sorted.slice(start, start + pageSize), [sorted, start, pageSize]);
 
-  const setSearch = (value: string) => {
+  const setSearch = useCallback((value: string) => {
     setSearchValue(value);
     setPage(0);
-  };
+  }, []);
 
-  const setPageSize = (size: number) => {
+  const setPageSize = useCallback((size: number) => {
     setPageSizeValue(size);
     setPage(0);
-  };
+  }, []);
 
-  const toggleSort = (key: string) => {
-    if (key === sortKey) {
-      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
+  const toggleSort = useCallback((key: string) => {
+    setSortKey(prevKey => {
+      if (key === prevKey) {
+        setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        return prevKey;
+      }
       setSortDirection('asc');
-    }
+      return key;
+    });
     setPage(0);
-  };
+  }, []);
 
-  const setSort = (key: string, direction: SortDirection) => {
+  const setSort = useCallback((key: string, direction: SortDirection) => {
     setSortKey(key);
     setSortDirection(direction);
     setPage(0);
-  };
+  }, []);
 
   return {
     search,

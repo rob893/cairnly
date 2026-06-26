@@ -48,12 +48,7 @@ export function SpendingPlanSummaryCard({ summary, currency, isLoading }: Spendi
               </thead>
               <tbody className="divide-y divide-border">
                 <SummaryRow label="Income" amounts={summary.income} currency={currency} className="text-success" />
-                <SummaryRow
-                  label="Expenses"
-                  amounts={summary.expenses}
-                  currency={currency}
-                  className="text-danger"
-                />
+                <SummaryRow label="Expenses" amounts={summary.expenses} currency={currency} className="text-danger" />
                 <RemainingRow amounts={summary.remaining} currency={currency} />
               </tbody>
             </table>

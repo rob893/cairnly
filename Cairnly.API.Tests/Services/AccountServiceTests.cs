@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Cairnly.API.Core;
 using Cairnly.API.Data.Repositories;
 using Cairnly.API.Models.Entities;
-using Cairnly.API.Models.QueryParameters;
 using Cairnly.API.Models.Requests.Accounts;
 using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Domain;

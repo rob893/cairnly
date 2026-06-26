@@ -108,7 +108,7 @@ export function SpendingPlanDetailPage() {
             isLoading={summaryQuery.isLoading}
           />
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+          <div className="space-y-6">
             <LineItemsSection kind="income" spendingPlanId={spendingPlan.id} currency={spendingPlan.currency} />
             <LineItemsSection kind="expense" spendingPlanId={spendingPlan.id} currency={spendingPlan.currency} />
           </div>

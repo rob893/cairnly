@@ -49,9 +49,7 @@ export function SpendingPlansListCard({ items, isLoading }: SpendingPlansListCar
                 <li key={item.id}>
                   <Link to={`/spending-plans/${item.id}`} className="group block no-underline">
                     <div className="flex items-baseline justify-between gap-3">
-                      <span className="truncate font-medium text-foreground group-hover:text-accent">
-                        {item.name}
-                      </span>
+                      <span className="truncate font-medium text-foreground group-hover:text-accent">{item.name}</span>
                       <span className={`shrink-0 text-sm font-semibold tabular-nums ${remainingTone}`}>
                         {formatMoney(item.remaining, item.currency)}
                       </span>

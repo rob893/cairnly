@@ -1,14 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
-using Moq;
 using Cairnly.API.Core;
 using Cairnly.API.Data.Repositories;
 using Cairnly.API.Models.Auth;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Domain;
+using Microsoft.AspNetCore.Identity;
+using Moq;
 
 namespace Cairnly.API.Tests.Services;
 

@@ -299,50 +299,67 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
         var userId = ApplicationSettings.SystemUserId;
 
+        // Map leaf (child) category names to their seeded IDs so line items reference an assignable
+        // category. Only children are included: groups are not assignable (leaf-only rule), and a
+        // group can share a name with one of its children (e.g. "Shopping").
+        var categoryIdByName = await this.context.Categories
+            .Where(c => c.IsSystem && c.ParentId != null)
+            .ToDictionaryAsync(c => c.Name, c => c.Id, cancellationToken);
+
+        int CategoryId(string name) => categoryIdByName.TryGetValue(name, out var id)
+            ? id
+            : throw new InvalidOperationException($"Seed category '{name}' was not found.");
+
+        // Essential / Non-Essential tags applied to expenses (owned by the admin user).
+        var essentialTag = new Tag { UserId = userId, Name = "Essential", CreatedById = userId, UpdatedById = userId };
+        var nonEssentialTag = new Tag { UserId = userId, Name = "Non-Essential", CreatedById = userId, UpdatedById = userId };
+        this.context.Tags.AddRange(essentialTag, nonEssentialTag);
+        await this.context.SaveChangesAsync(cancellationToken);
+
         // Income line items (all annual figures; the source has no per-income cadence).
-        var incomes = new (string Name, IncomeType Type, long Amount)[]
+        var incomes = new (string Name, string Category, long Amount)[]
         {
-            ("Interest and Dividends", IncomeType.W2, 300_000),
-            ("Microsoft W2", IncomeType.W2, 19_000_000),
-            ("Microsoft Perks+", IncomeType.W2, 150_000),
-            ("Microsoft Bonus", IncomeType.W2, 3_800_000),
-            ("Microsoft Stock", IncomeType.W2, 6_000_000)
+            ("Interest and Dividends", "Dividends & Capital Gains", 300_000),
+            ("Microsoft W2", "Paychecks", 19_000_000),
+            ("Microsoft Perks+", "Other Income", 150_000),
+            ("Microsoft Bonus", "Paychecks", 3_800_000),
+            ("Microsoft Stock", "Paychecks", 6_000_000)
         };
 
-        // Expense line items: amounts in integer minor units (cents).
-        var expenses = new (string Name, string? Description, long Amount, SpendingPlanCadence Cadence)[]
+        // Expense line items: amounts in integer minor units (cents). `Essential` drives the tag link.
+        var expenses = new (string Name, string? Description, long Amount, SpendingPlanCadence Cadence, string Category, bool Essential)[]
         {
-            ("Taxable Brokerage", "Robinhood Account", 50_000, SpendingPlanCadence.Weekly),
-            ("Mortgage, HOA, Utilities", "3026.83 for Mortgage/tax/insurance\n150 HOA\n~500 for utilities (power, gas, water, trash)", 400_000, SpendingPlanCadence.Monthly),
-            ("Netflix", null, 500, SpendingPlanCadence.Monthly),
-            ("Disney+", null, 500, SpendingPlanCadence.Monthly),
-            ("Haircut", null, 5_000, SpendingPlanCadence.Monthly),
-            ("Hulu", null, 500, SpendingPlanCadence.Monthly),
-            ("Internet", null, 7_000, SpendingPlanCadence.Monthly),
-            ("Phone", null, 9_500, SpendingPlanCadence.Monthly),
-            ("WoW", null, 1_500, SpendingPlanCadence.Monthly),
-            ("Amazon Prime", null, 14_000, SpendingPlanCadence.Annual),
-            ("Car Registration", "GA is super cheap lol", 2_000, SpendingPlanCadence.Annual),
-            ("Domain Names", "rwherber.com and knowones.com and derpcode and tidygal\nManaged through godaddy", 8_000, SpendingPlanCadence.Annual),
-            ("Web Server Hosting", "Digital ocean VM", 2_900, SpendingPlanCadence.Monthly),
-            ("YouTube Premium", null, 1_000, SpendingPlanCadence.Monthly),
-            ("Food (Groceries/Going Out)", null, 40_000, SpendingPlanCadence.Monthly),
-            ("Gas", null, 7_500, SpendingPlanCadence.Monthly),
-            ("Car Insurance", null, 15_300, SpendingPlanCadence.Monthly),
-            ("401k", null, 2_300_000, SpendingPlanCadence.Annual),
-            ("Federal Tax", "From 2024 tax return", 7_520_600, SpendingPlanCadence.Annual),
-            ("GA State Tax", "From 2024 tax return", 1_200_000, SpendingPlanCadence.Annual),
-            ("Amazon Fresh Membership", "Fresh Membership for free deliveries", 1_000, SpendingPlanCadence.Monthly),
-            ("Pet Insurance", null, 5_600, SpendingPlanCadence.Monthly),
-            ("HBO Max", null, 500, SpendingPlanCadence.Monthly),
-            ("Pest Control", null, 35_200, SpendingPlanCadence.Annual),
-            ("Misc Spending", null, 15_000, SpendingPlanCadence.Weekly),
-            ("Mortgage Additional Principal Payments", null, 100_000, SpendingPlanCadence.Monthly),
-            ("House cleaning", null, 25_000, SpendingPlanCadence.Monthly),
-            ("Termite Bond", null, 35_000, SpendingPlanCadence.Annual),
-            ("OpenAI Sub", null, 2_000, SpendingPlanCadence.Monthly),
-            ("HSA", null, 440_000, SpendingPlanCadence.Annual),
-            ("Umbrella Insurance", null, 33_000, SpendingPlanCadence.Annual)
+            ("Taxable Brokerage", "Robinhood Account", 50_000, SpendingPlanCadence.Weekly, "Financial & Legal Services", false),
+            ("Mortgage, HOA, Utilities", "3026.83 for Mortgage/tax/insurance\n150 HOA\n~500 for utilities (power, gas, water, trash)", 400_000, SpendingPlanCadence.Monthly, "Mortgage", true),
+            ("Netflix", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Disney+", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Haircut", null, 5_000, SpendingPlanCadence.Monthly, "Personal", false),
+            ("Hulu", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Internet", null, 7_000, SpendingPlanCadence.Monthly, "Internet & Cable", true),
+            ("Phone", null, 9_500, SpendingPlanCadence.Monthly, "Phone", true),
+            ("WoW", null, 1_500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Amazon Prime", null, 14_000, SpendingPlanCadence.Annual, "Shopping", false),
+            ("Car Registration", "GA is super cheap lol", 2_000, SpendingPlanCadence.Annual, "Auto Maintenance", true),
+            ("Domain Names", "rwherber.com and knowones.com and derpcode and tidygal\nManaged through godaddy", 8_000, SpendingPlanCadence.Annual, "Miscellaneous", false),
+            ("Web Server Hosting", "Digital ocean VM", 2_900, SpendingPlanCadence.Monthly, "Miscellaneous", false),
+            ("YouTube Premium", null, 1_000, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Food (Groceries/Going Out)", null, 40_000, SpendingPlanCadence.Monthly, "Groceries", true),
+            ("Gas", null, 7_500, SpendingPlanCadence.Monthly, "Gas", true),
+            ("Car Insurance", null, 15_300, SpendingPlanCadence.Monthly, "Insurance", true),
+            ("401k", null, 2_300_000, SpendingPlanCadence.Annual, "Financial & Legal Services", true),
+            ("Federal Tax", "From 2024 tax return", 7_520_600, SpendingPlanCadence.Annual, "Taxes", true),
+            ("GA State Tax", "From 2024 tax return", 1_200_000, SpendingPlanCadence.Annual, "Taxes", true),
+            ("Amazon Fresh Membership", "Fresh Membership for free deliveries", 1_000, SpendingPlanCadence.Monthly, "Groceries", false),
+            ("Pet Insurance", null, 5_600, SpendingPlanCadence.Monthly, "Pets", false),
+            ("HBO Max", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
+            ("Pest Control", null, 35_200, SpendingPlanCadence.Annual, "Home Improvement", true),
+            ("Misc Spending", null, 15_000, SpendingPlanCadence.Weekly, "Miscellaneous", false),
+            ("Mortgage Additional Principal Payments", null, 100_000, SpendingPlanCadence.Monthly, "Mortgage", false),
+            ("House cleaning", null, 25_000, SpendingPlanCadence.Monthly, "Home Improvement", false),
+            ("Termite Bond", null, 35_000, SpendingPlanCadence.Annual, "Home Improvement", true),
+            ("OpenAI Sub", null, 2_000, SpendingPlanCadence.Monthly, "Miscellaneous", false),
+            ("HSA", null, 440_000, SpendingPlanCadence.Annual, "Medical", true),
+            ("Umbrella Insurance", null, 33_000, SpendingPlanCadence.Annual, "Insurance", true)
         };
 
         var spendingPlan = new SpendingPlan
@@ -356,9 +373,9 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
                 {
                     UserId = userId,
                     Name = income.Name,
-                    Type = income.Type,
                     Amount = income.Amount,
-                    Cadence = SpendingPlanCadence.Annual
+                    Cadence = SpendingPlanCadence.Annual,
+                    CategoryId = CategoryId(income.Category)
                 })],
             Expenses = [.. expenses
                 .Select(expense => new SpendingPlanExpense
@@ -367,7 +384,12 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
                     Name = expense.Name,
                     Description = expense.Description,
                     Amount = expense.Amount,
-                    Cadence = expense.Cadence
+                    Cadence = expense.Cadence,
+                    CategoryId = CategoryId(expense.Category),
+                    SpendingPlanExpenseTags =
+                    [
+                        new SpendingPlanExpenseTag { TagId = expense.Essential ? essentialTag.Id : nonEssentialTag.Id }
+                    ]
                 })]
         };
 

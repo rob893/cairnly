@@ -219,7 +219,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             transaction.HasOne(t => t.Category)
                 .WithMany(c => c.Transactions)
                 .HasForeignKey(t => t.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             transaction.HasOne(t => t.ParentTransaction)
                 .WithMany(t => t.Splits)
@@ -261,7 +261,6 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
 
         builder.Entity<SpendingPlanIncome>(income =>
         {
-            income.Property(i => i.Type).HasConversion<string>().HasMaxLength(32);
             income.Property(i => i.Cadence).HasConversion<string>().HasMaxLength(16);
             income.Property(i => i.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);
             income.Property(i => i.CreatedAt).HasDefaultValueSql("now()");
@@ -283,7 +282,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             income.HasOne(i => i.Category)
                 .WithMany()
                 .HasForeignKey(i => i.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<SpendingPlanExpense>(expense =>
@@ -309,7 +308,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             expense.HasOne(e => e.Category)
                 .WithMany()
                 .HasForeignKey(e => e.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<SpendingPlanIncomeTag>(incomeTag =>

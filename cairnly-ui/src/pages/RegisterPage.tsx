@@ -20,7 +20,10 @@ export function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({ isValid: false, errors: [] });
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({
+    isValid: false,
+    errors: []
+  });
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -117,7 +120,9 @@ export function RegisterPage() {
           autoComplete="new-password"
           description={getPasswordRequirementsDescription()}
           isInvalid={password.length > 0 && !passwordValidation.isValid}
-          errorMessage={password.length > 0 && !passwordValidation.isValid ? passwordValidation.errors.join(', ') : undefined}
+          errorMessage={
+            password.length > 0 && !passwordValidation.isValid ? passwordValidation.errors.join(', ') : undefined
+          }
         />
 
         <FormField
@@ -131,7 +136,9 @@ export function RegisterPage() {
           placeholder="Confirm your password"
           autoComplete="new-password"
           isInvalid={confirmPassword.length > 0 && password !== confirmPassword}
-          errorMessage={confirmPassword.length > 0 && password !== confirmPassword ? 'Passwords do not match' : undefined}
+          errorMessage={
+            confirmPassword.length > 0 && password !== confirmPassword ? 'Passwords do not match' : undefined
+          }
         />
 
         <Button type="submit" fullWidth className="font-semibold" isPending={isLoading} isDisabled={isDisabled}>

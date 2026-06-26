@@ -1,9 +1,5 @@
 import { useContext, useEffect } from 'react';
-import {
-  PageHeaderSetContext,
-  PageHeaderStateContext,
-  type PageHeaderConfig
-} from '../contexts/PageHeaderContext';
+import { PageHeaderSetContext, PageHeaderStateContext, type PageHeaderConfig } from '../contexts/PageHeaderContext';
 
 /** Reads the current page-header config (used by the app top bar). */
 export function usePageHeaderState(): PageHeaderConfig {

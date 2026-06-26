@@ -1,8 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Cairnly.API.Extensions;
 using Cairnly.API.Models.Dtos;
 using Cairnly.API.Models.QueryParameters;
@@ -10,7 +8,9 @@ using Cairnly.API.Models.Requests.Transactions;
 using Cairnly.API.Models.Responses.Pagination;
 using Cairnly.API.Services.Core;
 using Cairnly.API.Services.Domain;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cairnly.API.Controllers.V1;
 

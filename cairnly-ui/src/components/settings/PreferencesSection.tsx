@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, ToggleButton, ToggleButtonGroup } from '@heroui/react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
-import { useUpdatePreferences } from '../../hooks/api';
+import { useUpdatePreferences } from '../../hooks/preferences';
 import { ACCENT_PRESETS, type ThemeMode } from '../../constants/theme';
 
 /**

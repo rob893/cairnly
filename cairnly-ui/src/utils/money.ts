@@ -26,8 +26,8 @@ export function currencyFractionDigits(currency: string): number {
 
   try {
     digits =
-      new Intl.NumberFormat(undefined, { style: 'currency', currency: key }).resolvedOptions()
-        .maximumFractionDigits ?? 2;
+      new Intl.NumberFormat(undefined, { style: 'currency', currency: key }).resolvedOptions().maximumFractionDigits ??
+      2;
   } catch {
     digits = 2;
   }

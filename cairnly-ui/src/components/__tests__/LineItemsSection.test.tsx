@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { LineItemsSection } from '../spendingPlans/LineItemsSection';
 import type { SpendingPlanExpense } from '../../types/spendingPlans';
 import type { Tag } from '../../types/tags';
+import type { Category } from '../../types/categories';
 
 const expenses: SpendingPlanExpense[] = [
   {
@@ -14,7 +15,7 @@ const expenses: SpendingPlanExpense[] = [
     description: 'Weekly auto-invest',
     amount: 50000,
     cadence: 'Weekly',
-    categoryId: null,
+    categoryId: 10,
     tagIds: [1],
     metadata: {},
     createdAt: '',
@@ -28,7 +29,7 @@ const expenses: SpendingPlanExpense[] = [
     description: null,
     amount: 500,
     cadence: 'Monthly',
-    categoryId: null,
+    categoryId: 11,
     tagIds: [2],
     metadata: {},
     createdAt: '',
@@ -39,6 +40,33 @@ const expenses: SpendingPlanExpense[] = [
 const tags: Tag[] = [
   { id: 1, userId: 1, name: 'investing', metadata: {}, createdAt: '', updatedAt: '' },
   { id: 2, userId: 1, name: 'subscription', metadata: {}, createdAt: '', updatedAt: '' }
+];
+
+const categories: Category[] = [
+  {
+    id: 10,
+    userId: 1,
+    name: 'Financial & Legal Services',
+    icon: '🗄',
+    parentId: 99,
+    kind: 'Expense',
+    isSystem: true,
+    metadata: {},
+    createdAt: '',
+    updatedAt: ''
+  },
+  {
+    id: 11,
+    userId: 1,
+    name: 'Entertainment & Recreation',
+    icon: '🎥',
+    parentId: 99,
+    kind: 'Expense',
+    isSystem: true,
+    metadata: {},
+    createdAt: '',
+    updatedAt: ''
+  }
 ];
 
 const idleQuery = {
@@ -67,6 +95,15 @@ vi.mock('../../hooks/spendingPlans', () => ({
 vi.mock('../../hooks/tags', () => ({
   useTags: () => ({ tags, tagsById: new Map(tags.map(t => [t.id, t])), isLoading: false }),
   useCreateTag: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
+
+vi.mock('../../hooks/categories', () => ({
+  useCategories: () => ({
+    categories,
+    categoriesById: new Map(categories.map(c => [c.id, c])),
+    groups: [],
+    isLoading: false
+  })
 }));
 
 beforeAll(() => {

@@ -12,10 +12,10 @@ namespace Cairnly.API.Services.Domain;
 public interface ICategoryTagValidator
 {
     /// <summary>
-    /// Validates that an optional category exists and is accessible (owned by the current user, a
+    /// Validates that a category is provided, exists, and is accessible (owned by the current user, a
     /// system category, or accessed by an administrator).
     /// </summary>
-    /// <param name="categoryId">The optional category ID.</param>
+    /// <param name="categoryId">The category ID. A null value fails validation.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A success result when valid; otherwise a validation failure.</returns>
     Task<Result<bool>> ValidateCategoryAsync(int? categoryId, CancellationToken cancellationToken);

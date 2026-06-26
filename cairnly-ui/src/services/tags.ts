@@ -1,5 +1,5 @@
 import apiClient from './axiosConfig';
-import type { CursorPaginatedResponse } from '../types/models';
+import type { CursorPaginatedResponse } from '../types/pagination';
 import type { CreateTagRequest, Tag, TagQueryParameters } from '../types/tags';
 
 export const tagsApi = {

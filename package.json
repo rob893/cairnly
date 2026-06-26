@@ -7,6 +7,7 @@
     "test-api": "dotnet test",
     "publish-api": "cd Cairnly.API && dotnet publish -c Release -o dist",
     "start-ui": "cd cairnly-ui && npm run dev",
-    "build-ui": "cd cairnly-ui && npm run build"
+    "build-ui": "cd cairnly-ui && npm run build",
+    "format": "dotnet format && cd cairnly-ui && npm run prettier"
   }
 }

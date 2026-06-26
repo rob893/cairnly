@@ -92,7 +92,10 @@ export function LandingPage() {
           <div className="absolute inset-0 -z-20 cairnly-aurora" aria-hidden="true" />
           <div className="absolute inset-0 -z-10 cairnly-grid" aria-hidden="true" />
           <div className="cairnly-orb cairnly-float absolute -top-20 left-1/4 size-72 opacity-60" aria-hidden="true" />
-          <div className="cairnly-orb cairnly-float-slow absolute top-40 right-1/5 size-80 opacity-50" aria-hidden="true" />
+          <div
+            className="cairnly-orb cairnly-float-slow absolute top-40 right-1/5 size-80 opacity-50"
+            aria-hidden="true"
+          />
 
           <div className="mx-auto max-w-4xl px-6 pt-24 pb-28 text-center sm:pt-32">
             <Reveal from="none">
@@ -112,8 +115,8 @@ export function LandingPage() {
 
             <Reveal delay={160}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-                Cairnly helps you understand, plan, and optimize your money — spending plans, accounts, and spending in one
-                clear place. Build wealth one marker at a time.
+                Cairnly helps you understand, plan, and optimize your money — spending plans, accounts, and spending in
+                one clear place. Build wealth one marker at a time.
               </p>
             </Reveal>
 
@@ -140,8 +143,7 @@ export function LandingPage() {
         <section className="relative mx-auto w-full max-w-[2000px] px-6 lg:px-10 pb-28">
           <Reveal from="left">
             <h2 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">
-              Everything you need to track spend and grow wealth —{' '}
-              <span className="text-muted">in one place.</span>
+              Everything you need to track spend and grow wealth — <span className="text-muted">in one place.</span>
             </h2>
           </Reveal>
 
@@ -183,7 +185,10 @@ export function LandingPage() {
         {/* Final CTA */}
         <section className="relative w-full overflow-hidden">
           <div className="absolute inset-0 -z-10 cairnly-aurora opacity-80" aria-hidden="true" />
-          <div className="cairnly-orb cairnly-float absolute bottom-0 right-1/4 size-72 opacity-50" aria-hidden="true" />
+          <div
+            className="cairnly-orb cairnly-float absolute bottom-0 right-1/4 size-72 opacity-50"
+            aria-hidden="true"
+          />
           <div className="mx-auto w-full max-w-4xl px-6 py-28 text-center">
             <Reveal>
               <CairnMark className="mx-auto size-12 text-accent" />

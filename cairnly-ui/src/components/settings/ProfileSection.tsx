@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Modal, Spinner } from '@heroui/react';
 import { useAuth } from '../../hooks/useAuth';
-import { useSendEmailConfirmation, useUpdateUsername, useUserDetails } from '../../hooks/api';
+import { useSendEmailConfirmation, useUpdateUsername, useUserDetails } from '../../hooks/users';
 import { FormField } from '../FormField';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { showErrorDetails } from '../../utils/environment';
@@ -81,15 +81,29 @@ export function ProfileSection() {
                     </Modal.Header>
                     <Modal.Body className="space-y-4">
                       {updateUsername.error && (
-                        <ApiErrorDisplay error={updateUsername.error as Error} title="Update failed" showDetails={showErrorDetails} />
+                        <ApiErrorDisplay
+                          error={updateUsername.error as Error}
+                          title="Update failed"
+                          showDetails={showErrorDetails}
+                        />
                       )}
-                      <FormField label="New username" value={newUsername} onChange={setNewUsername} isRequired autoComplete="username" />
+                      <FormField
+                        label="New username"
+                        value={newUsername}
+                        onChange={setNewUsername}
+                        isRequired
+                        autoComplete="username"
+                      />
                     </Modal.Body>
                     <Modal.Footer>
                       <Button slot="close" variant="outline">
                         Cancel
                       </Button>
-                      <Button onPress={handleUsernameSubmit} isPending={updateUsername.isPending} isDisabled={!newUsername.trim()}>
+                      <Button
+                        onPress={handleUsernameSubmit}
+                        isPending={updateUsername.isPending}
+                        isDisabled={!newUsername.trim()}
+                      >
                         Save
                       </Button>
                     </Modal.Footer>

@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using Cairnly.API.Core;
 using Cairnly.API.Data.Repositories;
 using Cairnly.API.Models.Entities;
@@ -12,6 +8,9 @@ using Cairnly.API.Models.Requests;
 using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Domain;
 using Cairnly.API.Services.Email;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace Cairnly.API.Tests.Services;
 

@@ -41,11 +41,11 @@ public sealed class Transaction : IIdentifiable<int>, IOwnedByUser<int>, IAudita
     [MaxLength(1024)]
     public string? Description { get; set; }
 
-    /// <summary>Gets or sets the optional category ID assigned to this transaction.</summary>
-    public int? CategoryId { get; set; }
+    /// <summary>Gets or sets the category ID assigned to this transaction.</summary>
+    public int CategoryId { get; set; }
 
     /// <summary>Gets or sets the category navigation property.</summary>
-    public Category? Category { get; set; }
+    public Category Category { get; set; } = default!;
 
     /// <summary>Gets or sets how the transaction entered the system.</summary>
     public TransactionSource Source { get; set; }

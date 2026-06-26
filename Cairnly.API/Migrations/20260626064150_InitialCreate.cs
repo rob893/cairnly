@@ -207,6 +207,7 @@ namespace Cairnly.API.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Icon = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: true),
                     ParentId = table.Column<int>(type: "integer", nullable: true),
                     Kind = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     IsSystem = table.Column<bool>(type: "boolean", nullable: false),
@@ -362,7 +363,7 @@ namespace Cairnly.API.Migrations
                     Amount = table.Column<long>(type: "bigint", nullable: false),
                     Merchant = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     Description = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
-                    CategoryId = table.Column<int>(type: "integer", nullable: true),
+                    CategoryId = table.Column<int>(type: "integer", nullable: false),
                     Source = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     IsSplit = table.Column<bool>(type: "boolean", nullable: false),
                     ParentTransactionId = table.Column<int>(type: "integer", nullable: true),
@@ -392,7 +393,7 @@ namespace Cairnly.API.Migrations
                         column: x => x.CategoryId,
                         principalTable: "Categories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Transactions_Transactions_ParentTransactionId",
                         column: x => x.ParentTransactionId,
@@ -413,7 +414,7 @@ namespace Cairnly.API.Migrations
                     Description = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
                     Amount = table.Column<long>(type: "bigint", nullable: false),
                     Cadence = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    CategoryId = table.Column<int>(type: "integer", nullable: true),
+                    CategoryId = table.Column<int>(type: "integer", nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
@@ -434,7 +435,7 @@ namespace Cairnly.API.Migrations
                         column: x => x.CategoryId,
                         principalTable: "Categories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SpendingPlanExpenses_SpendingPlans_SpendingPlanId",
                         column: x => x.SpendingPlanId,
@@ -453,10 +454,9 @@ namespace Cairnly.API.Migrations
                     SpendingPlanId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Description = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
-                    Type = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     Amount = table.Column<long>(type: "bigint", nullable: false),
                     Cadence = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    CategoryId = table.Column<int>(type: "integer", nullable: true),
+                    CategoryId = table.Column<int>(type: "integer", nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
@@ -477,7 +477,7 @@ namespace Cairnly.API.Migrations
                         column: x => x.CategoryId,
                         principalTable: "Categories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SpendingPlanIncomes_SpendingPlans_SpendingPlanId",
                         column: x => x.SpendingPlanId,

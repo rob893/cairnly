@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { Button, Card, CardContent, CardHeader, Chip, Modal, Spinner, Table } from '@heroui/react';
 import { LineItemFormModal } from './LineItemFormModal';
@@ -20,7 +20,8 @@ import {
   useUpdateExpense,
   useUpdateIncome
 } from '../../hooks/spendingPlans';
-import { cadenceLabel, incomeTypeLabel } from '../../types/spendingPlans';
+import { cadenceLabel } from '../../types/spendingPlans';
+import { useCategories } from '../../hooks/categories';
 import type {
   SpendingPlanExpense,
   SpendingPlanIncome,
@@ -28,6 +29,8 @@ import type {
   CreateSpendingPlanExpenseRequest,
   CreateSpendingPlanIncomeRequest
 } from '../../types/spendingPlans';
+import type { Category } from '../../types/categories';
+import type { Tag } from '../../types/tags';
 
 type LineItem = SpendingPlanIncome | SpendingPlanExpense;
 
@@ -68,6 +71,14 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
   const query = isIncome ? incomesQuery : expensesQuery;
 
   const { tagsById } = useTags();
+  const { categoriesById } = useCategories();
+
+  const categoryNameOf = useMemo(
+    () =>
+      (item: LineItem): string =>
+        categoriesById.get(item.categoryId)?.name ?? '',
+    [categoriesById]
+  );
 
   const createIncome = useCreateIncome(spendingPlanId);
   const updateIncome = useUpdateIncome(spendingPlanId);
@@ -98,13 +109,16 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
   );
 
   const tagNamesOf = useMemo(
-    () => (item: LineItem): string[] => item.tagIds.map(id => tagsById.get(id)?.name ?? '').filter(name => name !== ''),
+    () =>
+      (item: LineItem): string[] =>
+        item.tagIds.map(id => tagsById.get(id)?.name ?? '').filter(name => name !== ''),
     [tagsById]
   );
 
   const getSearchText = useMemo(
-    () => (item: LineItem) => [item.name, item.description ?? '', ...tagNamesOf(item)].join(' ').toLowerCase(),
-    [tagNamesOf]
+    () => (item: LineItem) =>
+      [item.name, item.description ?? '', categoryNameOf(item), ...tagNamesOf(item)].join(' ').toLowerCase(),
+    [tagNamesOf, categoryNameOf]
   );
 
   const getSortValue = useMemo(
@@ -113,8 +127,8 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
         switch (key) {
           case 'name':
             return item.name.toLowerCase();
-          case 'type':
-            return 'type' in item ? incomeTypeLabel(item.type) : '';
+          case 'category':
+            return categoryNameOf(item).toLowerCase();
           case 'amount':
             return item.amount;
           case 'cadence':
@@ -128,7 +142,7 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
             return item.name.toLowerCase();
         }
       },
-    []
+    [categoryNameOf]
   );
 
   const table = useClientTable(items, {
@@ -138,26 +152,32 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
     initialPageSize: 10
   });
 
-  const sortDescriptor: SortDescriptor = {
-    column: table.sortKey,
-    direction: table.sortDirection === 'asc' ? 'ascending' : 'descending'
-  };
-
-  const handleSortChange = (descriptor: SortDescriptor) => {
-    table.setSort(String(descriptor.column), descriptor.direction === 'ascending' ? 'asc' : 'desc');
-  };
+  // Reset the relevant mutation's error state whenever the form opens, so a prior
+  // failure doesn't linger. Kept in an effect so the row callbacks stay stable.
+  useEffect(() => {
+    if (!formOpen) {
+      return;
+    }
+    if (editing) {
+      updateMutation.reset();
+    } else {
+      createMutation.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOpen, editing]);
 
   const openCreate = () => {
     setEditing(undefined);
-    createMutation.reset();
     setFormOpen(true);
   };
 
-  const openEdit = (item: LineItem) => {
+  const openEdit = useCallback((item: LineItem) => {
     setEditing(item);
-    updateMutation.reset();
     setFormOpen(true);
-  };
+  }, []);
+
+  const openDetails = useCallback((item: LineItem) => setDetailsTarget(item), []);
+  const openDeletePrompt = useCallback((item: LineItem) => setDeleteTarget(item), []);
 
   const handleSubmit = async (payload: CreateSpendingPlanIncomeRequest & CreateSpendingPlanExpenseRequest) => {
     const expensePayload: CreateSpendingPlanExpenseRequest = {
@@ -165,6 +185,7 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
       description: payload.description,
       amount: payload.amount,
       cadence: payload.cadence,
+      categoryId: payload.categoryId,
       tagIds: payload.tagIds
     };
 
@@ -198,86 +219,6 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
     setDeleteTarget(undefined);
   };
 
-  const renderCells = (item: LineItem) => {
-    const breakdown = cadenceBreakdown(item.amount, item.cadence);
-    const tags = tagNamesOf(item);
-
-    const cells = [
-      <Table.Cell key="details">
-        <Button
-          isIconOnly
-          variant="ghost"
-          size="sm"
-          aria-label={`View ${item.name} details`}
-          onPress={() => setDetailsTarget(item)}
-        >
-          <Eye className="size-4" />
-        </Button>
-      </Table.Cell>,
-      <Table.Cell key="name">
-        <span className="font-medium">{item.name}</span>
-        {tags.length > 0 && (
-          <span className="ml-2 hidden gap-1 align-middle lg:inline-flex">
-            {tags.slice(0, 3).map(name => (
-              <Chip key={name} variant="soft" size="sm">
-                {name}
-              </Chip>
-            ))}
-          </span>
-        )}
-      </Table.Cell>
-    ];
-
-    if (isIncome) {
-      cells.push(
-        <Table.Cell key="type">{'type' in item ? incomeTypeLabel(item.type) : ''}</Table.Cell>,
-        <Table.Cell key="amount" className="text-right font-semibold tabular-nums text-success">
-          {formatMoney(item.amount, currency)}
-        </Table.Cell>
-      );
-    } else {
-      cells.push(
-        <Table.Cell key="cadence">
-          <Chip variant="soft" size="sm">
-            {cadenceLabel(item.cadence)}
-          </Chip>
-        </Table.Cell>,
-        ...COST_COLUMNS.map(col => (
-          <Table.Cell key={col.key} className="text-right tabular-nums">
-            {formatMoney(breakdown[col.key], currency)}
-          </Table.Cell>
-        ))
-      );
-    }
-
-    cells.push(
-      <Table.Cell key="actions">
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            isIconOnly
-            variant="ghost"
-            size="sm"
-            onPress={() => openEdit(item)}
-            aria-label={`Edit ${item.name}`}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            isIconOnly
-            variant="danger-soft"
-            size="sm"
-            onPress={() => setDeleteTarget(item)}
-            aria-label={`Delete ${item.name}`}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      </Table.Cell>
-    );
-
-    return cells;
-  };
-
   return (
     <Card className="bg-surface border border-border">
       <CardHeader className="px-6 pt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -303,7 +244,11 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
           </div>
         ) : query.isError ? (
           <div className="px-4">
-            <ApiErrorDisplay error={query.error as Error} title={`Failed to load ${kind}`} showDetails={showErrorDetails} />
+            <ApiErrorDisplay
+              error={query.error as Error}
+              title={`Failed to load ${kind}`}
+              showDetails={showErrorDetails}
+            />
           </div>
         ) : items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted">
@@ -311,49 +256,22 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
           </p>
         ) : (
           <>
-            <Table aria-label={`${title} line items`}>
-              <Table.ScrollContainer>
-                <Table.Content
-                  aria-label={`${title} line items`}
-                  sortDescriptor={sortDescriptor}
-                  onSortChange={handleSortChange}
-                  className="min-w-[40rem]"
-                >
-                  <Table.Header>
-                    <Table.Column id="details" width={48} aria-label="Details">
-                      {''}
-                    </Table.Column>
-                    <SortableColumn id="name" label="Name" isRowHeader />
-                    {isIncome ? (
-                      <>
-                        <SortableColumn id="type" label="Type" />
-                        <SortableColumn id="amount" label="Amount" align="right" />
-                      </>
-                    ) : (
-                      <>
-                        <SortableColumn id="cadence" label="Frequency" />
-                        {COST_COLUMNS.map(col => (
-                          <SortableColumn key={col.key} id={col.key} label={col.label} align="right" />
-                        ))}
-                      </>
-                    )}
-                    <Table.Column id="actions" className="text-right">
-                      Actions
-                    </Table.Column>
-                  </Table.Header>
-                  <Table.Body
-                    items={table.pageItems}
-                    renderEmptyState={() => (
-                      <span className="block py-8 text-center text-sm text-muted">
-                        No {kind} matches “{table.search}”.
-                      </span>
-                    )}
-                  >
-                    {(item: LineItem) => <Table.Row id={item.id}>{renderCells(item)}</Table.Row>}
-                  </Table.Body>
-                </Table.Content>
-              </Table.ScrollContainer>
-            </Table>
+            <LineItemsTable
+              title={title}
+              kind={kind}
+              isIncome={isIncome}
+              currency={currency}
+              items={table.pageItems}
+              searchTerm={table.search}
+              sortKey={table.sortKey}
+              sortDirection={table.sortDirection}
+              onSortChange={table.setSort}
+              categoriesById={categoriesById}
+              tagsById={tagsById}
+              onDetails={openDetails}
+              onEdit={openEdit}
+              onDelete={openDeletePrompt}
+            />
 
             <TableFooter table={table} />
           </>
@@ -392,7 +310,11 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
               </Modal.Header>
               <Modal.Body className="space-y-4">
                 {deleteMutation.error && (
-                  <ApiErrorDisplay error={deleteMutation.error as Error} title="Delete failed" showDetails={showErrorDetails} />
+                  <ApiErrorDisplay
+                    error={deleteMutation.error as Error}
+                    title="Delete failed"
+                    showDetails={showErrorDetails}
+                  />
                 )}
                 <p className="text-sm text-muted">
                   Permanently delete <span className="font-medium text-foreground">{deleteTarget?.name}</span>? This
@@ -430,7 +352,12 @@ function SortableColumn({
   isRowHeader?: boolean;
 }) {
   return (
-    <Table.Column id={id} allowsSorting isRowHeader={isRowHeader} className={align === 'right' ? 'text-right' : undefined}>
+    <Table.Column
+      id={id}
+      allowsSorting
+      isRowHeader={isRowHeader}
+      className={align === 'right' ? 'text-right' : undefined}
+    >
       {({ sortDirection }: { sortDirection?: 'ascending' | 'descending' }) => (
         <Table.SortableColumnHeader sortDirection={sortDirection}>{label}</Table.SortableColumnHeader>
       )}
@@ -546,3 +473,181 @@ function TableFooter({ table }: { table: TableApi }) {
     </div>
   );
 }
+
+interface LineItemsTableProps {
+  title: string;
+  kind: 'income' | 'expense';
+  isIncome: boolean;
+  currency: string;
+  items: LineItem[];
+  searchTerm: string;
+  sortKey: string;
+  sortDirection: 'asc' | 'desc';
+  onSortChange(key: string, direction: 'asc' | 'desc'): void;
+  categoriesById: Map<number, Category>;
+  tagsById: Map<number, Tag>;
+  onDetails(item: LineItem): void;
+  onEdit(item: LineItem): void;
+  onDelete(item: LineItem): void;
+}
+
+/**
+ * Renders the income/expense line items in a sortable HeroUI table. Memoized so
+ * that unrelated parent state changes (e.g. opening an edit/details modal) don't
+ * force a costly rebuild of the react-aria table collection. Only re-renders when
+ * its data, search term, sort, or stable callbacks change.
+ */
+const LineItemsTable = memo(function LineItemsTable({
+  title,
+  kind,
+  isIncome,
+  currency,
+  items,
+  searchTerm,
+  sortKey,
+  sortDirection,
+  onSortChange,
+  categoriesById,
+  tagsById,
+  onDetails,
+  onEdit,
+  onDelete
+}: LineItemsTableProps) {
+  const sortDescriptor: SortDescriptor = {
+    column: sortKey,
+    direction: sortDirection === 'asc' ? 'ascending' : 'descending'
+  };
+
+  const handleSortChange = (descriptor: SortDescriptor) => {
+    onSortChange(String(descriptor.column), descriptor.direction === 'descending' ? 'desc' : 'asc');
+  };
+
+  const renderCells = (item: LineItem) => {
+    const breakdown = cadenceBreakdown(item.amount, item.cadence);
+    const category = categoriesById.get(item.categoryId);
+    const tagNames = item.tagIds.map(id => tagsById.get(id)?.name ?? '').filter(name => name !== '');
+
+    const cells = [
+      <Table.Cell key="details">
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          aria-label={`View ${item.name} details`}
+          onPress={() => onDetails(item)}
+        >
+          <Eye className="size-4" />
+        </Button>
+      </Table.Cell>,
+      <Table.Cell key="name">
+        <span className="font-medium">{item.name}</span>
+      </Table.Cell>,
+      <Table.Cell key="category">
+        <span className="flex items-center gap-1.5">
+          {category?.icon && <span aria-hidden="true">{category.icon}</span>}
+          <span className="truncate">{category?.name || '—'}</span>
+        </span>
+      </Table.Cell>,
+      <Table.Cell key="tags">
+        {tagNames.length === 0 ? (
+          <span className="text-muted">—</span>
+        ) : (
+          <span className="flex flex-wrap gap-1">
+            {tagNames.map(name => (
+              <Chip key={name} variant="soft" size="sm">
+                {name}
+              </Chip>
+            ))}
+          </span>
+        )}
+      </Table.Cell>
+    ];
+
+    if (isIncome) {
+      cells.push(
+        <Table.Cell key="amount" className="text-right font-semibold tabular-nums text-success">
+          {formatMoney(item.amount, currency)}
+        </Table.Cell>
+      );
+    } else {
+      cells.push(
+        <Table.Cell key="cadence">
+          <Chip variant="soft" size="sm">
+            {cadenceLabel(item.cadence)}
+          </Chip>
+        </Table.Cell>,
+        ...COST_COLUMNS.map(col => (
+          <Table.Cell key={col.key} className="text-right tabular-nums">
+            {formatMoney(breakdown[col.key], currency)}
+          </Table.Cell>
+        ))
+      );
+    }
+
+    cells.push(
+      <Table.Cell key="actions">
+        <div className="flex items-center justify-end gap-1">
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => onEdit(item)} aria-label={`Edit ${item.name}`}>
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            isIconOnly
+            variant="danger-soft"
+            size="sm"
+            onPress={() => onDelete(item)}
+            aria-label={`Delete ${item.name}`}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      </Table.Cell>
+    );
+
+    return cells;
+  };
+
+  return (
+    <Table aria-label={`${title} line items`}>
+      <Table.ScrollContainer>
+        <Table.Content
+          aria-label={`${title} line items`}
+          sortDescriptor={sortDescriptor}
+          onSortChange={handleSortChange}
+          className="min-w-[40rem]"
+        >
+          <Table.Header>
+            <Table.Column id="details" width={48} aria-label="Details">
+              {''}
+            </Table.Column>
+            <SortableColumn id="name" label="Name" isRowHeader />
+            <SortableColumn id="category" label="Category" />
+            <Table.Column id="tags">Tags</Table.Column>
+            {isIncome ? (
+              <SortableColumn id="amount" label="Amount" align="right" />
+            ) : (
+              <>
+                <SortableColumn id="cadence" label="Frequency" />
+                {COST_COLUMNS.map(col => (
+                  <SortableColumn key={col.key} id={col.key} label={col.label} align="right" />
+                ))}
+              </>
+            )}
+            <Table.Column id="actions" className="text-right">
+              Actions
+            </Table.Column>
+          </Table.Header>
+          <Table.Body
+            items={items}
+            renderEmptyState={() => (
+              <span className="block py-8 text-center text-sm text-muted">
+                No {kind} matches “{searchTerm}”.
+              </span>
+            )}
+          >
+            {(item: LineItem) => <Table.Row id={item.id}>{renderCells(item)}</Table.Row>}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+    </Table>
+  );
+});

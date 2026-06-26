@@ -3,16 +3,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Identity;
-using CommandLine;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Cairnly.API.ApplicationStartup;
 using Cairnly.API.Constants;
 using Cairnly.API.Core;
 using Cairnly.API.Data;
 using Cairnly.API.Extensions;
+using CommandLine;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Cairnly.API;
 

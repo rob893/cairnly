@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Models.QueryParameters;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,12 @@ public sealed class CategoryRepository : Repository<Category, CategoryQueryParam
     /// <param name="context">The database context.</param>
     public CategoryRepository(DataContext context) : base(context)
     {
+    }
+
+    /// <inheritdoc />
+    public Task<bool> HasChildrenAsync(int categoryId, CancellationToken cancellationToken)
+    {
+        return this.Context.Categories.AnyAsync(c => c.ParentId == categoryId, cancellationToken);
     }
 
     /// <inheritdoc />

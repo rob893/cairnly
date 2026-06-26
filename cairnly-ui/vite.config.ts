@@ -53,7 +53,10 @@ export default defineConfig(({ mode }) => {
               { name: 'vendor-query', test: /[\\/]node_modules[\\/]@tanstack[\\/]react-query[\\/]/ },
               { name: 'vendor-ui', test: /[\\/]node_modules[\\/]@heroui[\\/](react|styles)[\\/]/ },
               { name: 'vendor-icons', test: /[\\/]node_modules[\\/]lucide-react[\\/]/ },
-              { name: 'vendor-charts', test: /[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor|internmap)[\\/]/ },
+              {
+                name: 'vendor-charts',
+                test: /[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor|internmap)[\\/]/
+              },
               { name: 'vendor-http', test: /[\\/]node_modules[\\/](axios|jwt-decode)[\\/]/ }
             ]
           }

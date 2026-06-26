@@ -41,7 +41,7 @@ public sealed class CategoryTagValidator : ICategoryTagValidator
     {
         if (categoryId == null)
         {
-            return Result<bool>.Success(true);
+            return Result<bool>.Failure(DomainErrorType.Validation, "A category is required");
         }
 
         var category = await this.categoryRepository.GetByIdAsync(categoryId.Value, track: false, cancellationToken);
@@ -52,6 +52,16 @@ public sealed class CategoryTagValidator : ICategoryTagValidator
         if (!accessible)
         {
             return Result<bool>.Failure(DomainErrorType.Validation, "The specified category does not exist");
+        }
+
+        // Parent groups are organizational only; line items and transactions must be assigned to a
+        // leaf category (one with no children) so group rollups stay unambiguous.
+        var hasChildren = await this.categoryRepository.HasChildrenAsync(categoryId.Value, cancellationToken);
+        if (hasChildren)
+        {
+            return Result<bool>.Failure(
+                DomainErrorType.Validation,
+                $"'{category!.Name}' is a category group; choose one of its categories instead");
         }
 
         return Result<bool>.Success(true);

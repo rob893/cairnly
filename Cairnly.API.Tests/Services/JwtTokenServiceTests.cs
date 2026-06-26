@@ -1,19 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Moq;
 using Cairnly.API.Constants;
 using Cairnly.API.Data.Repositories;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Models.Settings;
 using Cairnly.API.Services.Auth;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Moq;
 
 namespace Cairnly.API.Tests.Services;
 

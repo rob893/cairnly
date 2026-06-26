@@ -61,8 +61,7 @@ export function CategoryBreakdown({ title, items, currency, tone }: CategoryBrea
                 <span className="truncate text-foreground">{item.label}</span>
               </span>
               <span className="shrink-0 tabular-nums text-foreground">
-                {formatMoney(item.amount, currency)}{' '}
-                <span className="text-muted">({item.percent.toFixed(1)}%)</span>
+                {formatMoney(item.amount, currency)} <span className="text-muted">({item.percent.toFixed(1)}%)</span>
               </span>
             </div>
           </div>

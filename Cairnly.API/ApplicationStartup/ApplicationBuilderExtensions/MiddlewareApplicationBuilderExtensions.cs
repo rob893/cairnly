@@ -1,7 +1,7 @@
 
 using System;
-using Microsoft.AspNetCore.Builder;
 using Cairnly.API.Middleware;
+using Microsoft.AspNetCore.Builder;
 
 namespace Cairnly.API.ApplicationStartup.ApplicationBuilderExtensions;
 

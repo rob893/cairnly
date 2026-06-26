@@ -17,7 +17,10 @@ export function ResetPasswordPage() {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({ isValid: false, errors: [] });
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({
+    isValid: false,
+    errors: []
+  });
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -72,14 +75,18 @@ export function ResetPasswordPage() {
         <Card className="w-full max-w-md shadow-2xl">
           <CardHeader className="flex flex-col items-center pb-6 pt-8">
             <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
-            <Chip color="success" variant="soft">✅ Password Reset</Chip>
+            <Chip color="success" variant="soft">
+              ✅ Password Reset
+            </Chip>
           </CardHeader>
           <CardContent className="px-8 pb-8 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-4">Password Updated!</h2>
             <p className="text-default-600 mb-8 leading-relaxed">
               Your password has been updated. You can now sign in with your new password.
             </p>
-            <Button fullWidth onPress={() => navigate('/login')}>Sign In</Button>
+            <Button fullWidth onPress={() => navigate('/login')}>
+              Sign In
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -92,12 +99,16 @@ export function ResetPasswordPage() {
         <Card className="w-full max-w-md shadow-2xl">
           <CardHeader className="flex flex-col items-center pb-6 pt-8">
             <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
-            <Chip color="danger" variant="soft">❌ Invalid Link</Chip>
+            <Chip color="danger" variant="soft">
+              ❌ Invalid Link
+            </Chip>
           </CardHeader>
           <CardContent className="px-8 pb-8 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-4">Link Invalid or Expired</h2>
             <p className="text-default-600 mb-8">Please request a new password reset link.</p>
-            <Button fullWidth onPress={() => navigate('/forgot-password')}>Request New Reset Link</Button>
+            <Button fullWidth onPress={() => navigate('/forgot-password')}>
+              Request New Reset Link
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -135,7 +146,9 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               description={getPasswordRequirementsDescription()}
               isInvalid={password.length > 0 && !passwordValidation.isValid}
-              errorMessage={password.length > 0 && !passwordValidation.isValid ? passwordValidation.errors.join(', ') : undefined}
+              errorMessage={
+                password.length > 0 && !passwordValidation.isValid ? passwordValidation.errors.join(', ') : undefined
+              }
             />
 
             <FormField
@@ -149,7 +162,9 @@ export function ResetPasswordPage() {
               placeholder="Confirm your new password"
               autoComplete="new-password"
               isInvalid={confirmPassword.length > 0 && password !== confirmPassword}
-              errorMessage={confirmPassword.length > 0 && password !== confirmPassword ? 'Passwords do not match' : undefined}
+              errorMessage={
+                confirmPassword.length > 0 && password !== confirmPassword ? 'Passwords do not match' : undefined
+              }
             />
 
             <Button

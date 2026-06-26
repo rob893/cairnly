@@ -51,7 +51,10 @@ export function AuthShell({ heading, subheading, topPrompt, brandTitle, brandSub
       <aside className="relative hidden lg:flex flex-col justify-end overflow-hidden bg-surface-secondary cairnly-aurora">
         <div className="absolute inset-0 cairnly-grid" aria-hidden="true" />
         <div className="cairnly-orb cairnly-float absolute -top-16 -right-10 size-72" aria-hidden="true" />
-        <div className="cairnly-orb cairnly-float-slow absolute top-1/3 -left-16 size-80 opacity-70" aria-hidden="true" />
+        <div
+          className="cairnly-orb cairnly-float-slow absolute top-1/3 -left-16 size-80 opacity-70"
+          aria-hidden="true"
+        />
 
         {/* Floating cairn motif */}
         <div className="relative flex-1 flex items-center justify-center" aria-hidden="true">

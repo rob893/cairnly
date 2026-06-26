@@ -34,11 +34,6 @@ public sealed class SpendingPlanIncomeRepository : Repository<SpendingPlanIncome
             query = query.Where(i => i.UserId == searchParams.RequestingUserId);
         }
 
-        if (searchParams.Type.HasValue)
-        {
-            query = query.Where(i => i.Type == searchParams.Type.Value);
-        }
-
         if (!string.IsNullOrWhiteSpace(searchParams.Name))
         {
             query = query.Where(i => EF.Functions.ILike(i.Name, $"%{searchParams.Name}%"));

@@ -31,8 +31,9 @@ public sealed record UpdateTransactionRequest
     [MaxLength(1024)]
     public string? Description { get; init; }
 
-    /// <summary>Gets the optional category ID to assign.</summary>
-    public int? CategoryId { get; init; }
+    /// <summary>Gets the category ID to assign.</summary>
+    [Required]
+    public int CategoryId { get; init; }
 
     /// <summary>Gets how the transaction entered the system.</summary>
     public TransactionSource Source { get; init; } = TransactionSource.Manual;

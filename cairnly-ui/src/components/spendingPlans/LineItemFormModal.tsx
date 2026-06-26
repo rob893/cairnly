@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react';
 import { Button, Label, Modal, TextArea, TextField } from '@heroui/react';
 import { FormField } from '../FormField';
 import { SelectField } from '../SelectField';
+import { CategorySelect } from '../CategorySelect';
 import { TagSelector } from './TagSelector';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { showErrorDetails } from '../../utils/environment';
 import { minorToMajor, parseMoneyToMinor } from '../../utils/money';
-import { spendingPlanCadences, incomeTypes } from '../../types/spendingPlans';
+import { spendingPlanCadences } from '../../types/spendingPlans';
 import type {
   SpendingPlanCadence,
   SpendingPlanExpense,
   SpendingPlanIncome,
   CreateSpendingPlanExpenseRequest,
-  CreateSpendingPlanIncomeRequest,
-  IncomeType
+  CreateSpendingPlanIncomeRequest
 } from '../../types/spendingPlans';
 
 type LineItemKind = 'income' | 'expense';
@@ -57,7 +57,7 @@ export function LineItemFormModal({
   const [cadence, setCadence] = useState<SpendingPlanCadence>(
     kind === 'income' ? DEFAULT_INCOME_CADENCE : DEFAULT_EXPENSE_CADENCE
   );
-  const [type, setType] = useState<IncomeType>('W2');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -72,7 +72,7 @@ export function LineItemFormModal({
     setDescription(item?.description ?? '');
     setAmount(item ? String(minorToMajor(item.amount, currency)) : '');
     setCadence(item?.cadence ?? (kind === 'income' ? DEFAULT_INCOME_CADENCE : DEFAULT_EXPENSE_CADENCE));
-    setType(item && 'type' in item ? item.type : 'W2');
+    setCategoryId(item?.categoryId ?? null);
     setTagIds(item?.tagIds ?? []);
   }, [isOpen, item, kind, currency]);
 
@@ -91,12 +91,17 @@ export function LineItemFormModal({
       return;
     }
 
+    if (categoryId === null) {
+      setLocalError('Select a category.');
+      return;
+    }
+
     const payload: CreateSpendingPlanIncomeRequest & CreateSpendingPlanExpenseRequest = {
       name: name.trim(),
       description: description.trim() ? description.trim() : null,
       amount: minor,
       cadence,
-      type,
+      categoryId,
       tagIds
     };
 
@@ -146,9 +151,12 @@ export function LineItemFormModal({
                 options={spendingPlanCadences}
               />
 
-              {kind === 'income' && (
-                <SelectField<IncomeType> label="Income type" value={type} onChange={setType} options={incomeTypes} />
-              )}
+              <CategorySelect
+                label="Category"
+                value={categoryId}
+                onChange={setCategoryId}
+                kind={kind === 'income' ? 'Income' : 'Expense'}
+              />
 
               <TextField value={description} onChange={setDescription} className="w-full">
                 <Label className="mb-1 block text-sm">Description</Label>
@@ -164,7 +172,11 @@ export function LineItemFormModal({
               <Button slot="close" variant="outline">
                 Cancel
               </Button>
-              <Button onPress={handleSubmit} isPending={isPending} isDisabled={!name.trim() || !amount.trim()}>
+              <Button
+                onPress={handleSubmit}
+                isPending={isPending}
+                isDisabled={!name.trim() || !amount.trim() || categoryId === null}
+              >
                 {isEdit ? 'Save changes' : `Add ${noun}`}
               </Button>
             </Modal.Footer>

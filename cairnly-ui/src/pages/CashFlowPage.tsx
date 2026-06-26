@@ -35,8 +35,7 @@ interface StatTileProps {
 
 /** A centered headline figure with a caption, used for the cash-flow summary row. */
 function StatTile({ value, label, tone = 'neutral' }: StatTileProps) {
-  const valueClass =
-    tone === 'income' ? 'text-success' : tone === 'expense' ? 'text-danger' : 'text-foreground';
+  const valueClass = tone === 'income' ? 'text-success' : tone === 'expense' ? 'text-danger' : 'text-foreground';
 
   return (
     <Card className="bg-surface border border-border">

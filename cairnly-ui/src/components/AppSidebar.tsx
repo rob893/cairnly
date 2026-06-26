@@ -33,9 +33,7 @@ const navItems: NavItem[] = [
 function navLinkClass({ isActive }: { isActive: boolean }): string {
   return [
     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium transition-colors no-underline',
-    isActive
-      ? 'bg-surface-secondary text-foreground'
-      : 'text-muted hover:bg-surface-secondary/60 hover:text-foreground'
+    isActive ? 'bg-surface-secondary text-foreground' : 'text-muted hover:bg-surface-secondary/60 hover:text-foreground'
   ].join(' ');
 }
 
@@ -119,9 +117,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                 <Avatar color="accent" size="sm">
                   <Avatar.Fallback>{avatarInitial}</Avatar.Fallback>
                 </Avatar>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                  {user.userName}
-                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{user.userName}</span>
                 {menuOpen ? (
                   <ChevronUp className="size-4 shrink-0 text-muted" />
                 ) : (

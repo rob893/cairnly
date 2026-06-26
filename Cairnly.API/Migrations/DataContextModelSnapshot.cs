@@ -302,7 +302,7 @@ namespace Cairnly.API.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -382,7 +382,7 @@ namespace Cairnly.API.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -408,11 +408,6 @@ namespace Cairnly.API.Migrations
 
                     b.Property<int>("SpendingPlanId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -509,7 +504,7 @@ namespace Cairnly.API.Migrations
                     b.Property<long>("Amount")
                         .HasColumnType("bigint");
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -886,7 +881,8 @@ namespace Cairnly.API.Migrations
                     b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Cairnly.API.Models.Entities.SpendingPlan", "SpendingPlan")
                         .WithMany("Expenses")
@@ -931,7 +927,8 @@ namespace Cairnly.API.Migrations
                     b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Cairnly.API.Models.Entities.SpendingPlan", "SpendingPlan")
                         .WithMany("Incomes")
@@ -993,7 +990,8 @@ namespace Cairnly.API.Migrations
                     b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
                         .WithMany("Transactions")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Cairnly.API.Models.Entities.Transaction", "ParentTransaction")
                         .WithMany("Splits")

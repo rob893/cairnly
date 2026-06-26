@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Cairnly.API.Models.Entities;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Cairnly.API.Models.QueryParameters;
@@ -19,7 +18,4 @@ public sealed record SpendingPlanIncomeQueryParameters : OwnedEntityQueryParamet
 
     /// <summary>Gets an optional name filter (case-insensitive substring match).</summary>
     public string? Name { get; init; }
-
-    /// <summary>Gets an optional income type filter.</summary>
-    public IncomeType? Type { get; init; }
 }
