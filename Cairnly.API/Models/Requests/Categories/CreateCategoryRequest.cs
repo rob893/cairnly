@@ -14,6 +14,10 @@ public sealed record CreateCategoryRequest
     [MaxLength(255)]
     public string Name { get; init; } = default!;
 
+    /// <summary>Gets the optional icon (emoji) representing the category.</summary>
+    [MaxLength(16)]
+    public string? Icon { get; init; }
+
     /// <summary>Gets the kind of money movement this category groups.</summary>
     [Required]
     public CategoryKind Kind { get; init; }

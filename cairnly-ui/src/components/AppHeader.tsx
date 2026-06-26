@@ -1,7 +1,7 @@
 import { Button } from '@heroui/react';
 import { useAuth } from '../hooks/useAuth';
 import { usePageHeaderState } from '../hooks/usePageHeader';
-import { MenuIcon } from './icons/NavIcons';
+import { Menu } from 'lucide-react';
 
 /** Returns a time-of-day greeting ("Good morning/afternoon/evening"). */
 function greetingForHour(hour: number): string {
@@ -44,7 +44,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
           className="lg:hidden"
           onPress={onMenuClick}
         >
-          <MenuIcon className="size-5" />
+          <Menu className="size-5" />
         </Button>
 
         <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">{heading}</h1>

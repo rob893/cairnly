@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { Card, CardContent, CardHeader } from '@heroui/react';
 import { SelectField, type SelectOption } from '../SelectField';
 import { formatMoney } from '../../utils/money';
-import { TrendUpIcon } from '../icons/NavIcons';
+import { TrendingUp } from 'lucide-react';
 
 interface NetWorthCardProps {
   total: number;
@@ -52,7 +52,7 @@ export function NetWorthCard({ total, change, changePercent, series, currency }:
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <span className="text-3xl font-bold tabular-nums">{formatMoney(total, currency)}</span>
             <span className={`flex items-center gap-1 text-sm font-medium ${positive ? 'text-success' : 'text-danger'}`}>
-              <TrendUpIcon className="size-4" />
+              <TrendingUp className="size-4" />
               {formatMoney(change, currency)} ({changePercent.toFixed(1)}%)
             </span>
             <span className="text-sm text-muted">1 month change</span>

@@ -25,6 +25,10 @@ public sealed class Category : IIdentifiable<int>, IOwnedByUser<int>, IAuditable
     [MaxLength(255)]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Gets or sets an optional icon (emoji) representing the category.</summary>
+    [MaxLength(16)]
+    public string? Icon { get; set; }
+
     /// <summary>Gets or sets the optional parent category ID for hierarchical categories.</summary>
     public int? ParentId { get; set; }
 

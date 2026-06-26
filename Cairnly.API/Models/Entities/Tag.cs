@@ -6,7 +6,7 @@ namespace Cairnly.API.Models.Entities;
 
 /// <summary>
 /// Represents a generic, free-form label owned by a user. Tags can be applied to any taggable
-/// entity (currently transactions; budgets, expenses, and other entities in the future).
+/// entity (currently transactions; spendingPlans, expenses, and other entities in the future).
 /// </summary>
 public sealed class Tag : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntity
 {
@@ -42,13 +42,13 @@ public sealed class Tag : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntit
 
     /// <summary>
     /// Gets or sets the transaction-tag join rows. This is the transaction-specific link; future
-    /// taggable entities (e.g. budgets) would add their own join collections.
+    /// taggable entities (e.g. spendingPlans) would add their own join collections.
     /// </summary>
     public List<TransactionTag> TransactionTags { get; set; } = [];
 
-    /// <summary>Gets or sets the budget-income-tag join rows.</summary>
-    public List<BudgetIncomeTag> BudgetIncomeTags { get; set; } = [];
+    /// <summary>Gets or sets the spendingPlan-income-tag join rows.</summary>
+    public List<SpendingPlanIncomeTag> SpendingPlanIncomeTags { get; set; } = [];
 
-    /// <summary>Gets or sets the budget-expense-tag join rows.</summary>
-    public List<BudgetExpenseTag> BudgetExpenseTags { get; set; } = [];
+    /// <summary>Gets or sets the spendingPlan-expense-tag join rows.</summary>
+    public List<SpendingPlanExpenseTag> SpendingPlanExpenseTags { get; set; } = [];
 }

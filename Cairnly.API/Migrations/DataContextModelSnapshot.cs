@@ -91,223 +91,6 @@ namespace Cairnly.API.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("Cairnly.API.Models.Entities.Budget", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<Dictionary<string, object>>("Metadata")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Budgets");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetExpense", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("Amount")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("BudgetId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Cadence")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<Dictionary<string, object>>("Metadata")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BudgetId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId", "BudgetId");
-
-                    b.ToTable("BudgetExpenses");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetExpenseTag", b =>
-                {
-                    b.Property<int>("BudgetExpenseId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TagId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("BudgetExpenseId", "TagId");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("BudgetExpenseTag");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetIncome", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("Amount")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("BudgetId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Cadence")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<Dictionary<string, object>>("Metadata")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BudgetId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId", "BudgetId");
-
-                    b.ToTable("BudgetIncomes");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetIncomeTag", b =>
-                {
-                    b.Property<int>("BudgetIncomeId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TagId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("BudgetIncomeId", "TagId");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("BudgetIncomeTag");
-                });
-
             modelBuilder.Entity("Cairnly.API.Models.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -323,6 +106,10 @@ namespace Cairnly.API.Migrations
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
 
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean");
@@ -445,6 +232,223 @@ namespace Cairnly.API.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<Dictionary<string, object>>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SpendingPlans");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanExpense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Cadence")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<Dictionary<string, object>>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("SpendingPlanId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("SpendingPlanId");
+
+                    b.HasIndex("UserId", "SpendingPlanId");
+
+                    b.ToTable("SpendingPlanExpenses");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanExpenseTag", b =>
+                {
+                    b.Property<int>("SpendingPlanExpenseId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SpendingPlanExpenseId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("SpendingPlanExpenseTag");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanIncome", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Cadence")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<Dictionary<string, object>>("Metadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("SpendingPlanId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("SpendingPlanId");
+
+                    b.HasIndex("UserId", "SpendingPlanId");
+
+                    b.ToTable("SpendingPlanIncomes");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanIncomeTag", b =>
+                {
+                    b.Property<int>("SpendingPlanIncomeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SpendingPlanIncomeId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("SpendingPlanIncomeTag");
                 });
 
             modelBuilder.Entity("Cairnly.API.Models.Entities.Tag", b =>
@@ -826,107 +830,6 @@ namespace Cairnly.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Cairnly.API.Models.Entities.Budget", b =>
-                {
-                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
-                        .WithMany("Budgets")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetExpense", b =>
-                {
-                    b.HasOne("Cairnly.API.Models.Entities.Budget", "Budget")
-                        .WithMany("Expenses")
-                        .HasForeignKey("BudgetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Budget");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetExpenseTag", b =>
-                {
-                    b.HasOne("Cairnly.API.Models.Entities.BudgetExpense", "BudgetExpense")
-                        .WithMany("BudgetExpenseTags")
-                        .HasForeignKey("BudgetExpenseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cairnly.API.Models.Entities.Tag", "Tag")
-                        .WithMany("BudgetExpenseTags")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BudgetExpense");
-
-                    b.Navigation("Tag");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetIncome", b =>
-                {
-                    b.HasOne("Cairnly.API.Models.Entities.Budget", "Budget")
-                        .WithMany("Incomes")
-                        .HasForeignKey("BudgetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Budget");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetIncomeTag", b =>
-                {
-                    b.HasOne("Cairnly.API.Models.Entities.BudgetIncome", "BudgetIncome")
-                        .WithMany("BudgetIncomeTags")
-                        .HasForeignKey("BudgetIncomeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cairnly.API.Models.Entities.Tag", "Tag")
-                        .WithMany("BudgetIncomeTags")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BudgetIncome");
-
-                    b.Navigation("Tag");
-                });
-
             modelBuilder.Entity("Cairnly.API.Models.Entities.Category", b =>
                 {
                     b.HasOne("Cairnly.API.Models.Entities.Category", "Parent")
@@ -965,6 +868,107 @@ namespace Cairnly.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlan", b =>
+                {
+                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
+                        .WithMany("SpendingPlans")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanExpense", b =>
+                {
+                    b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cairnly.API.Models.Entities.SpendingPlan", "SpendingPlan")
+                        .WithMany("Expenses")
+                        .HasForeignKey("SpendingPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("SpendingPlan");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanExpenseTag", b =>
+                {
+                    b.HasOne("Cairnly.API.Models.Entities.SpendingPlanExpense", "SpendingPlanExpense")
+                        .WithMany("SpendingPlanExpenseTags")
+                        .HasForeignKey("SpendingPlanExpenseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cairnly.API.Models.Entities.Tag", "Tag")
+                        .WithMany("SpendingPlanExpenseTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SpendingPlanExpense");
+
+                    b.Navigation("Tag");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanIncome", b =>
+                {
+                    b.HasOne("Cairnly.API.Models.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cairnly.API.Models.Entities.SpendingPlan", "SpendingPlan")
+                        .WithMany("Incomes")
+                        .HasForeignKey("SpendingPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cairnly.API.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("SpendingPlan");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanIncomeTag", b =>
+                {
+                    b.HasOne("Cairnly.API.Models.Entities.SpendingPlanIncome", "SpendingPlanIncome")
+                        .WithMany("SpendingPlanIncomeTags")
+                        .HasForeignKey("SpendingPlanIncomeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cairnly.API.Models.Entities.Tag", "Tag")
+                        .WithMany("SpendingPlanIncomeTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SpendingPlanIncome");
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("Cairnly.API.Models.Entities.Tag", b =>
@@ -1101,23 +1105,6 @@ namespace Cairnly.API.Migrations
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("Cairnly.API.Models.Entities.Budget", b =>
-                {
-                    b.Navigation("Expenses");
-
-                    b.Navigation("Incomes");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetExpense", b =>
-                {
-                    b.Navigation("BudgetExpenseTags");
-                });
-
-            modelBuilder.Entity("Cairnly.API.Models.Entities.BudgetIncome", b =>
-                {
-                    b.Navigation("BudgetIncomeTags");
-                });
-
             modelBuilder.Entity("Cairnly.API.Models.Entities.Category", b =>
                 {
                     b.Navigation("Children");
@@ -1130,11 +1117,28 @@ namespace Cairnly.API.Migrations
                     b.Navigation("UserRoles");
                 });
 
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlan", b =>
+                {
+                    b.Navigation("Expenses");
+
+                    b.Navigation("Incomes");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanExpense", b =>
+                {
+                    b.Navigation("SpendingPlanExpenseTags");
+                });
+
+            modelBuilder.Entity("Cairnly.API.Models.Entities.SpendingPlanIncome", b =>
+                {
+                    b.Navigation("SpendingPlanIncomeTags");
+                });
+
             modelBuilder.Entity("Cairnly.API.Models.Entities.Tag", b =>
                 {
-                    b.Navigation("BudgetExpenseTags");
+                    b.Navigation("SpendingPlanExpenseTags");
 
-                    b.Navigation("BudgetIncomeTags");
+                    b.Navigation("SpendingPlanIncomeTags");
 
                     b.Navigation("TransactionTags");
                 });
@@ -1150,8 +1154,6 @@ namespace Cairnly.API.Migrations
                 {
                     b.Navigation("Accounts");
 
-                    b.Navigation("Budgets");
-
                     b.Navigation("Categories");
 
                     b.Navigation("LinkedAccounts");
@@ -1159,6 +1161,8 @@ namespace Cairnly.API.Migrations
                     b.Navigation("Preferences");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("SpendingPlans");
 
                     b.Navigation("Tags");
 

@@ -1,7 +1,7 @@
 namespace Cairnly.API.Models.Entities;
 
 /// <summary>
-/// Classifies the source/type of a budget income line item.
+/// Classifies the source/type of a spendingPlan income line item.
 /// </summary>
 public enum IncomeType
 {

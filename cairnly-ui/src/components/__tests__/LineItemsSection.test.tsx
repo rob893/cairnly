@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LineItemsSection } from '../budgets/LineItemsSection';
-import type { BudgetExpense } from '../../types/budgets';
+import { LineItemsSection } from '../spendingPlans/LineItemsSection';
+import type { SpendingPlanExpense } from '../../types/spendingPlans';
 import type { Tag } from '../../types/tags';
 
-const expenses: BudgetExpense[] = [
+const expenses: SpendingPlanExpense[] = [
   {
     id: 1,
     userId: 1,
-    budgetId: 1,
+    spendingPlanId: 1,
     name: 'Taxable Brokerage',
     description: 'Weekly auto-invest',
     amount: 50000,
@@ -23,7 +23,7 @@ const expenses: BudgetExpense[] = [
   {
     id: 2,
     userId: 1,
-    budgetId: 1,
+    spendingPlanId: 1,
     name: 'Netflix',
     description: null,
     amount: 500,
@@ -53,9 +53,9 @@ const idleQuery = {
 
 const idleMutation = { mutateAsync: vi.fn(), isPending: false, error: null, reset: vi.fn() };
 
-vi.mock('../../hooks/budgets', () => ({
-  useBudgetIncomes: () => idleQuery,
-  useBudgetExpenses: () => ({ ...idleQuery, data: { pages: [{ nodes: expenses }] } }),
+vi.mock('../../hooks/spendingPlans', () => ({
+  useSpendingPlanIncomes: () => idleQuery,
+  useSpendingPlanExpenses: () => ({ ...idleQuery, data: { pages: [{ nodes: expenses }] } }),
   useCreateIncome: () => idleMutation,
   useUpdateIncome: () => idleMutation,
   useDeleteIncome: () => idleMutation,
@@ -92,7 +92,7 @@ beforeAll(() => {
 
 describe('LineItemsSection (HeroUI Table)', () => {
   it('renders the expense cadence-cost columns with normalized values', () => {
-    render(<LineItemsSection kind="expense" budgetId={1} currency="USD" />);
+    render(<LineItemsSection kind="expense" spendingPlanId={1} currency="USD" />);
 
     // Column headers from the HeroUI table.
     expect(screen.getByText('Frequency')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('LineItemsSection (HeroUI Table)', () => {
   });
 
   it('exposes the search box and add button', () => {
-    render(<LineItemsSection kind="expense" budgetId={1} currency="USD" />);
+    render(<LineItemsSection kind="expense" spendingPlanId={1} currency="USD" />);
 
     expect(screen.getByRole('searchbox', { name: /search expense/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add expense' })).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('LineItemsSection (HeroUI Table)', () => {
 
   it('opens the details modal when the in-cell details button is pressed', async () => {
     const user = userEvent.setup();
-    render(<LineItemsSection kind="expense" budgetId={1} currency="USD" />);
+    render(<LineItemsSection kind="expense" spendingPlanId={1} currency="USD" />);
 
     await user.click(screen.getByRole('button', { name: 'View Taxable Brokerage details' }));
 
@@ -127,7 +127,7 @@ describe('LineItemsSection (HeroUI Table)', () => {
 
   it('searches by tag name', async () => {
     const user = userEvent.setup();
-    render(<LineItemsSection kind="expense" budgetId={1} currency="USD" />);
+    render(<LineItemsSection kind="expense" spendingPlanId={1} currency="USD" />);
 
     await user.type(screen.getByRole('searchbox', { name: /search expense/i }), 'subscription');
 

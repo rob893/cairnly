@@ -1,7 +1,7 @@
 /**
  * Helpers for working with money amounts expressed as integer **minor units**
  * (e.g. cents) in a given ISO 4217 currency, matching the API contract where all
- * budget amounts are stored and transmitted as `long` minor units.
+ * spendingPlan amounts are stored and transmitted as `long` minor units.
  */
 
 /** Cache of minor-unit fraction digits per currency to avoid rebuilding formatters. */

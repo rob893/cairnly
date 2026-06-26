@@ -63,7 +63,7 @@ export function RegisterPage() {
   return (
     <AuthShell
       heading="Create your account"
-      subheading="Start tracking budgets, accounts, and spending in minutes."
+      subheading="Start tracking spending plans, accounts, and spending in minutes."
       topPrompt={
         <>
           Already have an account?

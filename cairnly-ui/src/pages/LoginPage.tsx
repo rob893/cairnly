@@ -52,7 +52,7 @@ export function LoginPage() {
           Financial clarity for the <span className="cairnly-text-gradient">long journey</span>.
         </>
       }
-      brandSubtitle="Budgets, accounts, and spending in one calm, clear place. Build wealth one marker at a time."
+      brandSubtitle="SpendingPlans, accounts, and spending in one calm, clear place. Build wealth one marker at a time."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ApiErrorDisplay error={error} title="Login Failed" showDetails={showErrorDetails} />}

@@ -12,9 +12,9 @@ const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.H
 const AccountsPage = lazy(() => import('./pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
 const CashFlowPage = lazy(() => import('./pages/CashFlowPage').then(m => ({ default: m.CashFlowPage })));
-const BudgetsPage = lazy(() => import('./pages/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
-const BudgetDetailPage = lazy(() => import('./pages/BudgetDetailPage').then(m => ({ default: m.BudgetDetailPage })));
-const AccountPage = lazy(() => import('./pages/AccountPage').then(m => ({ default: m.AccountPage })));
+const SpendingPlansPage = lazy(() => import('./pages/SpendingPlansPage').then(m => ({ default: m.SpendingPlansPage })));
+const SpendingPlanDetailPage = lazy(() => import('./pages/SpendingPlanDetailPage').then(m => ({ default: m.SpendingPlanDetailPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage').then(m => ({ default: m.OAuthCallbackPage })));
@@ -89,31 +89,31 @@ function App() {
               }
             />
             <Route
-              path={routePaths.budgets}
+              path={routePaths.spendingPlans}
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <BudgetsPage />
+                    <SpendingPlansPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
             />
             <Route
-              path={routePaths.budgetDetail}
+              path={routePaths.spendingPlanDetail}
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <BudgetDetailPage />
+                    <SpendingPlanDetailPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
             />
             <Route
-              path={routePaths.account}
+              path={routePaths.settings}
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <AccountPage />
+                    <SettingsPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

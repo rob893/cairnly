@@ -94,6 +94,7 @@ public sealed class CategoryService : ICategoryService
         {
             UserId = this.currentUserService.UserId,
             Name = request.Name,
+            Icon = request.Icon,
             Kind = request.Kind,
             ParentId = request.ParentId,
             IsSystem = false,
@@ -142,6 +143,7 @@ public sealed class CategoryService : ICategoryService
         }
 
         category.Name = request.Name;
+        category.Icon = request.Icon;
         category.Kind = request.Kind;
         category.ParentId = request.ParentId;
         category.Metadata = request.Metadata ?? [];

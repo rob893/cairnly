@@ -1,4 +1,4 @@
-import type { BudgetCadence, CadenceAmounts } from '../types/budgets';
+import type { SpendingPlanCadence, CadenceAmounts } from '../types/spendingPlans';
 
 /** Number of days, weeks, and months per year used to normalize amounts. */
 const DAYS_PER_YEAR = 365;
@@ -7,10 +7,10 @@ const MONTHS_PER_YEAR = 12;
 
 /**
  * The number of times a cadence occurs per year, mirroring the API's
- * `BudgetCadenceExtensions.PeriodsPerYear` so client-side cost breakdowns match
+ * `SpendingPlanCadenceExtensions.PeriodsPerYear` so client-side cost breakdowns match
  * the server's normalized summary.
  */
-export function periodsPerYear(cadence: BudgetCadence): number {
+export function periodsPerYear(cadence: SpendingPlanCadence): number {
   switch (cadence) {
     case 'Daily':
       return DAYS_PER_YEAR;
@@ -38,13 +38,13 @@ export function periodsPerYear(cadence: BudgetCadence): number {
  * The annual cost is `amount * periodsPerYear(cadence)`; the other columns divide
  * that annual figure by the number of days/weeks/months in a year. Amounts stay
  * in minor units and may be fractional — formatting rounds for display, matching
- * how the budget summary is presented.
+ * how the spendingPlan summary is presented.
  *
  * @param amount The per-period amount in integer minor units.
  * @param cadence The line item's recurrence cadence.
  * @returns The cost normalized across cadence columns, in (possibly fractional) minor units.
  */
-export function cadenceBreakdown(amount: number, cadence: BudgetCadence): CadenceAmounts {
+export function cadenceBreakdown(amount: number, cadence: SpendingPlanCadence): CadenceAmounts {
   const annual = amount * periodsPerYear(cadence);
 
   return {

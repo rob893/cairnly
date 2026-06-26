@@ -1,6 +1,6 @@
 import type { CursorPaginationQueryParameters } from './models';
 
-/** A user-scoped tag that can be linked to budget income/expense line items. */
+/** A user-scoped tag that can be linked to spendingPlan income/expense line items. */
 export interface Tag {
   id: number;
   userId: number;

@@ -18,6 +18,9 @@ public sealed record CategoryDto : IIdentifiable<int>, IOwnedByUser<int>
     /// <summary>Gets the category name.</summary>
     public required string Name { get; init; }
 
+    /// <summary>Gets the optional icon (emoji) representing the category.</summary>
+    public string? Icon { get; init; }
+
     /// <summary>Gets the optional parent category ID.</summary>
     public int? ParentId { get; init; }
 
@@ -50,6 +53,7 @@ public sealed record CategoryDto : IIdentifiable<int>, IOwnedByUser<int>
             Id = category.Id,
             UserId = category.UserId,
             Name = category.Name,
+            Icon = category.Icon,
             ParentId = category.ParentId,
             Kind = category.Kind,
             IsSystem = category.IsSystem,

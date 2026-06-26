@@ -1,4 +1,4 @@
-import type { CadenceAmounts } from '../types/budgets';
+import type { CadenceAmounts } from '../types/spendingPlans';
 import type { SelectOption } from '../components/SelectField';
 
 /** The normalized cadence keys the dashboard can display. */

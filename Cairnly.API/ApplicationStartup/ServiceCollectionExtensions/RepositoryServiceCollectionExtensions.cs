@@ -23,9 +23,9 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
-        services.AddScoped<IBudgetRepository, BudgetRepository>();
-        services.AddScoped<IBudgetIncomeRepository, BudgetIncomeRepository>();
-        services.AddScoped<IBudgetExpenseRepository, BudgetExpenseRepository>();
+        services.AddScoped<ISpendingPlanRepository, SpendingPlanRepository>();
+        services.AddScoped<ISpendingPlanIncomeRepository, SpendingPlanIncomeRepository>();
+        services.AddScoped<ISpendingPlanExpenseRepository, SpendingPlanExpenseRepository>();
         services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
         return services;

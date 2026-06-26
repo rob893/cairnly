@@ -16,10 +16,6 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: vi.fn()
 }));
 
-vi.mock('../ThemeToggle', () => ({
-  ThemeToggle: () => null
-}));
-
 /** Builds a complete auth context value, overriding only the fields under test. */
 function makeAuth(overrides: Partial<ReturnType<typeof useAuth>>): ReturnType<typeof useAuth> {
   return {
@@ -83,11 +79,11 @@ describe('AppSidebar', () => {
     );
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Budgets' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Spending Plans' })).toBeInTheDocument();
     expect(screen.getByText('alice')).toBeInTheDocument();
   });
 
-  it('navigates to the account page from the profile menu', async () => {
+  it('navigates to the settings page from the profile menu', async () => {
     vi.mocked(useAuth).mockReturnValue(
       makeAuth({
         isAuthenticated: true,
@@ -103,9 +99,9 @@ describe('AppSidebar', () => {
     );
 
     await user.click(screen.getByRole('button', { name: /profile menu/i }));
-    await user.click(await screen.findByRole('menuitem', { name: /account/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /settings/i }));
 
-    expect(navigateMock).toHaveBeenCalledWith('/account');
+    expect(navigateMock).toHaveBeenCalledWith('/settings');
   });
 
   it('signs out through the profile menu', async () => {

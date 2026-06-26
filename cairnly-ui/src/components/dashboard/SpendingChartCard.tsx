@@ -5,7 +5,7 @@ import { formatMoney } from '../../utils/money';
 import type { DashboardCadence } from '../../utils/dashboard';
 import { dashboardCadenceOptions } from '../../utils/dashboard';
 
-/** A single budget's normalized income/expenses for the charted cadence (major units). */
+/** A single spendingPlan's normalized income/expenses for the charted cadence (major units). */
 export interface SpendingDatum {
   name: string;
   income: number;
@@ -60,7 +60,7 @@ function ChartTooltip({
 }
 
 /**
- * A bar chart comparing normalized income and expenses for each budget at the
+ * A bar chart comparing normalized income and expenses for each spendingPlan at the
  * selected cadence, with a cadence selector in the header.
  */
 export function SpendingChartCard({ data, currency, cadence, onCadenceChange }: SpendingChartCardProps) {
@@ -69,7 +69,7 @@ export function SpendingChartCard({ data, currency, cadence, onCadenceChange }: 
       <CardHeader className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
         <div>
           <h2 className="text-lg font-semibold">Income vs expenses</h2>
-          <p className="text-sm text-muted">Normalized per budget at the selected cadence.</p>
+          <p className="text-sm text-muted">Normalized per spending plan at the selected cadence.</p>
         </div>
         <div className="w-40">
           <SelectField

@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '../icons/NavIcons';
+import { ChevronDown } from 'lucide-react';
 import { formatMoney } from '../../utils/money';
 import { mockTransactionGroups, mockTransactionsCurrency } from '../../constants/mockTransactions';
 
@@ -63,7 +63,7 @@ export function TransactionsList() {
 
                     <div className="flex items-center justify-end gap-2">
                       <span className={`text-sm font-semibold tabular-nums ${amount.className}`}>{amount.text}</span>
-                      <ChevronDownIcon className="size-4 -rotate-90 text-muted" />
+                      <ChevronDown className="size-4 -rotate-90 text-muted" />
                     </div>
                   </li>
                 );

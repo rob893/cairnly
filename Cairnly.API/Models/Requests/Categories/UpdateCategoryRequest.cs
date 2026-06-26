@@ -15,6 +15,10 @@ public sealed record UpdateCategoryRequest
     [MaxLength(255)]
     public string Name { get; init; } = default!;
 
+    /// <summary>Gets the optional icon (emoji) representing the category.</summary>
+    [MaxLength(16)]
+    public string? Icon { get; init; }
+
     /// <summary>Gets the kind of money movement this category groups.</summary>
     [Required]
     public CategoryKind Kind { get; init; }
@@ -38,6 +42,7 @@ public sealed record UpdateCategoryRequest
         return new UpdateCategoryRequest
         {
             Name = category.Name,
+            Icon = category.Icon,
             Kind = category.Kind,
             ParentId = category.ParentId,
             Metadata = category.Metadata

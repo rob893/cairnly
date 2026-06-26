@@ -1,25 +1,26 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, Button, Spinner, Chip } from '@heroui/react';
+import { CircleCheck, CircleX } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { GitHubIcon, GoogleIcon } from '../components/oauthIcons';
 import { handleOAuthCallbackFromUrl, type OAuthProvider } from '../utils/oauthUtils';
 
+/** Chip/Spinner accent color for a given step. */
+type StepColor = 'accent' | 'success' | 'danger';
+
 interface ProviderConfig {
   name: string;
   icon: React.JSX.Element;
-  chipColor: 'default' | 'accent' | 'danger' | 'success' | 'warning';
 }
 
 const providerConfigs: Record<OAuthProvider, ProviderConfig> = {
   github: {
     name: 'GitHub',
-    chipColor: 'default',
     icon: <GitHubIcon className="w-8 h-8 text-foreground" />
   },
   google: {
     name: 'Google',
-    chipColor: 'accent',
     icon: <GoogleIcon className="w-8 h-8" />
   }
 };
@@ -67,9 +68,7 @@ export function OAuthCallbackPage({ provider }: { provider: OAuthProvider }) {
           setStep('error');
           return;
         }
-
         setStep('exchanging');
-        await new Promise(resolve => setTimeout(resolve, 500));
         setStep('authenticating');
 
         if (provider === 'github') {
@@ -79,7 +78,7 @@ export function OAuthCallbackPage({ provider }: { provider: OAuthProvider }) {
         }
 
         setStep('success');
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 800)); // Show success state
         navigate('/dashboard', { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : `${providerConfig?.name || 'OAuth'} login failed`);
@@ -92,31 +91,68 @@ export function OAuthCallbackPage({ provider }: { provider: OAuthProvider }) {
     processCallback();
   }, [loginWithGitHub, loginWithGoogle, navigate, provider, providerConfig?.name]);
 
-  const stepLabel = {
-    processing: 'Processing Callback',
-    exchanging: 'Exchanging Tokens',
-    authenticating: 'Authenticating',
-    success: 'Login Successful!',
-    error: 'Login Failed'
-  }[step];
+  const getStepInfo = (): { title: string; description: string; icon: React.JSX.Element; color: StepColor } => {
+    const providerName = providerConfig?.name || 'OAuth';
 
-  const stepDesc = {
-    processing: `Validating ${providerConfig?.name || 'OAuth'} authorization...`,
-    exchanging: 'Securely exchanging authorization code...',
-    authenticating: 'Completing your login...',
-    success: 'Redirecting you now...',
-    error: `Something went wrong during the ${providerConfig?.name || 'OAuth'} login process.`
-  }[step];
+    switch (step) {
+      case 'processing':
+        return {
+          title: 'Processing Callback',
+          description: `Validating ${providerName} authorization...`,
+          icon: <Spinner size="lg" color="accent" />,
+          color: 'accent'
+        };
+      case 'exchanging':
+        return {
+          title: 'Exchanging Tokens',
+          description: 'Securely exchanging authorization code...',
+          icon: <Spinner size="lg" color="accent" />,
+          color: 'accent'
+        };
+      case 'authenticating':
+        return {
+          title: 'Authenticating',
+          description: 'Completing your login to Cairnly...',
+          icon: <Spinner size="lg" color="accent" />,
+          color: 'accent'
+        };
+      case 'success':
+        return {
+          title: 'Login Successful!',
+          description: 'Welcome to Cairnly! Redirecting you now...',
+          icon: <CircleCheck className="w-16 h-16 text-success" />,
+          color: 'success'
+        };
+      case 'error':
+        return {
+          title: 'Login Failed',
+          description: `Something went wrong during the ${providerName} login process.`,
+          icon: <CircleX className="w-16 h-16 text-danger" />,
+          color: 'danger'
+        };
+      default:
+        return {
+          title: 'Processing...',
+          description: 'Please wait...',
+          icon: <Spinner size="lg" color="accent" />,
+          color: 'accent'
+        };
+    }
+  };
+
+  const stepInfo = getStepInfo();
 
   if (!providerConfig) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+      <div className="min-h-screen bg-linear-to-br from-background via-surface to-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-2xl border border-border">
           <CardContent className="px-8 py-8 text-center">
-            <span className="text-5xl mb-4 block">❌</span>
+            <CircleX className="w-16 h-16 text-danger mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-foreground mb-2">Invalid Provider</h2>
-            <p className="text-default-600 mb-6">Unsupported OAuth provider: {provider}</p>
-            <Button fullWidth onPress={() => navigate('/login')}>Return to Login</Button>
+            <p className="text-muted mb-6">Unsupported OAuth provider: {provider}</p>
+            <Button fullWidth size="lg" className="font-semibold" onPress={() => navigate('/login', { replace: true })}>
+              Return to Login
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -124,52 +160,59 @@ export function OAuthCallbackPage({ provider }: { provider: OAuthProvider }) {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-content1 to-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="min-h-screen bg-linear-to-br from-background via-surface to-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-2xl border border-border">
         <CardHeader className="flex flex-col items-center pb-6 pt-8">
-          <div className="mb-4 p-3 rounded-full bg-content2 border border-divider">{providerConfig.icon}</div>
-          <Chip color={providerConfig.chipColor} variant="soft">{providerConfig.name} Authentication</Chip>
+          {/* Provider icon */}
+          <div className="mb-4 p-3 rounded-full bg-surface-secondary border border-border">{providerConfig.icon}</div>
+
+          <Chip color={stepInfo.color} variant="soft" className="font-medium mb-2">
+            {providerConfig.name} Authentication
+          </Chip>
         </CardHeader>
 
         <CardContent className="px-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            {step === 'success' ? <span className="text-5xl">✅</span>
-              : step === 'error' ? <span className="text-5xl">❌</span>
-              : <Spinner size="lg" color="accent" />}
-          </div>
+          {/* Status icon */}
+          <div className="flex justify-center mb-6">{stepInfo.icon}</div>
 
+          {/* Status text */}
           <div className="space-y-3 mb-6">
-            <h2 className="text-2xl font-bold text-foreground">{stepLabel}</h2>
-            <p className="text-default-600 text-lg">{stepDesc}</p>
+            <h2 className="text-2xl font-bold text-foreground">{stepInfo.title}</h2>
+            <p className="text-muted text-lg">{stepInfo.description}</p>
           </div>
 
+          {/* Progress steps */}
           {isLoading && step !== 'error' && (
             <div className="flex justify-center items-center space-x-2 mb-6">
-              {['processing', 'exchanging', 'authenticating'].map((_s, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-colors ${['processing', 'exchanging', 'authenticating', 'success'].indexOf(step) >= i ? 'bg-primary' : 'bg-content3'}`}
-                />
-              ))}
-              <div className={`w-2 h-2 rounded-full ${step === 'success' ? 'bg-success' : 'bg-content3'}`} />
+              <div
+                className={`w-2 h-2 rounded-full ${['processing', 'exchanging', 'authenticating', 'success'].includes(step) ? 'bg-accent' : 'bg-surface-secondary'}`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full ${['exchanging', 'authenticating', 'success'].includes(step) ? 'bg-accent' : 'bg-surface-secondary'}`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full ${['authenticating', 'success'].includes(step) ? 'bg-accent' : 'bg-surface-secondary'}`}
+              />
+              <div className={`w-2 h-2 rounded-full ${step === 'success' ? 'bg-success' : 'bg-surface-secondary'}`} />
             </div>
           )}
 
+          {/* Error details */}
           {error && step === 'error' && (
             <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-lg">
               <p className="text-danger text-sm font-medium">{error}</p>
             </div>
           )}
 
+          {/* Action button for error state */}
           {step === 'error' && (
-            <Button fullWidth className="font-semibold" onPress={() => navigate('/login')}>
+            <Button fullWidth size="lg" className="font-semibold" onPress={() => navigate('/login', { replace: true })}>
               Return to Login
             </Button>
           )}
 
-          {isLoading && step !== 'error' && (
-            <p className="text-sm text-default-500">This may take a few moments...</p>
-          )}
+          {/* Loading state message */}
+          {isLoading && step !== 'error' && <p className="text-sm text-muted">This may take a few moments...</p>}
         </CardContent>
       </Card>
     </div>

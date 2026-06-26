@@ -53,14 +53,14 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
     /// <summary>Gets the transactions DbSet.</summary>
     public DbSet<Transaction> Transactions => this.Set<Transaction>();
 
-    /// <summary>Gets the budgets DbSet.</summary>
-    public DbSet<Budget> Budgets => this.Set<Budget>();
+    /// <summary>Gets the spendingPlans DbSet.</summary>
+    public DbSet<SpendingPlan> SpendingPlans => this.Set<SpendingPlan>();
 
-    /// <summary>Gets the budget income line items DbSet.</summary>
-    public DbSet<BudgetIncome> BudgetIncomes => this.Set<BudgetIncome>();
+    /// <summary>Gets the spendingPlan income line items DbSet.</summary>
+    public DbSet<SpendingPlanIncome> SpendingPlanIncomes => this.Set<SpendingPlanIncome>();
 
-    /// <summary>Gets the budget expense line items DbSet.</summary>
-    public DbSet<BudgetExpense> BudgetExpenses => this.Set<BudgetExpense>();
+    /// <summary>Gets the spendingPlan expense line items DbSet.</summary>
+    public DbSet<SpendingPlanExpense> SpendingPlanExpenses => this.Set<SpendingPlanExpense>();
 
     /// <summary>Gets the transaction-tag join DbSet.</summary>
     public DbSet<TransactionTag> TransactionTags => this.Set<TransactionTag>();
@@ -157,6 +157,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
 
         builder.Entity<Category>(category =>
         {
+            category.Property(c => c.Icon).HasMaxLength(16);
             category.Property(c => c.Kind).HasConversion<string>().HasMaxLength(16);
             category.Property(c => c.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);
             category.Property(c => c.CreatedAt).HasDefaultValueSql("now()");
@@ -243,22 +244,22 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<Budget>(budget =>
+        builder.Entity<SpendingPlan>(spendingPlan =>
         {
-            budget.Property(b => b.Currency).HasMaxLength(3);
-            budget.Property(b => b.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);
-            budget.Property(b => b.CreatedAt).HasDefaultValueSql("now()");
-            budget.Property(b => b.UpdatedAt).HasDefaultValueSql("now()");
+            spendingPlan.Property(b => b.Currency).HasMaxLength(3);
+            spendingPlan.Property(b => b.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);
+            spendingPlan.Property(b => b.CreatedAt).HasDefaultValueSql("now()");
+            spendingPlan.Property(b => b.UpdatedAt).HasDefaultValueSql("now()");
 
-            budget.HasIndex(b => b.UserId);
+            spendingPlan.HasIndex(b => b.UserId);
 
-            budget.HasOne(b => b.User)
-                .WithMany(u => u.Budgets)
+            spendingPlan.HasOne(b => b.User)
+                .WithMany(u => u.SpendingPlans)
                 .HasForeignKey(b => b.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<BudgetIncome>(income =>
+        builder.Entity<SpendingPlanIncome>(income =>
         {
             income.Property(i => i.Type).HasConversion<string>().HasMaxLength(32);
             income.Property(i => i.Cadence).HasConversion<string>().HasMaxLength(16);
@@ -266,7 +267,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             income.Property(i => i.CreatedAt).HasDefaultValueSql("now()");
             income.Property(i => i.UpdatedAt).HasDefaultValueSql("now()");
 
-            income.HasIndex(i => new { i.UserId, i.BudgetId });
+            income.HasIndex(i => new { i.UserId, i.SpendingPlanId });
             income.HasIndex(i => i.CategoryId);
 
             income.HasOne(i => i.User)
@@ -274,9 +275,9 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
                 .HasForeignKey(i => i.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            income.HasOne(i => i.Budget)
+            income.HasOne(i => i.SpendingPlan)
                 .WithMany(b => b.Incomes)
-                .HasForeignKey(i => i.BudgetId)
+                .HasForeignKey(i => i.SpendingPlanId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             income.HasOne(i => i.Category)
@@ -285,14 +286,14 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        builder.Entity<BudgetExpense>(expense =>
+        builder.Entity<SpendingPlanExpense>(expense =>
         {
             expense.Property(e => e.Cadence).HasConversion<string>().HasMaxLength(16);
             expense.Property(e => e.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);
             expense.Property(e => e.CreatedAt).HasDefaultValueSql("now()");
             expense.Property(e => e.UpdatedAt).HasDefaultValueSql("now()");
 
-            expense.HasIndex(e => new { e.UserId, e.BudgetId });
+            expense.HasIndex(e => new { e.UserId, e.SpendingPlanId });
             expense.HasIndex(e => e.CategoryId);
 
             expense.HasOne(e => e.User)
@@ -300,9 +301,9 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            expense.HasOne(e => e.Budget)
+            expense.HasOne(e => e.SpendingPlan)
                 .WithMany(b => b.Expenses)
-                .HasForeignKey(e => e.BudgetId)
+                .HasForeignKey(e => e.SpendingPlanId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             expense.HasOne(e => e.Category)
@@ -311,36 +312,36 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        builder.Entity<BudgetIncomeTag>(incomeTag =>
+        builder.Entity<SpendingPlanIncomeTag>(incomeTag =>
         {
-            incomeTag.HasKey(it => new { it.BudgetIncomeId, it.TagId });
+            incomeTag.HasKey(it => new { it.SpendingPlanIncomeId, it.TagId });
 
             incomeTag.HasIndex(it => it.TagId);
 
-            incomeTag.HasOne(it => it.BudgetIncome)
-                .WithMany(i => i.BudgetIncomeTags)
-                .HasForeignKey(it => it.BudgetIncomeId)
+            incomeTag.HasOne(it => it.SpendingPlanIncome)
+                .WithMany(i => i.SpendingPlanIncomeTags)
+                .HasForeignKey(it => it.SpendingPlanIncomeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             incomeTag.HasOne(it => it.Tag)
-                .WithMany(t => t.BudgetIncomeTags)
+                .WithMany(t => t.SpendingPlanIncomeTags)
                 .HasForeignKey(it => it.TagId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<BudgetExpenseTag>(expenseTag =>
+        builder.Entity<SpendingPlanExpenseTag>(expenseTag =>
         {
-            expenseTag.HasKey(et => new { et.BudgetExpenseId, et.TagId });
+            expenseTag.HasKey(et => new { et.SpendingPlanExpenseId, et.TagId });
 
             expenseTag.HasIndex(et => et.TagId);
 
-            expenseTag.HasOne(et => et.BudgetExpense)
-                .WithMany(e => e.BudgetExpenseTags)
-                .HasForeignKey(et => et.BudgetExpenseId)
+            expenseTag.HasOne(et => et.SpendingPlanExpense)
+                .WithMany(e => e.SpendingPlanExpenseTags)
+                .HasForeignKey(et => et.SpendingPlanExpenseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             expenseTag.HasOne(et => et.Tag)
-                .WithMany(t => t.BudgetExpenseTags)
+                .WithMany(t => t.SpendingPlanExpenseTags)
                 .HasForeignKey(et => et.TagId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

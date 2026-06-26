@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TagSelector } from '../budgets/TagSelector';
+import { TagSelector } from '../spendingPlans/TagSelector';
 import type { Tag } from '../../types/tags';
 
 const sampleTags: Tag[] = [

@@ -4,7 +4,7 @@ import { SelectField } from '../components/SelectField';
 import { CashFlowChart } from '../components/cashflow/CashFlowChart';
 import { CategoryBreakdown } from '../components/cashflow/CategoryBreakdown';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { FilterIcon } from '../components/icons/NavIcons';
+import { Filter } from 'lucide-react';
 import { formatMoney } from '../utils/money';
 import {
   mockCashFlowCurrency,
@@ -78,7 +78,7 @@ export function CashFlowPage() {
             ))}
           </div>
           <Button variant="outline" size="sm">
-            <FilterIcon className="size-4" />
+            <Filter className="size-4" />
             Filters
           </Button>
         </div>

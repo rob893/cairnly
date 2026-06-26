@@ -1,37 +1,38 @@
-import type { Key } from 'react';
+import { useState, type Key } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router';
 import { Avatar, Dropdown } from '@heroui/react';
+import {
+  ArrowLeftRight,
+  ChartColumn,
+  ChevronDown,
+  ChevronUp,
+  House,
+  Landmark,
+  Layers,
+  LogOut,
+  Settings,
+  type LucideIcon
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { CairnMark } from './CairnMark';
-import { ThemeToggle } from './ThemeToggle';
-import {
-  AccountIcon,
-  BankIcon,
-  BudgetsIcon,
-  CashFlowIcon,
-  ChevronUpDownIcon,
-  DashboardIcon,
-  LogoutIcon,
-  TransactionsIcon
-} from './icons/NavIcons';
 
 interface NavItem {
   to: string;
   label: string;
-  Icon: (props: { className?: string }) => React.ReactElement;
+  Icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
-  { to: '/accounts', label: 'Accounts', Icon: BankIcon },
-  { to: '/transactions', label: 'Transactions', Icon: TransactionsIcon },
-  { to: '/cash-flow', label: 'Cash Flow', Icon: CashFlowIcon },
-  { to: '/budgets', label: 'Budgets', Icon: BudgetsIcon }
+  { to: '/dashboard', label: 'Dashboard', Icon: House },
+  { to: '/accounts', label: 'Accounts', Icon: Landmark },
+  { to: '/transactions', label: 'Transactions', Icon: ArrowLeftRight },
+  { to: '/cash-flow', label: 'Cash Flow', Icon: ChartColumn },
+  { to: '/spending-plans', label: 'Spending Plans', Icon: Layers }
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
   return [
-    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors no-underline',
+    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium transition-colors no-underline',
     isActive
       ? 'bg-surface-secondary text-foreground'
       : 'text-muted hover:bg-surface-secondary/60 hover:text-foreground'
@@ -47,12 +48,13 @@ interface AppSidebarProps {
 
 /**
  * The application's primary left navigation rail: brand, page links, and a
- * footer with the theme toggle and user/account menu. Renders as a fixed sidebar
- * at `lg` and up, and as a slide-in drawer with a backdrop on smaller screens.
+ * footer with the user/settings menu. Renders as a fixed sidebar at `lg` and up,
+ * and as a slide-in drawer with a backdrop on smaller screens.
  */
 export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -60,8 +62,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   };
 
   const handleMenuAction = (key: Key) => {
-    if (key === 'account') {
-      navigate('/account');
+    if (key === 'settings') {
+      navigate('/settings');
     } else if (key === 'signout') {
       void handleLogout();
     }
@@ -108,12 +110,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         </nav>
 
         <div className="border-t border-border p-3">
-          <div className="mb-2 flex justify-end px-1">
-            <ThemeToggle />
-          </div>
-
           {user && (
-            <Dropdown>
+            <Dropdown isOpen={menuOpen} onOpenChange={setMenuOpen}>
               <Dropdown.Trigger
                 aria-label="Open profile menu"
                 className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-focus"
@@ -124,19 +122,23 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {user.userName}
                 </span>
-                <ChevronUpDownIcon className="size-4 shrink-0 text-muted" />
+                {menuOpen ? (
+                  <ChevronUp className="size-4 shrink-0 text-muted" />
+                ) : (
+                  <ChevronDown className="size-4 shrink-0 text-muted" />
+                )}
               </Dropdown.Trigger>
               <Dropdown.Popover placement="top start" className="min-w-56">
                 <Dropdown.Menu aria-label="Profile actions" onAction={handleMenuAction}>
-                  <Dropdown.Item id="account">
+                  <Dropdown.Item id="settings">
                     <span className="flex items-center gap-2">
-                      <AccountIcon className="size-4" />
-                      Account
+                      <Settings className="size-4" />
+                      Settings
                     </span>
                   </Dropdown.Item>
                   <Dropdown.Item id="signout" className="text-danger">
                     <span className="flex items-center gap-2">
-                      <LogoutIcon className="size-4" />
+                      <LogOut className="size-4" />
                       Sign Out
                     </span>
                   </Dropdown.Item>

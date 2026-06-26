@@ -21,10 +21,10 @@ function mix(accentPct: number, base = 'var(--surface)'): string {
 
 const featureCards: FeatureCard[] = [
   {
-    name: 'Budgets',
+    name: 'Spending Plans',
     body: 'Plan income and expenses on any cadence and see it normalized into one clear number.',
     tint: mix(26),
-    art: <BudgetArt />
+    art: <SpendingPlanArt />
   },
   {
     name: 'Accounts',
@@ -59,7 +59,7 @@ const steps = [
   },
   {
     title: 'Plan your cadence',
-    body: 'Set budgets on whatever rhythm fits your life — weekly, monthly, or annual.'
+    body: 'Set spending plans on whatever rhythm fits your life — weekly, monthly, or annual.'
   },
   {
     title: 'Watch it compound',
@@ -112,7 +112,7 @@ export function LandingPage() {
 
             <Reveal delay={160}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-                Cairnly helps you understand, plan, and optimize your money — budgets, accounts, and spending in one
+                Cairnly helps you understand, plan, and optimize your money — spending plans, accounts, and spending in one
                 clear place. Build wealth one marker at a time.
               </p>
             </Reveal>
@@ -246,7 +246,7 @@ function FeatureCardView({ card }: { card: FeatureCard }) {
 
 /* --- Abstract, theme-aware illustrations built from CSS (no images) --- */
 
-function BudgetArt() {
+function SpendingPlanArt() {
   const rows = [82, 58, 40];
   return (
     <div className="w-full space-y-3">

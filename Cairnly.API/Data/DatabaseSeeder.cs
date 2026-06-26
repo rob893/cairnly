@@ -67,6 +67,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
             await this.SeedRolesAsync(cancellationToken);
             await this.SeedAdminUserAsync(cancellationToken);
             await this.SeedSystemCategoriesAsync(cancellationToken);
+            await this.SeedAdminSpendingPlanAsync(cancellationToken);
 
             await FixSequenceAsync(this.context, "AspNetRoles", "Id", cancellationToken);
             await FixSequenceAsync(this.context, "AspNetUsers", "Id", cancellationToken);
@@ -109,7 +110,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
     {
         this.context.TransactionTags.Clear();
         this.context.Transactions.Clear();
-        this.context.Budgets.Clear();
+        this.context.SpendingPlans.Clear();
         this.context.Tags.Clear();
         this.context.Categories.Clear();
         this.context.Accounts.Clear();
@@ -142,47 +143,240 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
             return;
         }
 
-        var systemCategories = new (string Name, CategoryKind Kind)[]
+        // System category groups (parent categories) and their child categories. The parent
+        // group has no icon; children carry an emoji. Each child inherits its group's kind.
+        var groups = new (string Group, CategoryKind Kind, (string Name, string Icon)[] Children)[]
         {
-            ("Salary", CategoryKind.Income),
-            ("Interest", CategoryKind.Income),
-            ("Dividends", CategoryKind.Income),
-            ("Refunds", CategoryKind.Income),
-            ("Other Income", CategoryKind.Income),
-            ("Housing", CategoryKind.Expense),
-            ("Utilities", CategoryKind.Expense),
-            ("Groceries", CategoryKind.Expense),
-            ("Dining", CategoryKind.Expense),
-            ("Transportation", CategoryKind.Expense),
-            ("Insurance", CategoryKind.Expense),
-            ("Healthcare", CategoryKind.Expense),
-            ("Entertainment", CategoryKind.Expense),
-            ("Shopping", CategoryKind.Expense),
-            ("Travel", CategoryKind.Expense),
-            ("Education", CategoryKind.Expense),
-            ("Subscriptions", CategoryKind.Expense),
-            ("Fees & Charges", CategoryKind.Expense),
-            ("Taxes", CategoryKind.Expense),
-            ("Gifts & Donations", CategoryKind.Expense),
-            ("Other Expense", CategoryKind.Expense),
-            ("Transfer", CategoryKind.Transfer),
-            ("Credit Card Payment", CategoryKind.Transfer),
-            ("Savings", CategoryKind.Transfer)
+            ("Income", CategoryKind.Income,
+            [
+                ("Paychecks", "💵"),
+                ("Interest", "💸"),
+                ("Business Income", "💰"),
+                ("Other Income", "💰"),
+                ("Dividends & Capital Gains", "📈")
+            ]),
+            ("Gifts & Donations", CategoryKind.Expense,
+            [
+                ("Charity", "🎗"),
+                ("Gifts", "🎁")
+            ]),
+            ("Auto & Transport", CategoryKind.Expense,
+            [
+                ("Auto Payment", "🚗"),
+                ("Public Transit", "🚃"),
+                ("Gas", "⛽️"),
+                ("Auto Maintenance", "🔧"),
+                ("Parking & Tolls", "🏢"),
+                ("Taxi & Ride Shares", "🚕")
+            ]),
+            ("Housing", CategoryKind.Expense,
+            [
+                ("Mortgage", "🏠"),
+                ("Rent", "🏠"),
+                ("Home Improvement", "🔨")
+            ]),
+            ("Bills & Utilities", CategoryKind.Expense,
+            [
+                ("Garbage", "🗑"),
+                ("Water", "💧"),
+                ("Gas & Electric", "⚡️"),
+                ("Internet & Cable", "🌐"),
+                ("Phone", "📱")
+            ]),
+            ("Food & Dining", CategoryKind.Expense,
+            [
+                ("Groceries", "🍏"),
+                ("Restaurants & Bars", "🍽"),
+                ("Coffee Shops", "☕️")
+            ]),
+            ("Travel & Lifestyle", CategoryKind.Expense,
+            [
+                ("Travel & Vacation", "🏝"),
+                ("Entertainment & Recreation", "🎥"),
+                ("Personal", "👑"),
+                ("Pets", "🐶"),
+                ("Fun Money", "😜")
+            ]),
+            ("Shopping", CategoryKind.Expense,
+            [
+                ("Shopping", "🛍"),
+                ("Clothing", "👕"),
+                ("Furniture & Housewares", "🪑"),
+                ("Electronics", "🖥")
+            ]),
+            ("Children", CategoryKind.Expense,
+            [
+                ("Child Care", "👶"),
+                ("Child Activities", "⚽️")
+            ]),
+            ("Education", CategoryKind.Expense,
+            [
+                ("Student Loans", "🎓"),
+                ("Education", "🏫")
+            ]),
+            ("Health & Wellness", CategoryKind.Expense,
+            [
+                ("Medical", "💊"),
+                ("Dentist", "🦷"),
+                ("Fitness", "💪")
+            ]),
+            ("Financial", CategoryKind.Expense,
+            [
+                ("Loan Repayment", "💰"),
+                ("Financial & Legal Services", "🗄"),
+                ("Financial Fees", "🏦"),
+                ("Cash & ATM", "🏧"),
+                ("Insurance", "☂️"),
+                ("Taxes", "🏛️")
+            ]),
+            ("Other", CategoryKind.Expense,
+            [
+                ("Uncategorized", "❓"),
+                ("Check", "💸"),
+                ("Miscellaneous", "💲")
+            ]),
+            ("Business", CategoryKind.Expense,
+            [
+                ("Advertising & Promotion", "📣"),
+                ("Business Utilities & Communication", "📞"),
+                ("Employee Wages & Contract Labor", "💵"),
+                ("Business Travel & Meals", "🍴"),
+                ("Business Auto Expenses", "🚖"),
+                ("Business Insurance", "📁"),
+                ("Office Supplies & Expenses", "📎"),
+                ("Office Rent", "🏢"),
+                ("Postage & Shipping", "📦")
+            ]),
+            ("Transfers", CategoryKind.Transfer,
+            [
+                ("Transfer", "🔁"),
+                ("Credit Card Payment", "💳"),
+                ("Balance Adjustments", "⚖️"),
+                ("Buy", "➡️"),
+                ("Sell", "⬅️")
+            ])
         };
 
-        this.logger.LogInformation("Seeding {Count} system categories...", systemCategories.Length);
+        var userId = ApplicationSettings.SystemUserId;
+        var categoryCount = 0;
 
-        foreach (var (name, kind) in systemCategories)
+        foreach (var (groupName, kind, children) in groups)
         {
-            this.context.Categories.Add(new Category
+            var parent = new Category
             {
-                UserId = ApplicationSettings.SystemUserId,
-                Name = name,
+                UserId = userId,
+                Name = groupName,
                 Kind = kind,
-                IsSystem = true
-            });
+                IsSystem = true,
+                Children = [.. children.Select(child => new Category
+                {
+                    UserId = userId,
+                    Name = child.Name,
+                    Icon = child.Icon,
+                    Kind = kind,
+                    IsSystem = true
+                })]
+            };
+
+            this.context.Categories.Add(parent);
+            categoryCount += 1 + children.Length;
         }
 
+        this.logger.LogInformation(
+            "Seeding {GroupCount} system category groups ({CategoryCount} categories)...",
+            groups.Length,
+            categoryCount);
+
+        await this.context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedAdminSpendingPlanAsync(CancellationToken cancellationToken = default)
+    {
+        if (await this.context.SpendingPlans.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var userId = ApplicationSettings.SystemUserId;
+
+        // Income line items (all annual figures; the source has no per-income cadence).
+        var incomes = new (string Name, IncomeType Type, long Amount)[]
+        {
+            ("Interest and Dividends", IncomeType.W2, 300_000),
+            ("Microsoft W2", IncomeType.W2, 19_000_000),
+            ("Microsoft Perks+", IncomeType.W2, 150_000),
+            ("Microsoft Bonus", IncomeType.W2, 3_800_000),
+            ("Microsoft Stock", IncomeType.W2, 6_000_000)
+        };
+
+        // Expense line items: amounts in integer minor units (cents).
+        var expenses = new (string Name, string? Description, long Amount, SpendingPlanCadence Cadence)[]
+        {
+            ("Taxable Brokerage", "Robinhood Account", 50_000, SpendingPlanCadence.Weekly),
+            ("Mortgage, HOA, Utilities", "3026.83 for Mortgage/tax/insurance\n150 HOA\n~500 for utilities (power, gas, water, trash)", 400_000, SpendingPlanCadence.Monthly),
+            ("Netflix", null, 500, SpendingPlanCadence.Monthly),
+            ("Disney+", null, 500, SpendingPlanCadence.Monthly),
+            ("Haircut", null, 5_000, SpendingPlanCadence.Monthly),
+            ("Hulu", null, 500, SpendingPlanCadence.Monthly),
+            ("Internet", null, 7_000, SpendingPlanCadence.Monthly),
+            ("Phone", null, 9_500, SpendingPlanCadence.Monthly),
+            ("WoW", null, 1_500, SpendingPlanCadence.Monthly),
+            ("Amazon Prime", null, 14_000, SpendingPlanCadence.Annual),
+            ("Car Registration", "GA is super cheap lol", 2_000, SpendingPlanCadence.Annual),
+            ("Domain Names", "rwherber.com and knowones.com and derpcode and tidygal\nManaged through godaddy", 8_000, SpendingPlanCadence.Annual),
+            ("Web Server Hosting", "Digital ocean VM", 2_900, SpendingPlanCadence.Monthly),
+            ("YouTube Premium", null, 1_000, SpendingPlanCadence.Monthly),
+            ("Food (Groceries/Going Out)", null, 40_000, SpendingPlanCadence.Monthly),
+            ("Gas", null, 7_500, SpendingPlanCadence.Monthly),
+            ("Car Insurance", null, 15_300, SpendingPlanCadence.Monthly),
+            ("401k", null, 2_300_000, SpendingPlanCadence.Annual),
+            ("Federal Tax", "From 2024 tax return", 7_520_600, SpendingPlanCadence.Annual),
+            ("GA State Tax", "From 2024 tax return", 1_200_000, SpendingPlanCadence.Annual),
+            ("Amazon Fresh Membership", "Fresh Membership for free deliveries", 1_000, SpendingPlanCadence.Monthly),
+            ("Pet Insurance", null, 5_600, SpendingPlanCadence.Monthly),
+            ("HBO Max", null, 500, SpendingPlanCadence.Monthly),
+            ("Pest Control", null, 35_200, SpendingPlanCadence.Annual),
+            ("Misc Spending", null, 15_000, SpendingPlanCadence.Weekly),
+            ("Mortgage Additional Principal Payments", null, 100_000, SpendingPlanCadence.Monthly),
+            ("House cleaning", null, 25_000, SpendingPlanCadence.Monthly),
+            ("Termite Bond", null, 35_000, SpendingPlanCadence.Annual),
+            ("OpenAI Sub", null, 2_000, SpendingPlanCadence.Monthly),
+            ("HSA", null, 440_000, SpendingPlanCadence.Annual),
+            ("Umbrella Insurance", null, 33_000, SpendingPlanCadence.Annual)
+        };
+
+        var spendingPlan = new SpendingPlan
+        {
+            UserId = userId,
+            Name = "Main Spending Plan",
+            Description = "Main spending plan",
+            Currency = "USD",
+            Incomes = [.. incomes
+                .Select(income => new SpendingPlanIncome
+                {
+                    UserId = userId,
+                    Name = income.Name,
+                    Type = income.Type,
+                    Amount = income.Amount,
+                    Cadence = SpendingPlanCadence.Annual
+                })],
+            Expenses = [.. expenses
+                .Select(expense => new SpendingPlanExpense
+                {
+                    UserId = userId,
+                    Name = expense.Name,
+                    Description = expense.Description,
+                    Amount = expense.Amount,
+                    Cadence = expense.Cadence
+                })]
+        };
+
+        this.logger.LogInformation(
+            "Seeding admin spending plan with {IncomeCount} incomes and {ExpenseCount} expenses...",
+            incomes.Length,
+            expenses.Length);
+
+        this.context.SpendingPlans.Add(spendingPlan);
         await this.context.SaveChangesAsync(cancellationToken);
     }
 
@@ -196,8 +390,8 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         var adminUser = new User
         {
             Id = ApplicationSettings.SystemUserId,
-            UserName = "admin",
-            Email = "admin@cairnly.local",
+            UserName = "rob893",
+            Email = "rwherber@gmail.com",
             EmailConfirmed = true,
             Created = DateTimeOffset.UtcNow,
             LastPasswordChange = DateTimeOffset.UtcNow,
