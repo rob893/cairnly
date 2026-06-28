@@ -33,10 +33,7 @@ export function buildContentSecurityPolicy(apiBaseUrl: string | undefined): stri
     `connect-src ${connectSrc.join(' ')}`,
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
-    // frame-ancestors is ignored when CSP is delivered via <meta>; enforce it (and
-    // X-Content-Type-Options/Referrer-Policy/HSTS) at the hosting layer for clickjacking defense.
-    "frame-ancestors 'none'"
+    "form-action 'self'"
   ];
 
   return directives.join('; ');

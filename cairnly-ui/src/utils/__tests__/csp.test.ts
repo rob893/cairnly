@@ -43,7 +43,12 @@ describe('buildContentSecurityPolicy', () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
     expect(csp).toContain("form-action 'self'");
-    expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  it('omits frame-ancestors (ignored in <meta>-delivered CSP)', () => {
+    const csp = buildContentSecurityPolicy('https://api.example.com');
+
+    expect(csp).not.toContain('frame-ancestors');
   });
 
   it('allows inline styles for Tailwind/HeroUI', () => {

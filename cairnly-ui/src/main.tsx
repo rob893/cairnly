@@ -1,19 +1,14 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter as Router } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LazyDevTools } from './components/LazyDevTools';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 
 // HeroUI v3 — styles imported via @import "@heroui/styles" in index.css, no provider needed.
-
-// Dev-only React Query Devtools: lazily imported behind import.meta.env.DEV so it is
-// dead-code-eliminated from production bundles.
-const DevTools = import.meta.env.DEV
-  ? lazy(() => import('./components/DevTools').then(m => ({ default: m.DevTools })))
-  : () => null;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,9 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <ErrorBoundary>
             <App />
           </ErrorBoundary>
-          <Suspense>
-            <DevTools />
-          </Suspense>
+          <LazyDevTools />
         </Router>
       </QueryClientProvider>
     </ThemeProvider>
