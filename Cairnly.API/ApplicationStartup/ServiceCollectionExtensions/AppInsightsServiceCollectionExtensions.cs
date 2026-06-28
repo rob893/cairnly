@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -122,6 +123,11 @@ public static class AppInsightsServiceCollectionExtensions
             })
             .WithTracing(tracing =>
             {
+                // Subscribes to Npgsql's ActivitySource so PostgreSQL queries surface as
+                // dependencies in App Insights. The Azure Monitor distro auto-instruments
+                // ASP.NET Core and HttpClient but not Npgsql, so this must be opted in.
+                tracing.AddNpgsql();
+
                 if (appInsightsOptions?.ConfigureTracerProvider != null)
                 {
                     appInsightsOptions.ConfigureTracerProvider(tracing);
