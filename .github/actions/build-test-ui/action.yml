@@ -8,10 +8,6 @@ inputs:
     description: Node.js version to install.
     required: false
     default: '24'
-  vite-api-base-url:
-    description: Base URL of the deployed API, injected into the production build.
-    required: false
-    default: ''
 
 runs:
   using: composite
@@ -47,5 +43,3 @@ runs:
       run: npm run build
       shell: bash
       working-directory: cairnly-ui
-      env:
-        VITE_API_BASE_URL: ${{ inputs.vite-api-base-url }}

@@ -40,6 +40,11 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss(), cspMetaPlugin(env.VITE_API_BASE_URL)],
     base: env.VITE_BASE_PATH || '/',
     publicDir: 'public',
+    // Dedicated port (not Vite's default 5173) so Cairnly gets its own origin and
+    // doesn't share service workers / storage with other local apps. strictPort
+    // fails fast instead of silently falling back to another port.
+    server: { port: 5180, strictPort: true },
+    preview: { port: 5180, strictPort: true },
     build: {
       rollupOptions: {
         output: {

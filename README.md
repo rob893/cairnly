@@ -85,7 +85,7 @@ bearer token (register/login via `/api/v1/auth/*`).
 cd cairnly-ui
 npm install
 # .env.local already points at the local API; adjust VITE_API_BASE_URL if needed.
-npm run dev                          # => http://localhost:5173
+npm run dev                          # => http://localhost:5180
 ```
 
 ## Configuration & secrets
@@ -140,7 +140,7 @@ Full details (Bicep resources, OIDC federated-credential setup, required secrets
 configuration, base-path notes) are in **[`CI/README.md`](./CI/README.md)**. In short:
 
 1. Provision infra: `az deployment group create --resource-group <rg> --template-file CI/Azure/main.bicep --parameters @CI/Azure/parameters/main.parameters.dev.json --parameters postgresAdminPassword=<pw>`.
-2. Configure repo **secrets** (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `POSTGRES_ADMIN_PASSWORD`) and **variables** (`AZURE_RESOURCE_GROUP`, `AZURE_WEBAPP_NAME`, `VITE_API_BASE_URL`).
+2. Configure repo **secrets** (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `POSTGRES_ADMIN_PASSWORD`) and **variables** (`AZURE_RESOURCE_GROUP`, `AZURE_WEBAPP_NAME`). The UI's API base URL is committed, non-secret config in `cairnly-ui/.env.production` — not a CI variable.
 3. Push to `main` — the API deploys to App Service (OIDC) and the UI deploys to GitHub Pages.
 
 ## Using this template

@@ -89,11 +89,12 @@ Triggers on push to `main`/`master` (paths: `cairnly-ui/**`) and `workflow_dispa
 
 Uses the official GitHub Pages action flow (`upload-pages-artifact` + `deploy-pages`).
 
-#### Required repository variables
+#### Configuration
 
-| Variable | Example | Description |
-|----------|---------|-------------|
-| `VITE_API_BASE_URL` | `https://cairnly-api-dev.azurewebsites.net` | API base URL injected at build time |
+No repository variables or secrets are required for the UI deploy. The API base URL
+is committed, non-secret config in `cairnly-ui/.env.production` (read automatically by
+`npm run build`). To target a different API origin, edit that file or add another
+`.env.<mode>` and build with `vite build --mode <mode>`.
 
 #### GitHub Pages setup
 

@@ -9,21 +9,22 @@
 #        base: '/'
 #      The UI already uses HashRouter, so client-side routing works on Pages.
 #
-# Required vars (Settings → Secrets and variables → Actions → Variables):
-#   VITE_API_BASE_URL  - Base URL of the deployed API
-#                        e.g. https://cairnly-api-dev.azurewebsites.net
+# Configuration:
+#   The deployed API base URL is committed, non-secret config in
+#   cairnly-ui/.env.production (read automatically at build time). No CI
+#   variables or secrets are required for this UI deploy.
 
 name: Build and Deploy UI
 
 on:
   # NOTE: the push trigger is intentionally commented out so this *template* repo does not try to deploy.
-  # Uncomment it after configuring the required secrets/variables (see README -> "Using this template").
-  # push:
-  #   branches:
-  #     - main
-  #     - master
-  #   paths:
-  #     - 'cairnly-ui/**'
+  # Uncomment it once GitHub Pages is enabled (see README -> "Using this template"). No CI secrets/variables
+  # are needed for the UI — its config lives in cairnly-ui/.env.* files.
+  push:
+    branches:
+      - main
+    paths:
+      - 'cairnly-ui/**'
   workflow_dispatch:
 
 permissions:
@@ -33,7 +34,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false  # let an in-progress deploy finish before starting another
+  cancel-in-progress: false # let an in-progress deploy finish before starting another
 
 jobs:
   build:
@@ -46,8 +47,6 @@ jobs:
 
       - name: Build & test UI
         uses: ./.github/actions/build-test-ui
-        with:
-          vite-api-base-url: ${{ vars.VITE_API_BASE_URL }}
 
       # Path is relative to workspace root; working-directory default does not apply to `uses` steps
       - name: Upload Pages artifact
