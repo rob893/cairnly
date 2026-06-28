@@ -30,7 +30,7 @@ public sealed class Startup
 
         if (this.configuration.GetEnvironment() != EnvironmentNames.Development)
         {
-            services.AddAppInsightsServices(this.configuration);
+            services.AddAppInsightsServices(this.configuration, new AppInsightsOptions { UseDefaultAzureCredential = true });
         }
 
         services.AddControllerServices()
