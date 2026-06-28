@@ -20,9 +20,6 @@ param appServicePlanId string
 ])
 param os string = 'Windows'
 
-@description('URI of the Key Vault from which the app reads secrets via managed identity.')
-param keyVaultUri string
-
 @description('Application Insights connection string for telemetry.')
 param appInsightsConnectionString string
 
@@ -39,11 +36,6 @@ var baseAppSettings = [
   {
     name: 'ASPNETCORE_ENVIRONMENT'
     value: aspNetCoreEnvironment
-  }
-  {
-    // The app uses DefaultAzureCredential + this URI to load secrets from Key Vault.
-    name: 'KeyVaultUrl'
-    value: keyVaultUri
   }
   {
     // Config key the API reads (ConfigurationKeys.ApplicationInsightsConnectionString).
@@ -70,12 +62,14 @@ resource webApp 'Microsoft.Web/sites@2024-11-01' = {
       // Linux uses linuxFxVersion; Windows uses netFrameworkVersion + CURRENT_STACK metadata.
       linuxFxVersion: isLinux ? 'DOTNETCORE|10.0' : null
       netFrameworkVersion: isLinux ? null : 'v10.0'
-      metadata: isLinux ? null : [
-        {
-          name: 'CURRENT_STACK'
-          value: 'dotnet'
-        }
-      ]
+      metadata: isLinux
+        ? null
+        : [
+            {
+              name: 'CURRENT_STACK'
+              value: 'dotnet'
+            }
+          ]
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'

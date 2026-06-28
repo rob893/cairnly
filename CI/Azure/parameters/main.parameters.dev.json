@@ -3,16 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "cairnlyResourceGroupName": {
-      "value": "rherber-cairnly-rg-ue-d"
+      "value": "rherber-cairnly-rg-uc-d"
     },
     "location": {
-      "value": "eastus2"
+      "value": "centralus"
     },
     "namePrefix": {
       "value": "rherber-cairnly"
     },
     "regionToken": {
-      "value": "ue"
+      "value": "uc"
     },
     "environment": {
       "value": "d"
@@ -24,10 +24,13 @@
       "value": "rherber-shared-rg-ue-d"
     },
     "appServicePlanName": {
-      "value": "rherber-shared-asp-ue-d"
+      "value": "rherber-shared-asp-uc-d"
     },
     "sharedKeyVaultName": {
       "value": "rherber-kv-ue-d"
+    },
+    "sharedCommunicationServiceName": {
+      "value": "rherber-acs-g-d"
     },
     "sharedLogAnalyticsWorkspaceName": {
       "value": "rherber-logworkspace-uw-lws-d"

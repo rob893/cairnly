@@ -139,7 +139,7 @@ cd cairnly-ui && npm run test:e2e         # UI e2e: Playwright (needs the app ru
 Full details (Bicep resources, OIDC federated-credential setup, required secrets/variables, GitHub Pages
 configuration, base-path notes) are in **[`CI/README.md`](./CI/README.md)**. In short:
 
-1. Provision infra: `az deployment sub create --location eastus2 --template-file CI/Azure/main.bicep --parameters @CI/Azure/parameters/main.parameters.dev.json` (creates the `rherber-cairnly-rg-ue-d` RG itself).
+1. Provision infra: `az deployment sub create --location centralus --template-file CI/Azure/main.bicep --parameters @CI/Azure/parameters/main.parameters.dev.json` (creates the `rherber-cairnly-rg-uc-d` RG itself).
 2. Configure repo **secrets** (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`). No deploy **variables** are needed — the RG and web app names come from the Bicep parameters file. The UI's API base URL is committed, non-secret config in `cairnly-ui/.env.production`.
 3. Push to `main` — the API deploys to App Service (OIDC) and the UI deploys to GitHub Pages.
 

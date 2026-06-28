@@ -14,22 +14,19 @@
 #   (CI/Azure/parameters/main.parameters.dev.json), so there is nothing to duplicate here.
 #
 # The infra deploy is SUBSCRIPTION-scoped: it CREATES the Cairnly resource group
-# (rherber-cairnly-rg-ue-d, from the parameters file) and also creates the App Service
-# plan + VM NSG rule and assigns a Key Vault role in the shared RG. The deploy identity
+# (rherber-cairnly-rg-uc-d, from the parameters file) and also creates the App Service
+# + VM NSG rule and assigns a Key Vault role in the shared RG. The deploy identity
 # therefore needs Contributor on the subscription (or on both resource groups).
 # PostgreSQL runs on the shared VM, so there is no managed database to provision.
 
 name: Build and Deploy API
 
 on:
-  # NOTE: the push trigger is intentionally commented out so this *template* repo does not try to deploy.
-  # Uncomment it after configuring the required secrets/variables (see README -> "Using this template").
-  # push:
-  #   branches:
-  #     - main
-  #     - master
-  #   paths:
-  #     - 'Cairnly.API/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'Cairnly.API/**'
   workflow_dispatch:
 
 jobs:
@@ -41,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup & restore .NET
         uses: ./.github/actions/build-test-api
@@ -52,7 +49,7 @@ jobs:
         run: dotnet publish Cairnly.API -c Release -o publish
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cairnly-api-b${{ github.run_number }}
           path: publish
@@ -68,16 +65,16 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cairnly-api-b${{ github.run_number }}
           path: publish
 
       - name: Log in to Azure (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -93,7 +90,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           az deployment sub create \
-            --location eastus2 \
+            --location centralus \
             --template-file CI/Azure/main.bicep \
             --parameters @CI/Azure/parameters/main.parameters.dev.json
 

@@ -1,19 +1,19 @@
 targetScope = 'subscription'
 
 @description('Name of the Cairnly resource group to create and deploy the app into.')
-param cairnlyResourceGroupName string = 'rherber-cairnly-rg-ue-d'
+param cairnlyResourceGroupName string = 'rherber-cairnly-rg-uc-d'
 
-@description('Azure region for the Cairnly resource group and its resources.')
-param location string = 'eastus2'
+@description('Azure region for the Cairnly resource group and its resources. Must match the shared App Service plan\'s region (Central US) since an app and its plan must be co-located.')
+param location string = 'centralus'
 
 @description('Short prefix applied to every resource name (e.g. "rherber-cairnly").')
 @maxLength(20)
 param namePrefix string = 'rherber-cairnly'
 
-@description('Region token used in resource names (e.g. ue for East US).')
-param regionToken string = 'ue'
+@description('Region token used in resource names (e.g. uc for Central US).')
+param regionToken string = 'uc'
 
-@description('Short deployment environment token used in names (e.g. d for dev). Drives ASP.NET Core env mapping.')
+@description('Short deployment environment token used in names (e.g. d for dev).')
 param environment string = 'd'
 
 @description('Operating system of the existing shared App Service plan. Must match the plan so the web app stack is configured correctly. Windows is the default for richer in-portal .NET diagnostics (Profiler, Snapshot Debugger).')
@@ -27,11 +27,14 @@ param appServiceOs string = 'Windows'
 @description('Name of the shared resource group that holds the App Service plan, Key Vault, Log Analytics workspace, and the database VM/NSG.')
 param sharedResourceGroupName string = 'rherber-shared-rg-ue-d'
 
-@description('Name of the existing shared App Service plan to host the web app on.')
-param appServicePlanName string = 'rherber-shared-asp-ue-d'
+@description('Name of the existing shared App Service plan to host the web app on. Located in Central US — the Cairnly web app must be deployed in the same region.')
+param appServicePlanName string = 'rherber-shared-asp-uc-d'
 
 @description('Name of the existing shared Key Vault the web app reads secrets from.')
 param sharedKeyVaultName string = 'rherber-kv-ue-d'
+
+@description('Name of the existing shared Azure Communication Services resource the web app sends email through.')
+param sharedCommunicationServiceName string = 'rherber-acs-g-d'
 
 @description('Name of the existing shared Log Analytics workspace to link App Insights to.')
 param sharedLogAnalyticsWorkspaceName string = 'rherber-logworkspace-uw-lws-d'
@@ -55,13 +58,9 @@ var resolvedTags = union(
   {
     environment: environment
     project: 'cairnly'
-    managedBy: 'bicep'
   },
   tags
 )
-
-// Map the short env token → ASP.NET Core environment name.
-var aspNetCoreEnv = environment == 'd' ? 'Development' : 'Production'
 
 // ── Cairnly resource group (created by this deployment) ─────────────────────
 resource cairnlyResourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = {
@@ -73,11 +72,6 @@ resource cairnlyResourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = 
 // ── Existing shared references (cross-RG) ───────────────────────────────────
 resource sharedLogAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' existing = {
   name: sharedLogAnalyticsWorkspaceName
-  scope: resourceGroup(sharedResourceGroupName)
-}
-
-resource sharedKeyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
-  name: sharedKeyVaultName
   scope: resourceGroup(sharedResourceGroupName)
 }
 
@@ -113,9 +107,7 @@ module appService 'modules/appService.bicep' = {
     location: location
     appServicePlanId: sharedAppServicePlan.id
     os: appServiceOs
-    keyVaultUri: sharedKeyVault.properties.vaultUri
     appInsightsConnectionString: appInsights.outputs.connectionString
-    aspNetCoreEnvironment: aspNetCoreEnv
     tags: resolvedTags
   }
 }
@@ -136,6 +128,27 @@ module kvRbac 'modules/keyVaultRbac.bicep' = {
   params: {
     webAppPrincipalId: appService.outputs.principalId
     keyVaultName: sharedKeyVaultName
+  }
+}
+
+// ── RBAC: Web App MI → send email via the shared ACS resource (shared RG) ───
+module acsRbac 'modules/acsEmailRbac.bicep' = {
+  name: 'acsRbac'
+  scope: resourceGroup(sharedResourceGroupName)
+  params: {
+    webAppPrincipalId: appService.outputs.principalId
+    communicationServiceName: sharedCommunicationServiceName
+  }
+}
+
+// ── RBAC: Web App MI → publish telemetry to the shared Log Analytics workspace
+// (App Insights has local auth disabled, so ingestion requires Entra auth). ───
+module logAnalyticsRbac 'modules/logAnalyticsRbac.bicep' = {
+  name: 'logAnalyticsRbac'
+  scope: resourceGroup(sharedResourceGroupName)
+  params: {
+    webAppPrincipalId: appService.outputs.principalId
+    logAnalyticsWorkspaceName: sharedLogAnalyticsWorkspaceName
   }
 }
 

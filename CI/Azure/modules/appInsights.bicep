@@ -27,6 +27,9 @@ param logAnalyticsWorkspaceId string
 ])
 param retentionInDays int = 90
 
+@description('Disable local (instrumentation-key/connection-string) auth so telemetry ingestion requires Microsoft Entra auth. The app authenticates via DefaultAzureCredential, so its managed identity needs the Monitoring Metrics Publisher role on this component.')
+param disableLocalAuth bool = true
+
 @description('Tags to apply to the resource.')
 param tags object = {}
 
@@ -42,6 +45,7 @@ resource appInsightsComp 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: logAnalyticsWorkspaceId
     RetentionInDays: retentionInDays
     IngestionMode: 'LogAnalytics'
+    DisableLocalAuth: disableLocalAuth
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
   }
