@@ -22,12 +22,14 @@ public sealed class AccountServiceTests
     private const int OtherUserId = 99;
 
     private readonly Mock<IAccountRepository> accountRepositoryMock;
+    private readonly Mock<IBalanceHistoryService> balanceHistoryServiceMock;
     private readonly Mock<ICurrentUserService> currentUserServiceMock;
     private readonly AccountService sut;
 
     public AccountServiceTests()
     {
         this.accountRepositoryMock = new Mock<IAccountRepository>();
+        this.balanceHistoryServiceMock = new Mock<IBalanceHistoryService>();
         this.currentUserServiceMock = new Mock<ICurrentUserService>();
         this.currentUserServiceMock.Setup(s => s.UserId).Returns(UserId);
         this.currentUserServiceMock.Setup(s => s.IsAdmin).Returns(false);
@@ -35,6 +37,7 @@ public sealed class AccountServiceTests
         this.sut = new AccountService(
             NullLogger<AccountService>.Instance,
             this.accountRepositoryMock.Object,
+            this.balanceHistoryServiceMock.Object,
             this.currentUserServiceMock.Object);
     }
 
@@ -119,6 +122,26 @@ public sealed class AccountServiceTests
         Assert.Equal(UserId, result.ValueOrThrow.UserId);
         this.accountRepositoryMock.Verify(r => r.Add(It.Is<Account>(a => a.Currency == "USD" && a.CreatedById == UserId && a.UpdatedById == UserId)), Times.Once);
         this.accountRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAccountAsync_RecordsBalanceSnapshot()
+    {
+        var request = new CreateAccountRequest
+        {
+            Name = "Checking",
+            Type = AccountType.Checking,
+            Class = AccountClass.Asset,
+            Currency = "USD",
+            OpeningBalance = 100
+        };
+
+        var result = await this.sut.CreateAccountAsync(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        this.balanceHistoryServiceMock.Verify(
+            s => s.RecordSnapshotsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

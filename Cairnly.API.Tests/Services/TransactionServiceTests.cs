@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
@@ -25,6 +26,7 @@ public sealed class TransactionServiceTests
     private readonly Mock<ITransactionRepository> transactionRepositoryMock;
     private readonly Mock<IAccountRepository> accountRepositoryMock;
     private readonly Mock<ICategoryTagValidator> validatorMock;
+    private readonly Mock<IBalanceHistoryService> balanceHistoryServiceMock;
     private readonly Mock<ICurrentUserService> currentUserServiceMock;
     private readonly TransactionService sut;
 
@@ -33,6 +35,7 @@ public sealed class TransactionServiceTests
         this.transactionRepositoryMock = new Mock<ITransactionRepository>();
         this.accountRepositoryMock = new Mock<IAccountRepository>();
         this.validatorMock = new Mock<ICategoryTagValidator>();
+        this.balanceHistoryServiceMock = new Mock<IBalanceHistoryService>();
         this.currentUserServiceMock = new Mock<ICurrentUserService>();
         this.currentUserServiceMock.Setup(s => s.UserId).Returns(UserId);
         this.currentUserServiceMock.Setup(s => s.IsAdmin).Returns(false);
@@ -51,6 +54,7 @@ public sealed class TransactionServiceTests
             this.transactionRepositoryMock.Object,
             this.accountRepositoryMock.Object,
             this.validatorMock.Object,
+            this.balanceHistoryServiceMock.Object,
             this.currentUserServiceMock.Object);
     }
 
@@ -98,6 +102,9 @@ public sealed class TransactionServiceTests
         Assert.Equal(new[] { 3, 4 }, result.ValueOrThrow.TagIds);
         this.transactionRepositoryMock.Verify(r => r.Add(It.IsAny<Transaction>()), Times.Once);
         this.transactionRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this.balanceHistoryServiceMock.Verify(
+            s => s.RecordSnapshotsAsync(It.Is<IEnumerable<int>>(ids => ids.Contains(10)), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

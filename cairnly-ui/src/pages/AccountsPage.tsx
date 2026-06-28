@@ -1,48 +1,220 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Modal, Spinner } from '@heroui/react';
 import { NetWorthCard } from '../components/accounts/NetWorthCard';
 import { AccountGroup } from '../components/accounts/AccountGroup';
 import { AccountSummaryCard } from '../components/accounts/AccountSummaryCard';
 import { AccountsHeaderActions } from '../components/accounts/AccountsHeaderActions';
+import { AccountFormModal } from '../components/accounts/AccountFormModal';
+import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
 import { usePageHeader } from '../hooks/usePageHeader';
+import { showErrorDetails } from '../utils/environment';
+import { buildAccountGroups, buildSummary } from '../utils/accounts';
 import {
-  mockAccountGroups,
-  mockAssets,
-  mockCurrency,
-  mockLiabilities,
-  mockNetWorth,
-  mockNetWorthSeries
-} from '../constants/mockAccounts';
+  useAccountHistory,
+  useAccounts,
+  useCreateAccount,
+  useDeleteAccount,
+  useNetWorthHistory,
+  useUpdateAccount
+} from '../hooks/accounts';
+import type { Account, AccountBalancePoint, BalanceHistoryTimeframe, CreateAccountRequest } from '../types/accounts';
 
-/** Stable header config (no per-render state) for the Accounts page. */
-const accountsHeader = { title: 'Accounts', actions: <AccountsHeaderActions /> };
+const DEFAULT_CURRENCY = 'USD';
 
 /**
- * The Accounts page: net worth overview, grouped account balances, and an
- * asset/liability summary. Currently backed by placeholder data — there is no
- * accounts API yet.
+ * The Accounts page: a net-worth overview with history chart, account balances
+ * grouped by type, and an asset/liability summary. Backed by the accounts API
+ * with per-account balance history.
  */
 export function AccountsPage() {
-  usePageHeader(accountsHeader);
+  const [timeframe, setTimeframe] = useState<BalanceHistoryTimeframe>('OneMonth');
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Account | undefined>(undefined);
+  const [deleteTarget, setDeleteTarget] = useState<Account | undefined>(undefined);
+
+  const accountsQuery = useAccounts();
+  const netWorthQuery = useNetWorthHistory(timeframe);
+  const accountHistoryQuery = useAccountHistory(timeframe);
+
+  const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const deleteAccount = useDeleteAccount();
+
+  // The list is small; eagerly pull every page so all accounts are available.
+  useEffect(() => {
+    if (accountsQuery.hasNextPage && !accountsQuery.isFetchingNextPage) {
+      void accountsQuery.fetchNextPage();
+    }
+  }, [accountsQuery.hasNextPage, accountsQuery.isFetchingNextPage, accountsQuery]);
+
+  const accounts = useMemo<Account[]>(
+    () => accountsQuery.data?.pages.flatMap(page => page.nodes ?? []) ?? [],
+    [accountsQuery.data]
+  );
+
+  const historyByAccountId = useMemo<Map<number, AccountBalancePoint[]>>(() => {
+    const map = new Map<number, AccountBalancePoint[]>();
+    for (const history of accountHistoryQuery.data ?? []) {
+      map.set(history.accountId, history.points);
+    }
+    return map;
+  }, [accountHistoryQuery.data]);
+
+  const currency = accounts[0]?.currency ?? netWorthQuery.data?.currency ?? DEFAULT_CURRENCY;
+
+  const groups = useMemo(() => buildAccountGroups(accounts, historyByAccountId), [accounts, historyByAccountId]);
+  const summary = useMemo(() => buildSummary(accounts), [accounts]);
+
+  const openCreate = useCallback(() => {
+    setEditing(undefined);
+    setFormOpen(true);
+  }, []);
+
+  const openEdit = useCallback((account: Account) => {
+    setEditing(account);
+    setFormOpen(true);
+  }, []);
+
+  const openDelete = useCallback((account: Account) => setDeleteTarget(account), []);
+
+  const handleRefresh = useCallback(() => {
+    void accountsQuery.refetch();
+    void netWorthQuery.refetch();
+    void accountHistoryQuery.refetch();
+  }, [accountsQuery, netWorthQuery, accountHistoryQuery]);
+
+  // Clear stale mutation errors whenever the form opens.
+  useEffect(() => {
+    if (!formOpen) {
+      return;
+    }
+    if (editing) {
+      updateAccount.reset();
+    } else {
+      createAccount.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOpen, editing]);
+
+  const isRefreshing =
+    accountsQuery.isFetching || netWorthQuery.isFetching || accountHistoryQuery.isFetching;
+
+  const actions = useMemo(
+    () => <AccountsHeaderActions onAdd={openCreate} onRefresh={handleRefresh} isRefreshing={isRefreshing} />,
+    [openCreate, handleRefresh, isRefreshing]
+  );
+
+  usePageHeader(useMemo(() => ({ title: 'Accounts', actions }), [actions]));
+
+  const handleSubmit = async (payload: CreateAccountRequest) => {
+    if (editing) {
+      await updateAccount.mutateAsync({ id: editing.id, request: payload });
+    } else {
+      await createAccount.mutateAsync(payload);
+    }
+
+    setFormOpen(false);
+    setEditing(undefined);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    await deleteAccount.mutateAsync(deleteTarget.id);
+    setDeleteTarget(undefined);
+  };
 
   return (
     <div className="space-y-6">
       <NetWorthCard
-        total={mockNetWorth.total}
-        change={mockNetWorth.change}
-        changePercent={mockNetWorth.changePercent}
-        series={mockNetWorthSeries}
-        currency={mockCurrency}
+        history={netWorthQuery.data}
+        currency={currency}
+        timeframe={timeframe}
+        onTimeframeChange={setTimeframe}
+        isLoading={netWorthQuery.isLoading}
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="space-y-4 xl:col-span-2">
-          {mockAccountGroups.map(group => (
-            <AccountGroup key={group.id} group={group} currency={mockCurrency} />
-          ))}
+      {accountsQuery.isLoading ? (
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" color="accent" />
         </div>
-        <div className="xl:col-span-1">
-          <AccountSummaryCard assets={mockAssets} liabilities={mockLiabilities} currency={mockCurrency} />
+      ) : accountsQuery.isError ? (
+        <ApiErrorDisplay
+          error={accountsQuery.error as Error}
+          title="Failed to load accounts"
+          showDetails={showErrorDetails}
+        />
+      ) : accounts.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-surface p-10 text-center">
+          <p className="text-sm text-muted">No accounts yet. Add one to start tracking your net worth.</p>
+          <Button className="mt-4" onPress={openCreate}>
+            Add account
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="space-y-4 xl:col-span-2">
+            {groups.map(group => (
+              <AccountGroup
+                key={group.type}
+                group={group}
+                currency={currency}
+                onEdit={openEdit}
+                onDelete={openDelete}
+              />
+            ))}
+          </div>
+          <div className="xl:col-span-1">
+            <AccountSummaryCard assets={summary.assets} liabilities={summary.liabilities} currency={currency} />
+          </div>
+        </div>
+      )}
+
+      <AccountFormModal
+        defaultCurrency={currency}
+        isOpen={formOpen}
+        onOpenChange={setFormOpen}
+        item={editing}
+        onSubmit={handleSubmit}
+        isPending={createAccount.isPending || updateAccount.isPending}
+        error={(editing ? updateAccount.error : createAccount.error) as Error | null}
+      />
+
+      <Modal isOpen={deleteTarget !== undefined} onOpenChange={open => !open && setDeleteTarget(undefined)}>
+        <Modal.Backdrop>
+          <Modal.Container size="sm">
+            <Modal.Dialog>
+              <Modal.CloseTrigger />
+              <Modal.Header>
+                <Modal.Heading>Delete account?</Modal.Heading>
+              </Modal.Header>
+              <Modal.Body className="space-y-4">
+                {deleteAccount.error && (
+                  <ApiErrorDisplay
+                    error={deleteAccount.error as Error}
+                    title="Delete failed"
+                    showDetails={showErrorDetails}
+                  />
+                )}
+                <p className="text-sm text-muted">
+                  Permanently delete <span className="font-medium text-foreground">{deleteTarget?.name}</span> and its
+                  transactions? This cannot be undone.
+                </p>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button slot="close" variant="outline">
+                  Cancel
+                </Button>
+                <Button variant="danger" onPress={handleDelete} isPending={deleteAccount.isPending}>
+                  Delete
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </div>
   );
 }

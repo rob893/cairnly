@@ -20,6 +20,7 @@ public static class RepositoryServiceCollectionExtensions
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IBalanceHistoryRepository, BalanceHistoryRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();

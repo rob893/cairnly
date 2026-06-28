@@ -8,11 +8,16 @@
 #   AZURE_CLIENT_ID          - App registration / managed identity client ID
 #   AZURE_TENANT_ID          - Azure AD tenant ID
 #   AZURE_SUBSCRIPTION_ID    - Azure subscription ID
-#   POSTGRES_ADMIN_PASSWORD  - PostgreSQL admin password (used only during Bicep infra deploy)
 #
 # Required vars (Settings → Secrets and variables → Actions → Variables):
-#   AZURE_RESOURCE_GROUP     - Resource group name (e.g. cairnly-rg-dev)
-#   AZURE_WEBAPP_NAME        - App Service web app name (e.g. cairnly-api-dev)
+#   (none) — the resource group and web app names come from the Bicep parameters file
+#   (CI/Azure/parameters/main.parameters.dev.json), so there is nothing to duplicate here.
+#
+# The infra deploy is SUBSCRIPTION-scoped: it CREATES the Cairnly resource group
+# (rherber-cairnly-rg-ue-d, from the parameters file) and also creates the App Service
+# plan + VM NSG rule and assigns a Key Vault role in the shared RG. The deploy identity
+# therefore needs Contributor on the subscription (or on both resource groups).
+# PostgreSQL runs on the shared VM, so there is no managed database to provision.
 
 name: Build and Deploy API
 
@@ -80,21 +85,31 @@ jobs:
 
       # Optional infrastructure step: provisions/updates all Azure resources via Bicep.
       # Runs on manual dispatch so you can apply infra changes on demand without a full
-      # code push. Incremental mode means existing resources are updated, not recreated.
+      # code push. This is a SUBSCRIPTION-scoped deployment: it creates the Cairnly
+      # resource group itself (name comes from the parameters file) and also touches the
+      # shared RG, so the deploy identity needs Contributor on the subscription (or on
+      # both the Cairnly and shared resource groups).
       - name: Deploy Bicep infrastructure
         if: github.event_name == 'workflow_dispatch'
-        env:
-          POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: |
-          az deployment group create \
-            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+          az deployment sub create \
+            --location eastus2 \
             --template-file CI/Azure/main.bicep \
-            --parameters @CI/Azure/parameters/main.parameters.dev.json \
-            --parameters postgresAdminPassword="$POSTGRES_ADMIN_PASSWORD" \
-            --mode Incremental
+            --parameters @CI/Azure/parameters/main.parameters.dev.json
+
+      # Derive the web app name from the same Bicep parameters that provision it, so the
+      # naming convention lives in exactly one place (no duplicated GitHub variable to drift).
+      - name: Resolve web app name from Bicep parameters
+        id: appname
+        run: |
+          params=CI/Azure/parameters/main.parameters.dev.json
+          prefix=$(jq -r '.parameters.namePrefix.value' "$params")
+          region=$(jq -r '.parameters.regionToken.value' "$params")
+          env=$(jq -r '.parameters.environment.value' "$params")
+          echo "name=${prefix}-api-${region}-${env}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          app-name: ${{ steps.appname.outputs.name }}
           package: publish

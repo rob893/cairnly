@@ -17,6 +17,12 @@ interface CategorySelectProps {
   kind?: CategoryKind;
   isDisabled?: boolean;
   className?: string;
+  /** Marks the field required (renders an asterisk on the label). */
+  isRequired?: boolean;
+  /** When true, the popover starts open (useful for inline edit cells). */
+  defaultOpen?: boolean;
+  /** Notified when the popover opens or closes. */
+  onOpenChange?(isOpen: boolean): void;
 }
 
 /**
@@ -31,6 +37,9 @@ export function CategorySelect({
   kind,
   isDisabled,
   className,
+  isRequired,
+  defaultOpen,
+  onOpenChange,
   'aria-label': ariaLabel
 }: CategorySelectProps) {
   const { groups, isLoading } = useCategories();
@@ -48,7 +57,10 @@ export function CategorySelect({
           onChange(Number(key));
         }
       }}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
       isDisabled={isDisabled || isLoading}
+      isRequired={isRequired}
       className={className ?? 'w-full'}
     >
       {label && <Label className="mb-1 block text-sm">{label}</Label>}

@@ -2,47 +2,75 @@
 
 ## Azure Bicep (`CI/Azure/`)
 
-Provisions a complete environment for the Cairnly API in a single resource group.
+Provisions the Cairnly API into its own resource group (`rherber-cairnly-rg-ue-d`),
+reusing shared infrastructure that lives in `rherber-shared-rg-ue-d`.
 
 ### Resources provisioned
 
-| Module | Resource | Name pattern |
-|--------|----------|-------------|
-| `logAnalytics.bicep` | Log Analytics Workspace | `<namePrefix>-la-<env>` |
-| `appInsights.bicep` | Application Insights (workspace-based) | `<namePrefix>-ai-<env>` |
-| `keyVault.bicep` | Key Vault (RBAC auth, soft-delete) | `<namePrefix>-kv-<env>` |
-| `postgres.bicep` | PostgreSQL Flexible Server + database | `<namePrefix>-pg-<env>` |
-| `appService.bicep` | App Service Plan (Linux) + Web App (.NET 10) | `<namePrefix>-asp-<env>` / `<namePrefix>-api-<env>` |
-| `rbac.bicep` | Role assignments for Web App managed identity | — |
+| Module | Resource | Location | Name |
+|--------|----------|----------|------|
+| `appInsights.bicep` | Application Insights (workspace-based) | Cairnly RG | `rherber-cairnly-ai-ue-d` |
+| `appService.bicep` | Web App (.NET 10, system-assigned MI) | Cairnly RG | `rherber-cairnly-api-ue-d` |
+| `rbac.bicep` | Monitoring Metrics Publisher on App Insights | Cairnly RG | — |
+| `keyVaultRbac.bicep` | Key Vault Secrets User on the shared vault | **shared RG** | — |
+| `nsgPostgresRule.bicep` | Inbound 5432 rule on the VM NSG | **shared RG** | `AllowCairnlyAppServiceToPostgres` |
+
+Shared resources **referenced but not created** (all pre-provisioned in the shared RG):
+App Service plan `rherber-shared-asp-ue-d`, Key Vault `rherber-kv-ue-d`, Log Analytics
+`rherber-logworkspace-uw-lws-d`, and the database VM/NSG `rherber-vm-ue-d-nsg`.
+
+### Architecture notes
+
+- **OS**: `appServiceOs` defaults to **Windows** and **must match the existing shared
+  plan's OS** so the web app stack is configured correctly (Windows gives richer
+  in-portal .NET diagnostics — Profiler, Snapshot Debugger).
+- **Database**: PostgreSQL runs on the shared VM (static public IP), not a managed
+  Flexible Server. The web app reaches it over the public endpoint on port 5432; the
+  `nsgPostgresRule` module opens that port to the web app's outbound IPs only. Those
+  IPs change only when the plan's **pricing tier** changes — re-run the deploy if you
+  resize the plan across tiers. The actual connection string is a Key Vault secret
+  (set out-of-band) and must point at the VM's public IP. PostgreSQL on the VM must be
+  configured to accept remote TLS connections (`listen_addresses`, `pg_hba.conf`).
+- **Subscription-scoped deploy**: `main.bicep` is `targetScope = 'subscription'` — the
+  deployment **creates the Cairnly RG itself** (name from the parameters file) and also
+  creates the NSG rule and assigns a Key Vault role in the shared RG (the App Service plan
+  there is pre-existing and only referenced). The deploy identity needs Contributor on the
+  **subscription** (or on both resource groups).
 
 ### Security model
 
 - The Web App uses a **system-assigned managed identity** — no secrets in app settings.
-- RBAC role assignments (via `rbac.bicep`):
-  - **Key Vault Secrets User** on the Key Vault → `DefaultAzureCredential` reads secrets at startup.
+- RBAC role assignments:
+  - **Key Vault Secrets User** on the shared Key Vault → `DefaultAzureCredential` reads secrets at startup.
   - **Monitoring Metrics Publisher** on App Insights → custom metric publishing.
-- Key Vault has `enableRbacAuthorization: true`; no legacy access policies.
+- The shared Key Vault has `enableRbacAuthorization: true`; no legacy access policies.
 
 ### Deploy infrastructure manually
 
 ```bash
-az deployment group create \
-  --resource-group <your-rg> \
+az deployment sub create \
+  --location eastus2 \
   --template-file CI/Azure/main.bicep \
-  --parameters @CI/Azure/parameters/main.parameters.dev.json \
-  --parameters postgresAdminPassword="<your-password>" \
-  --mode Incremental
+  --parameters @CI/Azure/parameters/main.parameters.dev.json
 ```
+
+The deployment creates the `rherber-cairnly-rg-ue-d` resource group; no need to create it first.
 
 ### Parameters (`CI/Azure/parameters/main.parameters.dev.json`)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `namePrefix` | `cairnly` | Short prefix for all resource names (max 16 chars) |
-| `environment` | `dev` | Environment tag; maps to `ASPNETCORE_ENVIRONMENT` |
-| `postgresAdminLogin` | `pgadmin` | Postgres admin login |
-| `postgresAdminPassword` | *(placeholder)* | **Override via secret — never commit a real password** |
-| `appServiceSku` | `B1` | App Service plan SKU |
+| `cairnlyResourceGroupName` | `rherber-cairnly-rg-ue-d` | Cairnly RG, **created** by the subscription-scoped deploy |
+| `location` | `eastus2` | Region for the Cairnly RG and its resources |
+| `namePrefix` | `rherber-cairnly` | Prefix for all resource names |
+| `regionToken` | `ue` | Region token used in names |
+| `environment` | `d` | Env token; `d` maps to `Development`, anything else → `Production` |
+| `appServiceOs` | `Windows` | OS of the existing shared plan (must match it) |
+| `appServicePlanName` | `rherber-shared-asp-ue-d` | Existing shared plan to host the web app |
+| `sharedResourceGroupName` | `rherber-shared-rg-ue-d` | RG holding shared infra |
+| `sharedKeyVaultName` | `rherber-kv-ue-d` | Shared Key Vault to read secrets from |
+| `sharedLogAnalyticsWorkspaceName` | `rherber-logworkspace-uw-lws-d` | Workspace for App Insights |
+| `vmNsgName` | `rherber-vm-ue-d-nsg` | VM NSG to open PostgreSQL on |
 
 ---
 
@@ -68,14 +96,13 @@ Triggers on push to `main`/`master` (paths: `Cairnly.API/**`) and `workflow_disp
 | `AZURE_CLIENT_ID` | App registration / managed identity client ID |
 | `AZURE_TENANT_ID` | Azure AD tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
-| `POSTGRES_ADMIN_PASSWORD` | Postgres admin password (Bicep infra deploy only) |
 
 #### Required repository variables
 
-| Variable | Example | Description |
-|----------|---------|-------------|
-| `AZURE_RESOURCE_GROUP` | `cairnly-rg-dev` | Resource group to deploy into |
-| `AZURE_WEBAPP_NAME` | `cairnly-api-dev` | App Service web app name |
+None. The resource group and web app names are derived from the Bicep parameters file
+(`CI/Azure/parameters/main.parameters.dev.json`) — the subscription-scoped deploy creates
+the RG, and the code-deploy step composes the web app name from the same `namePrefix` /
+`regionToken` / `environment` values. Change the names in one place: the parameters file.
 
 #### OIDC setup
 

@@ -3,6 +3,7 @@ import type { SortDescriptor } from 'react-aria-components';
 import { Button, Card, CardContent, CardHeader, Chip, Modal, Spinner, Table } from '@heroui/react';
 import { LineItemFormModal } from './LineItemFormModal';
 import { SelectField } from '../SelectField';
+import { CategorySelect } from '../CategorySelect';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { showErrorDetails } from '../../utils/environment';
 import { formatMoney } from '../../utils/money';
@@ -179,6 +180,31 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
   const openDetails = useCallback((item: LineItem) => setDetailsTarget(item), []);
   const openDeletePrompt = useCallback((item: LineItem) => setDeleteTarget(item), []);
 
+  const updateIncomeAsync = updateIncome.mutateAsync;
+  const updateExpenseAsync = updateExpense.mutateAsync;
+
+  // Persists a partial inline edit (name or category) by sending a full update
+  // request built from the current item plus the patched fields.
+  const handleInlineSave = useCallback(
+    async (item: LineItem, patch: { name?: string; categoryId?: number }) => {
+      const request = {
+        name: patch.name ?? item.name,
+        description: item.description ?? null,
+        amount: item.amount,
+        cadence: item.cadence,
+        categoryId: patch.categoryId ?? item.categoryId,
+        tagIds: item.tagIds
+      };
+
+      if (isIncome) {
+        await updateIncomeAsync({ incomeId: item.id, request });
+      } else {
+        await updateExpenseAsync({ expenseId: item.id, request });
+      }
+    },
+    [isIncome, updateIncomeAsync, updateExpenseAsync]
+  );
+
   const handleSubmit = async (payload: CreateSpendingPlanIncomeRequest & CreateSpendingPlanExpenseRequest) => {
     const expensePayload: CreateSpendingPlanExpenseRequest = {
       name: payload.name,
@@ -271,6 +297,7 @@ export function LineItemsSection({ kind, spendingPlanId, currency }: LineItemsSe
               onDetails={openDetails}
               onEdit={openEdit}
               onDelete={openDeletePrompt}
+              onInlineSave={handleInlineSave}
             />
 
             <TableFooter table={table} />
@@ -359,9 +386,148 @@ function SortableColumn({
       className={align === 'right' ? 'text-right' : undefined}
     >
       {({ sortDirection }: { sortDirection?: 'ascending' | 'descending' }) => (
-        <Table.SortableColumnHeader sortDirection={sortDirection}>{label}</Table.SortableColumnHeader>
+        <Table.SortableColumnHeader
+          sortDirection={sortDirection}
+          className={align === 'right' ? 'justify-end gap-1' : undefined}
+        >
+          {label}
+        </Table.SortableColumnHeader>
       )}
     </Table.Column>
+  );
+}
+
+/**
+ * Name cell that switches to a text input on click, letting the user rename a
+ * line item in place. Saves on Enter or blur (when changed) and reverts on Escape.
+ */
+function EditableNameCell({
+  item,
+  onSave
+}: {
+  item: LineItem;
+  onSave(item: LineItem, patch: { name: string }): Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(item.name);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editing) {
+      setValue(item.name);
+    }
+  }, [item.name, editing]);
+
+  const cancel = () => {
+    setValue(item.name);
+    setEditing(false);
+  };
+
+  const commit = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === item.name) {
+      cancel();
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(item, { name: trimmed });
+      setEditing(false);
+    } catch {
+      setValue(item.name);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        aria-label={`Edit ${item.name} name`}
+        className="-mx-1 max-w-full truncate rounded px-1 text-left font-medium transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        {item.name}
+      </button>
+    );
+  }
+
+  return (
+    <input
+      type="text"
+      autoFocus
+      value={value}
+      disabled={saving}
+      aria-label="Name"
+      onChange={event => setValue(event.target.value)}
+      onBlur={() => void commit()}
+      onKeyDown={event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          void commit();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          cancel();
+        }
+      }}
+      className="w-full min-w-32 rounded border border-border bg-surface px-2 py-1 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    />
+  );
+}
+
+/**
+ * Category cell that switches to an inline {@link CategorySelect} on click. The
+ * picker opens immediately; selecting a different category saves it, and closing
+ * the picker returns to the read-only display.
+ */
+function EditableCategoryCell({
+  item,
+  kind,
+  categoriesById,
+  onSave
+}: {
+  item: LineItem;
+  kind: 'income' | 'expense';
+  categoriesById: Map<number, Category>;
+  onSave(item: LineItem, patch: { categoryId: number }): Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const category = categoriesById.get(item.categoryId);
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        aria-label={`Edit ${item.name} category`}
+        className="-mx-1 flex max-w-full items-center gap-1.5 rounded px-1 text-left transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        {category?.icon && <span aria-hidden="true">{category.icon}</span>}
+        <span className="truncate">{category?.name || '—'}</span>
+      </button>
+    );
+  }
+
+  return (
+    <CategorySelect
+      aria-label="Category"
+      value={item.categoryId}
+      kind={kind === 'income' ? 'Income' : 'Expense'}
+      defaultOpen
+      onChange={categoryId => {
+        if (categoryId !== item.categoryId) {
+          void onSave(item, { categoryId });
+        }
+        setEditing(false);
+      }}
+      onOpenChange={open => {
+        if (!open) {
+          setEditing(false);
+        }
+      }}
+      className="w-full min-w-44"
+    />
   );
 }
 
@@ -489,6 +655,7 @@ interface LineItemsTableProps {
   onDetails(item: LineItem): void;
   onEdit(item: LineItem): void;
   onDelete(item: LineItem): void;
+  onInlineSave(item: LineItem, patch: { name?: string; categoryId?: number }): Promise<void>;
 }
 
 /**
@@ -511,7 +678,8 @@ const LineItemsTable = memo(function LineItemsTable({
   tagsById,
   onDetails,
   onEdit,
-  onDelete
+  onDelete,
+  onInlineSave
 }: LineItemsTableProps) {
   const sortDescriptor: SortDescriptor = {
     column: sortKey,
@@ -524,7 +692,6 @@ const LineItemsTable = memo(function LineItemsTable({
 
   const renderCells = (item: LineItem) => {
     const breakdown = cadenceBreakdown(item.amount, item.cadence);
-    const category = categoriesById.get(item.categoryId);
     const tagNames = item.tagIds.map(id => tagsById.get(id)?.name ?? '').filter(name => name !== '');
 
     const cells = [
@@ -540,13 +707,10 @@ const LineItemsTable = memo(function LineItemsTable({
         </Button>
       </Table.Cell>,
       <Table.Cell key="name">
-        <span className="font-medium">{item.name}</span>
+        <EditableNameCell item={item} onSave={onInlineSave} />
       </Table.Cell>,
       <Table.Cell key="category">
-        <span className="flex items-center gap-1.5">
-          {category?.icon && <span aria-hidden="true">{category.icon}</span>}
-          <span className="truncate">{category?.name || '—'}</span>
-        </span>
+        <EditableCategoryCell item={item} kind={kind} categoriesById={categoriesById} onSave={onInlineSave} />
       </Table.Cell>,
       <Table.Cell key="tags">
         {tagNames.length === 0 ? (

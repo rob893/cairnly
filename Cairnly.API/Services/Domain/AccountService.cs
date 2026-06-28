@@ -25,6 +25,8 @@ public sealed class AccountService : IAccountService
 
     private readonly IAccountRepository accountRepository;
 
+    private readonly IBalanceHistoryService balanceHistoryService;
+
     private readonly ICurrentUserService currentUserService;
 
     /// <summary>
@@ -32,14 +34,17 @@ public sealed class AccountService : IAccountService
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="accountRepository">The account repository.</param>
+    /// <param name="balanceHistoryService">The balance history service.</param>
     /// <param name="currentUserService">The current user service.</param>
     public AccountService(
         ILogger<AccountService> logger,
         IAccountRepository accountRepository,
+        IBalanceHistoryService balanceHistoryService,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
+        this.balanceHistoryService = balanceHistoryService ?? throw new ArgumentNullException(nameof(balanceHistoryService));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -108,6 +113,8 @@ public sealed class AccountService : IAccountService
 
         this.logger.LogInformation("Created account {AccountId} for user {UserId}", account.Id, account.UserId);
 
+        await this.RecordSnapshotSafelyAsync(account.Id, cancellationToken);
+
         var balance = account.IsManual ? account.CurrentBalance : account.OpeningBalance;
 
         return Result<AccountDto>.Success(AccountDto.FromEntity(account, balance));
@@ -143,6 +150,8 @@ public sealed class AccountService : IAccountService
         account.UpdatedById = this.currentUserService.UserId;
 
         await this.accountRepository.SaveChangesAsync(cancellationToken);
+
+        await this.RecordSnapshotSafelyAsync(account.Id, cancellationToken);
 
         var balances = await this.ResolveBalancesAsync([account], cancellationToken);
 
@@ -215,6 +224,22 @@ public sealed class AccountService : IAccountService
     private bool CanAccess(Account account)
     {
         return account.UserId == this.currentUserService.UserId || this.currentUserService.IsAdmin;
+    }
+
+    /// <summary>
+    /// Records a balance snapshot for the account, swallowing and logging any failure so that
+    /// history recording never fails the primary mutation.
+    /// </summary>
+    private async Task RecordSnapshotSafelyAsync(int accountId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await this.balanceHistoryService.RecordSnapshotsAsync([accountId], cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Failed to record balance snapshot for account {AccountId}", accountId);
+        }
     }
 
     /// <summary>

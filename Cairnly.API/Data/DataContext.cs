@@ -44,6 +44,9 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
     /// <summary>Gets the financial accounts DbSet.</summary>
     public DbSet<Account> Accounts => this.Set<Account>();
 
+    /// <summary>Gets the per-account daily balance snapshots DbSet.</summary>
+    public DbSet<AccountBalanceSnapshot> AccountBalanceSnapshots => this.Set<AccountBalanceSnapshot>();
+
     /// <summary>Gets the categories DbSet.</summary>
     public DbSet<Category> Categories => this.Set<Category>();
 
@@ -152,6 +155,25 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
             account.HasOne(a => a.User)
                 .WithMany(u => u.Accounts)
                 .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AccountBalanceSnapshot>(snapshot =>
+        {
+            snapshot.Property(s => s.CreatedAt).HasDefaultValueSql("now()");
+            snapshot.Property(s => s.UpdatedAt).HasDefaultValueSql("now()");
+
+            snapshot.HasIndex(s => new { s.AccountId, s.AsOf }).IsUnique();
+            snapshot.HasIndex(s => new { s.UserId, s.AsOf });
+
+            snapshot.HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            snapshot.HasOne(s => s.Account)
+                .WithMany()
+                .HasForeignKey(s => s.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

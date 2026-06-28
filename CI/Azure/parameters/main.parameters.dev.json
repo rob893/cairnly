@@ -2,23 +2,38 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "cairnlyResourceGroupName": {
+      "value": "rherber-cairnly-rg-ue-d"
+    },
+    "location": {
+      "value": "eastus2"
+    },
     "namePrefix": {
-      "value": "cairnly"
+      "value": "rherber-cairnly"
+    },
+    "regionToken": {
+      "value": "ue"
     },
     "environment": {
-      "value": "dev"
+      "value": "d"
     },
-    "postgresAdminLogin": {
-      "value": "pgadmin"
+    "appServiceOs": {
+      "value": "Windows"
     },
-    "postgresAdminPassword": {
-      "value": "PLACEHOLDER-override-via-secret"
+    "sharedResourceGroupName": {
+      "value": "rherber-shared-rg-ue-d"
     },
-    "appServiceSku": {
-      "value": "B1"
+    "appServicePlanName": {
+      "value": "rherber-shared-asp-ue-d"
     },
-    "postgresAllowAzureServicesAccess": {
-      "value": true
+    "sharedKeyVaultName": {
+      "value": "rherber-kv-ue-d"
+    },
+    "sharedLogAnalyticsWorkspaceName": {
+      "value": "rherber-logworkspace-uw-lws-d"
+    },
+    "vmNsgName": {
+      "value": "rherber-vm-ue-d-nsg"
     }
   }
 }

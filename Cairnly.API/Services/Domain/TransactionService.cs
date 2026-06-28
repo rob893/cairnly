@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ public sealed class TransactionService : ITransactionService
 
     private readonly ICategoryTagValidator categoryTagValidator;
 
+    private readonly IBalanceHistoryService balanceHistoryService;
+
     private readonly ICurrentUserService currentUserService;
 
     /// <summary>
@@ -37,18 +40,21 @@ public sealed class TransactionService : ITransactionService
     /// <param name="transactionRepository">The transaction repository.</param>
     /// <param name="accountRepository">The account repository.</param>
     /// <param name="categoryTagValidator">The category/tag validator.</param>
+    /// <param name="balanceHistoryService">The balance history service.</param>
     /// <param name="currentUserService">The current user service.</param>
     public TransactionService(
         ILogger<TransactionService> logger,
         ITransactionRepository transactionRepository,
         IAccountRepository accountRepository,
         ICategoryTagValidator categoryTagValidator,
+        IBalanceHistoryService balanceHistoryService,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
         this.accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
         this.categoryTagValidator = categoryTagValidator ?? throw new ArgumentNullException(nameof(categoryTagValidator));
+        this.balanceHistoryService = balanceHistoryService ?? throw new ArgumentNullException(nameof(balanceHistoryService));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -149,6 +155,8 @@ public sealed class TransactionService : ITransactionService
 
         this.logger.LogInformation("Created transaction {TransactionId} for user {UserId}", transaction.Id, transaction.UserId);
 
+        await this.RecordSnapshotsSafelyAsync([transaction.AccountId], cancellationToken);
+
         return Result<TransactionDto>.Success(TransactionDto.FromEntity(transaction));
     }
 
@@ -195,6 +203,8 @@ public sealed class TransactionService : ITransactionService
             return Result<TransactionDto>.Failure(tagResult.ErrorType!.Value, tagResult.ErrorMessage!);
         }
 
+        var previousAccountId = transaction.AccountId;
+
         transaction.AccountId = request.AccountId;
         transaction.Date = request.Date;
         transaction.Amount = request.Amount;
@@ -208,6 +218,8 @@ public sealed class TransactionService : ITransactionService
         TagLinkUtilities.Sync(transaction.TransactionTags, tagIds, tagId => new TransactionTag { TransactionId = transaction.Id, TagId = tagId });
 
         await this.transactionRepository.SaveChangesAsync(cancellationToken);
+
+        await this.RecordSnapshotsSafelyAsync([previousAccountId, transaction.AccountId], cancellationToken);
 
         return Result<TransactionDto>.Success(TransactionDto.FromEntity(transaction));
     }
@@ -233,6 +245,8 @@ public sealed class TransactionService : ITransactionService
         await this.transactionRepository.SaveChangesAsync(cancellationToken);
 
         this.logger.LogInformation("Deleted transaction {TransactionId} for user {UserId}", id, this.currentUserService.UserId);
+
+        await this.RecordSnapshotsSafelyAsync([transaction.AccountId], cancellationToken);
 
         return Result<bool>.Success(true);
     }
@@ -273,6 +287,22 @@ public sealed class TransactionService : ITransactionService
         }
 
         return await this.UpdateTransactionAsync(id, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Records balance snapshots for the affected accounts, swallowing and logging any failure so
+    /// that history recording never fails the primary mutation.
+    /// </summary>
+    private async Task RecordSnapshotsSafelyAsync(IEnumerable<int> accountIds, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await this.balanceHistoryService.RecordSnapshotsAsync(accountIds, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Failed to record balance snapshots after a transaction change");
+        }
     }
 
     private async Task<Result<bool>> ValidateAccountAsync(int accountId, CancellationToken cancellationToken)

@@ -1,8 +1,11 @@
 @description('Prefix applied to all resource names. Max 16 characters.')
 param namePrefix string
 
-@description('Deployment environment name (e.g. dev, staging, prod).')
+@description('Short environment token used in resource names (e.g. d for dev).')
 param environment string
+
+@description('Region token used in resource names (e.g. ue for East US).')
+param regionToken string
 
 @description('Azure region for Application Insights.')
 param location string
@@ -27,7 +30,7 @@ param retentionInDays int = 90
 @description('Tags to apply to the resource.')
 param tags object = {}
 
-var aiName = '${namePrefix}-ai-${environment}'
+var aiName = '${namePrefix}-ai-${regionToken}-${environment}'
 
 resource appInsightsComp 'Microsoft.Insights/components@2020-02-02' = {
   name: aiName

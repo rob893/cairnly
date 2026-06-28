@@ -10,6 +10,9 @@ import { routePaths } from './constants/routes';
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
 const AccountsPage = lazy(() => import('./pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
+const AccountDetailPage = lazy(() =>
+  import('./pages/AccountDetailPage').then(m => ({ default: m.AccountDetailPage }))
+);
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
 const CashFlowPage = lazy(() => import('./pages/CashFlowPage').then(m => ({ default: m.CashFlowPage })));
 const SpendingPlansPage = lazy(() => import('./pages/SpendingPlansPage').then(m => ({ default: m.SpendingPlansPage })));
@@ -68,6 +71,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <AccountsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={routePaths.accountDetail}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AccountDetailPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

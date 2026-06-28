@@ -1,110 +1,56 @@
-targetScope = 'resourceGroup'
+targetScope = 'subscription'
 
-@description('Short prefix applied to every resource name (e.g. "myapp"). Max 16 chars keeps all derived resource names within Azure limits.')
-@maxLength(16)
-param namePrefix string
+@description('Name of the Cairnly resource group to create and deploy the app into.')
+param cairnlyResourceGroupName string = 'rherber-cairnly-rg-ue-d'
 
-@description('Azure region; defaults to the resource group location.')
-param location string = resourceGroup().location
+@description('Azure region for the Cairnly resource group and its resources.')
+param location string = 'eastus2'
 
-@description('Deployment environment name (e.g. dev, staging, prod).')
-param environment string = 'dev'
+@description('Short prefix applied to every resource name (e.g. "rherber-cairnly").')
+@maxLength(20)
+param namePrefix string = 'rherber-cairnly'
 
-@description('PostgreSQL flexible server administrator login name.')
-param postgresAdminLogin string
+@description('Region token used in resource names (e.g. ue for East US).')
+param regionToken string = 'ue'
 
-@description('PostgreSQL flexible server administrator password. Pass via --parameters or a GitHub secret — never store in plain text.')
-@secure()
-param postgresAdminPassword string
+@description('Short deployment environment token used in names (e.g. d for dev). Drives ASP.NET Core env mapping.')
+param environment string = 'd'
 
-@description('App Service plan SKU name (e.g. B1, B2, S1, P1v3).')
-param appServiceSku string = 'B1'
-
-@description('PostgreSQL flexible server compute SKU name (e.g. Standard_B1ms, Standard_D2s_v3).')
-param postgresSkuName string = 'Standard_B1ms'
-
-@description('PostgreSQL flexible server compute tier.')
+@description('Operating system of the existing shared App Service plan. Must match the plan so the web app stack is configured correctly. Windows is the default for richer in-portal .NET diagnostics (Profiler, Snapshot Debugger).')
 @allowed([
-  'Burstable'
-  'GeneralPurpose'
-  'MemoryOptimized'
+  'Windows'
+  'Linux'
 ])
-param postgresSkuTier string = 'Burstable'
+param appServiceOs string = 'Windows'
 
-@description('PostgreSQL flexible server storage size in GB.')
-@allowed([
-  32
-  64
-  128
-  256
-  512
-  1024
-  2048
-  4096
-  8192
-  16384
-])
-param postgresStorageSizeGB int = 32
+// ── Shared resources (live in the shared resource group, all pre-created) ───
+@description('Name of the shared resource group that holds the App Service plan, Key Vault, Log Analytics workspace, and the database VM/NSG.')
+param sharedResourceGroupName string = 'rherber-shared-rg-ue-d'
 
-@description('PostgreSQL automated backup retention in days (7–35).')
-@minValue(7)
-@maxValue(35)
-param postgresBackupRetentionDays int = 7
+@description('Name of the existing shared App Service plan to host the web app on.')
+param appServicePlanName string = 'rherber-shared-asp-ue-d'
 
-@description('PostgreSQL high availability mode.')
-@allowed([
-  'Disabled'
-  'SameZone'
-  'ZoneRedundant'
-])
-param postgresHighAvailabilityMode string = 'Disabled'
+@description('Name of the existing shared Key Vault the web app reads secrets from.')
+param sharedKeyVaultName string = 'rherber-kv-ue-d'
 
-@description('PostgreSQL public network access. Defaults to Enabled because this template has no VNet/private endpoint and the App Service reaches the database over the public endpoint. For production, set to Disabled and add a private endpoint.')
-@allowed([
-  'Enabled'
-  'Disabled'
-])
-param postgresPublicNetworkAccess string = 'Enabled'
+@description('Name of the existing shared Log Analytics workspace to link App Insights to.')
+param sharedLogAnalyticsWorkspaceName string = 'rherber-logworkspace-uw-lws-d'
 
-@description('Create the AllowAllAzureServices firewall rule (0.0.0.0–0.0.0.0 sentinel) on Postgres. The module default is false (secure); the dev parameters file opts in because the App Service has no VNet integration. Prefer scoping IPs via postgresAllowedClientIpRanges or going private in production.')
-param postgresAllowAzureServicesAccess bool = false
+// ── PostgreSQL-on-VM connectivity ───────────────────────────────────────────
+@description('Name of the existing VM network security group to open PostgreSQL on.')
+param vmNsgName string = 'rherber-vm-ue-d-nsg'
 
-@description('Scoped Postgres client IP ranges allowed through the firewall. Each element is { name, startIpAddress, endIpAddress }.')
-param postgresAllowedClientIpRanges array = []
-
-@description('Log Analytics workspace data retention in days (30–730).')
-@minValue(30)
-@maxValue(730)
-param logAnalyticsRetentionInDays int = 30
+@description('PostgreSQL TCP port on the VM.')
+param postgresPort string = '5432'
 
 @description('Application Insights data retention in days.')
-@allowed([
-  30
-  60
-  90
-  120
-  180
-  270
-  365
-  550
-  730
-])
+@allowed([30, 60, 90, 120, 180, 270, 365, 550, 730])
 param appInsightsRetentionInDays int = 90
-
-@description('Key Vault public network access. Defaults to Enabled because this template has no VNet/private endpoint and the App Service reads secrets over the public endpoint via managed identity. For production, set to Disabled and add a private endpoint.')
-@allowed([
-  'Enabled'
-  'Disabled'
-])
-param keyVaultPublicNetworkAccess string = 'Enabled'
-
-@description('Enable Key Vault purge protection. One-way switch, so it defaults to true for non-dev environments and false (unset) for dev to keep teardown/recreate simple.')
-param keyVaultEnablePurgeProtection bool = (environment != 'dev')
 
 @description('Additional resource tags merged over the defaults (environment, project, managedBy).')
 param tags object = {}
 
-// Merge caller-supplied tags over opinionated defaults
+// Merge caller-supplied tags over opinionated defaults.
 var resolvedTags = union(
   {
     environment: environment
@@ -114,96 +60,100 @@ var resolvedTags = union(
   tags
 )
 
-// Map infrastructure environment name → ASP.NET Core environment name
-var aspNetCoreEnv = environment == 'dev' ? 'Development' : 'Production'
+// Map the short env token → ASP.NET Core environment name.
+var aspNetCoreEnv = environment == 'd' ? 'Development' : 'Production'
 
-// ── Log Analytics workspace ──────────────────────────────────────────────────
-module logAnalytics 'modules/logAnalytics.bicep' = {
-  name: 'logAnalytics'
-  params: {
-    namePrefix: namePrefix
-    environment: environment
-    location: location
-    retentionInDays: logAnalyticsRetentionInDays
-    tags: resolvedTags
-  }
+// ── Cairnly resource group (created by this deployment) ─────────────────────
+resource cairnlyResourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = {
+  name: cairnlyResourceGroupName
+  location: location
+  tags: resolvedTags
 }
 
-// ── Application Insights (workspace-based) ──────────────────────────────────
+// ── Existing shared references (cross-RG) ───────────────────────────────────
+resource sharedLogAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' existing = {
+  name: sharedLogAnalyticsWorkspaceName
+  scope: resourceGroup(sharedResourceGroupName)
+}
+
+resource sharedKeyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
+  name: sharedKeyVaultName
+  scope: resourceGroup(sharedResourceGroupName)
+}
+
+// ── Existing shared App Service plan (pre-created in the shared resource group)
+resource sharedAppServicePlan 'Microsoft.Web/serverfarms@2024-11-01' existing = {
+  name: appServicePlanName
+  scope: resourceGroup(sharedResourceGroupName)
+}
+
+// ── Application Insights (workspace-based, linked to shared Log Analytics) ───
 module appInsights 'modules/appInsights.bicep' = {
   name: 'appInsights'
+  scope: resourceGroup(cairnlyResourceGroup.name)
   params: {
     namePrefix: namePrefix
+    regionToken: regionToken
     environment: environment
     location: location
-    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    logAnalyticsWorkspaceId: sharedLogAnalytics.id
     retentionInDays: appInsightsRetentionInDays
     tags: resolvedTags
   }
 }
 
-// ── Key Vault (RBAC authorization mode) ─────────────────────────────────────
-module keyVault 'modules/keyVault.bicep' = {
-  name: 'keyVault'
-  params: {
-    namePrefix: namePrefix
-    environment: environment
-    location: location
-    keyVaultPublicNetworkAccess: keyVaultPublicNetworkAccess
-    keyVaultEnablePurgeProtection: keyVaultEnablePurgeProtection
-    tags: resolvedTags
-  }
-}
-
-// ── PostgreSQL Flexible Server + database ────────────────────────────────────
-module postgres 'modules/postgres.bicep' = {
-  name: 'postgres'
-  params: {
-    namePrefix: namePrefix
-    environment: environment
-    location: location
-    adminLogin: postgresAdminLogin
-    adminPassword: postgresAdminPassword
-    skuName: postgresSkuName
-    skuTier: postgresSkuTier
-    storageSizeGB: postgresStorageSizeGB
-    backupRetentionDays: postgresBackupRetentionDays
-    highAvailabilityMode: postgresHighAvailabilityMode
-    publicNetworkAccess: postgresPublicNetworkAccess
-    allowAzureServicesAccess: postgresAllowAzureServicesAccess
-    allowedClientIpRanges: postgresAllowedClientIpRanges
-    tags: resolvedTags
-  }
-}
-
-// ── App Service plan + Web App (system-assigned MI, .NET 10, HTTPS-only) ────
+// ── Web App (system-assigned MI, .NET 10, HTTPS-only) on the shared plan ────
 module appService 'modules/appService.bicep' = {
   name: 'appService'
+  scope: resourceGroup(cairnlyResourceGroup.name)
   params: {
     namePrefix: namePrefix
+    regionToken: regionToken
     environment: environment
     location: location
-    sku: appServiceSku
-    keyVaultUri: keyVault.outputs.keyVaultUri
+    appServicePlanId: sharedAppServicePlan.id
+    os: appServiceOs
+    keyVaultUri: sharedKeyVault.properties.vaultUri
     appInsightsConnectionString: appInsights.outputs.connectionString
     aspNetCoreEnvironment: aspNetCoreEnv
     tags: resolvedTags
   }
 }
 
-// ── RBAC: grant Web App MI access to Key Vault secrets + App Insights metrics
-module rbac 'modules/rbac.bicep' = {
-  name: 'rbac'
+// ── RBAC: Web App MI → App Insights metrics (Cairnly RG) + shared Key Vault secrets (shared RG)
+module aiRbac 'modules/rbac.bicep' = {
+  name: 'aiRbac'
+  scope: resourceGroup(cairnlyResourceGroup.name)
   params: {
     webAppPrincipalId: appService.outputs.principalId
-    keyVaultName: keyVault.outputs.keyVaultName
     appInsightsName: appInsights.outputs.appInsightsName
   }
 }
 
+module kvRbac 'modules/keyVaultRbac.bicep' = {
+  name: 'kvRbac'
+  scope: resourceGroup(sharedResourceGroupName)
+  params: {
+    webAppPrincipalId: appService.outputs.principalId
+    keyVaultName: sharedKeyVaultName
+  }
+}
+
+// ── Open PostgreSQL on the VM NSG to the web app outbound IPs (shared RG) ────
+module postgresNsgRule 'modules/nsgPostgresRule.bicep' = {
+  name: 'postgresNsgRule'
+  scope: resourceGroup(sharedResourceGroupName)
+  params: {
+    nsgName: vmNsgName
+    port: postgresPort
+    sourceAddressPrefixes: appService.outputs.possibleOutboundIps
+  }
+}
+
 // ── Outputs for downstream use (pipeline variables, post-deploy config) ──────
+output cairnlyResourceGroupName string = cairnlyResourceGroup.name
 output webAppName string = appService.outputs.webAppName
 output webAppDefaultHostName string = appService.outputs.webAppDefaultHostName
-output keyVaultName string = keyVault.outputs.keyVaultName
-output postgresFqdn string = postgres.outputs.fqdn
+output appServicePlanId string = sharedAppServicePlan.id
 output appInsightsConnectionString string = appInsights.outputs.connectionString
+output webAppOutboundIps array = appService.outputs.possibleOutboundIps

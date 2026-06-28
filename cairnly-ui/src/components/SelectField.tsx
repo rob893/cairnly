@@ -19,6 +19,8 @@ interface SelectFieldProps<T extends string> {
   /** The selectable options. */
   options: ReadonlyArray<SelectOption<T>>;
   isDisabled?: boolean;
+  /** Marks the field required (renders an asterisk on the label). */
+  isRequired?: boolean;
   className?: string;
 }
 
@@ -34,6 +36,7 @@ export function SelectField<T extends string>({
   onChange,
   options,
   isDisabled,
+  isRequired,
   className,
   'aria-label': ariaLabel
 }: SelectFieldProps<T>) {
@@ -47,6 +50,7 @@ export function SelectField<T extends string>({
         }
       }}
       isDisabled={isDisabled}
+      isRequired={isRequired}
       className={className ?? 'w-full'}
     >
       {label && <Label className="mb-1 block text-sm">{label}</Label>}

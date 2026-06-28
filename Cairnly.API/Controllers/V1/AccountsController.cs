@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Extensions;
@@ -24,15 +25,51 @@ public sealed class AccountsController : ServiceControllerBase
 {
     private readonly IAccountService accountService;
 
+    private readonly IBalanceHistoryService balanceHistoryService;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AccountsController"/> class.
     /// </summary>
     /// <param name="accountService">The account service.</param>
+    /// <param name="balanceHistoryService">The balance history service.</param>
     /// <param name="correlationIdService">The correlation ID service.</param>
-    public AccountsController(IAccountService accountService, ICorrelationIdService correlationIdService)
+    public AccountsController(IAccountService accountService, IBalanceHistoryService balanceHistoryService, ICorrelationIdService correlationIdService)
         : base(correlationIdService)
     {
         this.accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+        this.balanceHistoryService = balanceHistoryService ?? throw new ArgumentNullException(nameof(balanceHistoryService));
+    }
+
+    /// <summary>
+    /// Gets the current user's net-worth history for the selected window.
+    /// </summary>
+    /// <param name="queryParameters">The history query parameters (timeframe).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The net-worth history.</returns>
+    /// <response code="200">Returns the net-worth history.</response>
+    [HttpGet("net-worth", Name = nameof(GetNetWorthHistoryAsync))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<NetWorthHistoryDto>> GetNetWorthHistoryAsync([FromQuery] BalanceHistoryQueryParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var history = await this.balanceHistoryService.GetNetWorthHistoryAsync(queryParameters, cancellationToken);
+
+        return this.Ok(history);
+    }
+
+    /// <summary>
+    /// Gets per-account balance history for the current user over the selected window.
+    /// </summary>
+    /// <param name="queryParameters">The history query parameters (timeframe).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The per-account balance history series.</returns>
+    /// <response code="200">Returns the per-account balance history.</response>
+    [HttpGet("history", Name = nameof(GetAccountHistoryAsync))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AccountHistoryDto>>> GetAccountHistoryAsync([FromQuery] BalanceHistoryQueryParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var history = await this.balanceHistoryService.GetAccountHistoryAsync(queryParameters, cancellationToken);
+
+        return this.Ok(history);
     }
 
     /// <summary>

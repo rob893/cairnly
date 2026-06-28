@@ -1,14 +1,24 @@
-@description('Prefix applied to all resource names. Max 16 characters.')
+@description('Prefix applied to all resource names.')
 param namePrefix string
 
-@description('Deployment environment name (e.g. dev, staging, prod).')
+@description('Region token used in resource names (e.g. ue for East US).')
+param regionToken string
+
+@description('Short environment token used in resource names (e.g. d for dev).')
 param environment string
 
-@description('Azure region for the App Service resources.')
+@description('Azure region for the web app. Must match the App Service plan\'s region.')
 param location string
 
-@description('App Service plan SKU name (e.g. B1, B2, S1, P1v3).')
-param sku string = 'B1'
+@description('Resource ID of the (shared) App Service plan to host this web app on.')
+param appServicePlanId string
+
+@description('Operating system of the target plan. Drives the runtime stack configuration.')
+@allowed([
+  'Windows'
+  'Linux'
+])
+param os string = 'Windows'
 
 @description('URI of the Key Vault from which the app reads secrets via managed identity.')
 param keyVaultUri string
@@ -19,65 +29,65 @@ param appInsightsConnectionString string
 @description('ASP.NET Core environment name (e.g. Development, Production).')
 param aspNetCoreEnvironment string = 'Production'
 
-@description('Tags to apply to all resources.')
+@description('Tags to apply to the web app.')
 param tags object = {}
 
-var appPlanName = '${namePrefix}-asp-${environment}'
-var appName = '${namePrefix}-api-${environment}'
+var appName = '${namePrefix}-api-${regionToken}-${environment}'
+var isLinux = os == 'Linux'
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2024-11-01' = {
-  name: appPlanName
-  location: location
-  tags: tags
-  kind: 'linux'
-  sku: {
-    name: sku
+var baseAppSettings = [
+  {
+    name: 'ASPNETCORE_ENVIRONMENT'
+    value: aspNetCoreEnvironment
   }
-  properties: {
-    reserved: true // required for Linux plans
+  {
+    // The app uses DefaultAzureCredential + this URI to load secrets from Key Vault.
+    name: 'KeyVaultUrl'
+    value: keyVaultUri
   }
-}
+  {
+    // Config key the API reads (ConfigurationKeys.ApplicationInsightsConnectionString).
+    // Telemetry is wired in code via UseAzureMonitor, so the auto-instrumentation agent
+    // (ApplicationInsightsAgent_EXTENSION_VERSION) is intentionally NOT enabled to avoid
+    // double-instrumentation. Name must match the flat config key exactly.
+    name: 'ApplicationInsightsConnectionString'
+    value: appInsightsConnectionString
+  }
+]
 
 resource webApp 'Microsoft.Web/sites@2024-11-01' = {
   name: appName
   location: location
   tags: tags
-  kind: 'app,linux'
+  kind: isLinux ? 'app,linux' : 'app'
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: appServicePlanId
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'DOTNETCORE|10.0'
+      // Linux uses linuxFxVersion; Windows uses netFrameworkVersion + CURRENT_STACK metadata.
+      linuxFxVersion: isLinux ? 'DOTNETCORE|10.0' : null
+      netFrameworkVersion: isLinux ? null : 'v10.0'
+      metadata: isLinux ? null : [
+        {
+          name: 'CURRENT_STACK'
+          value: 'dotnet'
+        }
+      ]
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      appSettings: [
-        {
-          name: 'ASPNETCORE_ENVIRONMENT'
-          value: aspNetCoreEnvironment
-        }
-        {
-          // The app uses DefaultAzureCredential + this URI to load secrets from Key Vault
-          name: 'KeyVaultUrl'
-          value: keyVaultUri
-        }
-        {
-          // Config key the API reads (ConfigurationKeys.ApplicationInsightsConnectionString).
-          // The app wires telemetry in code via UseAzureMonitor, so we do NOT enable the
-          // ApplicationInsightsAgent_EXTENSION_VERSION auto-instrumentation agent (that would
-          // double-instrument). Name must match the flat config key exactly.
-          name: 'ApplicationInsightsConnectionString'
-          value: appInsightsConnectionString
-        }
-      ]
+      appSettings: baseAppSettings
     }
   }
 }
 
 output webAppName string = webApp.name
 output webAppDefaultHostName string = webApp.properties.defaultHostName
-// Used by rbac.bicep to assign roles to this identity
+// Used by rbac modules to assign roles to this identity.
 output principalId string = webApp.identity.principalId
+// All possible outbound IPs; fed to the VM NSG rule so the app can reach PostgreSQL.
+// These change only when the plan's pricing tier changes.
+output possibleOutboundIps array = split(webApp.properties.possibleOutboundIpAddresses, ',')

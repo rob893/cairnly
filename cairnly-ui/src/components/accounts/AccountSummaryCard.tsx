@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@heroui/react';
 import { formatMoney } from '../../utils/money';
-import type { MockSummaryItem } from '../../constants/mockAccounts';
+import type { SummaryItem } from '../../utils/accounts';
 
 interface AccountSummaryCardProps {
-  assets: MockSummaryItem[];
-  liabilities: MockSummaryItem[];
+  assets: SummaryItem[];
+  liabilities: SummaryItem[];
   currency: string;
 }
 
 type DisplayMode = 'totals' | 'percent';
 
 /** A stacked proportional bar built from the items' share of the section total. */
-function SegmentBar({ items, total }: { items: MockSummaryItem[]; total: number }) {
+function SegmentBar({ items, total }: { items: SummaryItem[]; total: number }) {
   return (
     <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-secondary">
       {items.map(item => (
         <div
           key={item.label}
           className={item.color}
-          style={{ width: total > 0 ? `${(item.amount / total) * 100}%` : '0%' }}
+          style={{ width: total > 0 ? `${(Math.max(0, item.amount) / total) * 100}%` : '0%' }}
         />
       ))}
     </div>
@@ -33,7 +33,7 @@ function SummaryList({
   mode,
   currency
 }: {
-  items: MockSummaryItem[];
+  items: SummaryItem[];
   total: number;
   mode: DisplayMode;
   currency: string;

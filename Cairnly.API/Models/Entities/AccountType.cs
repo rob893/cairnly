@@ -39,5 +39,8 @@ public enum AccountType
     CreditCard,
 
     /// <summary>A loan liability.</summary>
-    Loan
+    Loan,
+
+    /// <summary>An account that does not fit the other categories.</summary>
+    Other
 }
