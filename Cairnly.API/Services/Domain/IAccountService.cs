@@ -62,4 +62,14 @@ public interface IAccountService
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A result indicating success or failure.</returns>
     Task<Result<bool>> DeleteAccountAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets an account's balance to a target value as of a given day by recording a
+    /// balance-adjustment transaction for the difference.
+    /// </summary>
+    /// <param name="id">The account ID.</param>
+    /// <param name="request">The set-balance request (target balance + as-of day).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated account DTO.</returns>
+    Task<Result<AccountDto>> SetBalanceAsync(int id, SetAccountBalanceRequest request, CancellationToken cancellationToken);
 }

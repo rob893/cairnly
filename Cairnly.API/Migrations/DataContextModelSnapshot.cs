@@ -50,12 +50,6 @@ namespace Cairnly.API.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
-                    b.Property<long>("CurrentBalance")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsManual")
-                        .HasColumnType("boolean");
-
                     b.Property<Dictionary<string, object>>("Metadata")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -567,6 +561,11 @@ namespace Cairnly.API.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
+
+                    b.Property<bool>("IsBalanceAdjustment")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsSplit")
                         .HasColumnType("boolean");

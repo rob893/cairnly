@@ -20,6 +20,8 @@ export interface Transaction {
   categoryId: number;
   source: TransactionSource;
   isSplit: boolean;
+  /** Whether this transaction is a balance adjustment from reconciling the account. */
+  isBalanceAdjustment: boolean;
   parentTransactionId?: number | null;
   tagIds: number[];
   metadata: Record<string, unknown>;

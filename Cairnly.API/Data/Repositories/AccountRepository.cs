@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -42,6 +43,18 @@ public sealed class AccountRepository : Repository<Account, AccountQueryParamete
     }
 
     /// <inheritdoc />
+    public async Task<long> GetTransactionSumAsOfAsync(int accountId, DateOnly asOf, CancellationToken cancellationToken = default)
+    {
+        // Include the whole of asOf by bounding strictly before the start of the following day.
+        var upperBoundExclusive = new DateTimeOffset(asOf.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+
+        return await this.Context.Transactions
+            .AsNoTracking()
+            .Where(t => t.AccountId == accountId && t.ParentTransactionId == null && t.Date < upperBoundExclusive)
+            .SumAsync(t => (long?)t.Amount, cancellationToken) ?? 0L;
+    }
+
+    /// <inheritdoc />
     protected override IQueryable<Account> AddWhereClauses(IQueryable<Account> query, AccountQueryParameters searchParams)
     {
         if (!searchParams.RequestingUserIsAdmin)
@@ -63,11 +76,6 @@ public sealed class AccountRepository : Repository<Account, AccountQueryParamete
         {
             var currency = searchParams.Currency.ToUpperInvariant();
             query = query.Where(a => a.Currency == currency);
-        }
-
-        if (searchParams.IsManual.HasValue)
-        {
-            query = query.Where(a => a.IsManual == searchParams.IsManual.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(searchParams.Name))

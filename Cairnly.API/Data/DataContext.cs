@@ -217,6 +217,7 @@ public sealed class DataContext : IdentityDbContext<User, Role, int,
         builder.Entity<Transaction>(transaction =>
         {
             transaction.Property(t => t.Source).HasConversion<string>().HasMaxLength(16);
+            transaction.Property(t => t.IsBalanceAdjustment).HasDefaultValue(false);
             transaction.Property(t => t.Merchant).HasMaxLength(255);
             transaction.Property(t => t.Description).HasMaxLength(1024);
             transaction.Property(t => t.Metadata).HasColumnType("jsonb").Metadata.SetValueComparer(metadataComparer);

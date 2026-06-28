@@ -31,13 +31,10 @@ public sealed record AccountDto : IIdentifiable<int>, IOwnedByUser<int>
     public required long OpeningBalance { get; init; }
 
     /// <summary>
-    /// Gets the current balance in integer minor units. Derived from transactions unless the
-    /// account is manual, in which case the stored value is returned.
+    /// Gets the current balance in integer minor units, derived from the opening balance plus the
+    /// sum of the account's transactions.
     /// </summary>
     public required long CurrentBalance { get; init; }
-
-    /// <summary>Gets a value indicating whether the balance is maintained manually.</summary>
-    public required bool IsManual { get; init; }
 
     /// <summary>Gets free-form metadata associated with the account.</summary>
     public required Dictionary<string, object> Metadata { get; init; }
@@ -68,7 +65,6 @@ public sealed record AccountDto : IIdentifiable<int>, IOwnedByUser<int>
             Currency = account.Currency,
             OpeningBalance = account.OpeningBalance,
             CurrentBalance = currentBalance,
-            IsManual = account.IsManual,
             Metadata = account.Metadata,
             CreatedAt = account.CreatedAt,
             UpdatedAt = account.UpdatedAt

@@ -99,8 +99,8 @@ export interface Account {
   class: AccountClass;
   currency: string;
   openingBalance: number;
+  /** Current balance in minor units, derived from the opening balance plus transactions. */
   currentBalance: number;
-  isManual: boolean;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -115,13 +115,19 @@ export interface CreateAccountRequest {
   class: AccountClass;
   currency: string;
   openingBalance: number;
-  currentBalance: number;
-  isManual: boolean;
   metadata?: Record<string, unknown> | null;
 }
 
 /** Payload to fully update an existing account. */
 export type UpdateAccountRequest = CreateAccountRequest;
+
+/** Payload to set an account's balance to a target value as of a day. */
+export interface SetAccountBalanceRequest {
+  /** The day the balance is set as of, as an ISO `YYYY-MM-DD` string. */
+  asOf: string;
+  /** The target balance in minor units. */
+  balance: number;
+}
 
 // Query parameters
 
@@ -130,7 +136,6 @@ export interface AccountQueryParameters extends CursorPaginationQueryParameters 
   type?: AccountType;
   class?: AccountClass;
   currency?: string;
-  isManual?: boolean;
   name?: string;
 }
 

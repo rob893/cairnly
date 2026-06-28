@@ -14,8 +14,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cairnly.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260628033106_AddAccountBalanceSnapshots")]
-    partial class AddAccountBalanceSnapshots
+    [Migration("20260628060124_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,12 +52,6 @@ namespace Cairnly.API.Migrations
                         .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
-
-                    b.Property<long>("CurrentBalance")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsManual")
-                        .HasColumnType("boolean");
 
                     b.Property<Dictionary<string, object>>("Metadata")
                         .IsRequired()
@@ -570,6 +564,11 @@ namespace Cairnly.API.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
+
+                    b.Property<bool>("IsBalanceAdjustment")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsSplit")
                         .HasColumnType("boolean");

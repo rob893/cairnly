@@ -33,23 +33,10 @@ public sealed class Account : IIdentifiable<int>, IOwnedByUser<int>, IAuditableE
     public string Currency { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the opening balance in integer minor units. Used as the starting point when the
-    /// balance is derived from transactions.
+    /// Gets or sets the opening balance in integer minor units. The account's current balance is
+    /// this value plus the sum of its transactions (including balance-adjustment transactions).
     /// </summary>
     public long OpeningBalance { get; set; }
-
-    /// <summary>
-    /// Gets or sets the manually maintained current balance in integer minor units. Only meaningful
-    /// when <see cref="IsManual"/> is <c>true</c>.
-    /// </summary>
-    public long CurrentBalance { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the balance is maintained manually. When
-    /// <c>false</c> (default) the balance is derived from <see cref="OpeningBalance"/> plus the sum
-    /// of the account's transactions.
-    /// </summary>
-    public bool IsManual { get; set; }
 
     /// <summary>
     /// Gets or sets free-form metadata stored as jsonb for future-proofing.

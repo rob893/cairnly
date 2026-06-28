@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
@@ -22,6 +25,9 @@ public sealed class AccountServiceTests
     private const int OtherUserId = 99;
 
     private readonly Mock<IAccountRepository> accountRepositoryMock;
+    private readonly Mock<ITransactionRepository> transactionRepositoryMock;
+    private readonly Mock<ICategoryRepository> categoryRepositoryMock;
+    private readonly Mock<IAccountBalanceResolver> balanceResolverMock;
     private readonly Mock<IBalanceHistoryService> balanceHistoryServiceMock;
     private readonly Mock<ICurrentUserService> currentUserServiceMock;
     private readonly AccountService sut;
@@ -29,14 +35,26 @@ public sealed class AccountServiceTests
     public AccountServiceTests()
     {
         this.accountRepositoryMock = new Mock<IAccountRepository>();
+        this.transactionRepositoryMock = new Mock<ITransactionRepository>();
+        this.categoryRepositoryMock = new Mock<ICategoryRepository>();
+        this.balanceResolverMock = new Mock<IAccountBalanceResolver>();
         this.balanceHistoryServiceMock = new Mock<IBalanceHistoryService>();
         this.currentUserServiceMock = new Mock<ICurrentUserService>();
         this.currentUserServiceMock.Setup(s => s.UserId).Returns(UserId);
         this.currentUserServiceMock.Setup(s => s.IsAdmin).Returns(false);
 
+        // By default, resolve each account's balance to its opening balance.
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalancesAsync(It.IsAny<IReadOnlyList<Account>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<Account> accounts, CancellationToken _) =>
+                (IReadOnlyDictionary<int, long>)accounts.ToDictionary(a => a.Id, a => a.OpeningBalance));
+
         this.sut = new AccountService(
             NullLogger<AccountService>.Instance,
             this.accountRepositoryMock.Object,
+            this.transactionRepositoryMock.Object,
+            this.categoryRepositoryMock.Object,
+            this.balanceResolverMock.Object,
             this.balanceHistoryServiceMock.Object,
             this.currentUserServiceMock.Object);
     }
@@ -68,39 +86,21 @@ public sealed class AccountServiceTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_DerivedBalance_AddsOpeningBalanceAndTransactionSum()
+    public async Task GetAccountByIdAsync_ReturnsResolvedBalance()
     {
-        var account = BuildAccount(1, UserId, isManual: false);
+        var account = BuildAccount(1, UserId);
         account.OpeningBalance = 1000;
         this.accountRepositoryMock
             .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
-        this.accountRepositoryMock
-            .Setup(r => r.GetTransactionSumsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<int, long> { [1] = 500 });
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalancesAsync(It.IsAny<IReadOnlyList<Account>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<int, long> { [1] = 1500 });
 
         var result = await this.sut.GetAccountByIdAsync(1, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(1500, result.ValueOrThrow.CurrentBalance);
-    }
-
-    [Fact]
-    public async Task GetAccountByIdAsync_ManualBalance_ReturnsStoredBalance()
-    {
-        var account = BuildAccount(1, UserId, isManual: true);
-        account.CurrentBalance = 2000;
-        this.accountRepositoryMock
-            .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(account);
-
-        var result = await this.sut.GetAccountByIdAsync(1, CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2000, result.ValueOrThrow.CurrentBalance);
-        this.accountRepositoryMock.Verify(
-            r => r.GetTransactionSumsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
@@ -120,6 +120,7 @@ public sealed class AccountServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal("USD", result.ValueOrThrow.Currency);
         Assert.Equal(UserId, result.ValueOrThrow.UserId);
+        Assert.Equal(100, result.ValueOrThrow.CurrentBalance);
         this.accountRepositoryMock.Verify(r => r.Add(It.Is<Account>(a => a.Currency == "USD" && a.CreatedById == UserId && a.UpdatedById == UserId)), Times.Once);
         this.accountRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -170,8 +171,7 @@ public sealed class AccountServiceTests
     [Fact]
     public async Task PatchAccountAsync_ReplaceName_UpdatesAccount()
     {
-        var account = BuildAccount(1, UserId, isManual: true);
-        account.CurrentBalance = 100;
+        var account = BuildAccount(1, UserId);
         this.accountRepositoryMock
             .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
@@ -205,7 +205,71 @@ public sealed class AccountServiceTests
         Assert.Equal(DomainErrorType.Forbidden, result.ErrorType);
     }
 
-    private static Account BuildAccount(int id, int userId, bool isManual = false)
+    [Fact]
+    public async Task SetBalanceAsync_CreatesAdjustmentForDeltaAndRecordsSnapshot()
+    {
+        var account = BuildAccount(1, UserId);
+        account.OpeningBalance = 0;
+        this.accountRepositoryMock
+            .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(account);
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalanceAsOfAsync(account, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1000);
+        this.categoryRepositoryMock
+            .Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<Category, bool>>>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Category { Id = 7, Name = "Uncategorized", IsSystem = true });
+
+        var request = new SetAccountBalanceRequest { AsOf = new DateOnly(2026, 6, 28), Balance = 1500 };
+
+        var result = await this.sut.SetBalanceAsync(1, request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        this.transactionRepositoryMock.Verify(
+            r => r.Add(It.Is<Transaction>(t => t.Amount == 500 && t.IsBalanceAdjustment && t.CategoryId == 7 && t.AccountId == 1)),
+            Times.Once);
+        this.transactionRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this.balanceHistoryServiceMock.Verify(
+            s => s.RecordSnapshotsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SetBalanceAsync_NoDelta_DoesNotCreateAdjustment()
+    {
+        var account = BuildAccount(1, UserId);
+        this.accountRepositoryMock
+            .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(account);
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalanceAsOfAsync(account, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1500);
+
+        var request = new SetAccountBalanceRequest { AsOf = new DateOnly(2026, 6, 28), Balance = 1500 };
+
+        var result = await this.sut.SetBalanceAsync(1, request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        this.transactionRepositoryMock.Verify(r => r.Add(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SetBalanceAsync_OtherUser_ReturnsForbidden()
+    {
+        this.accountRepositoryMock
+            .Setup(r => r.GetByIdAsync(1, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BuildAccount(1, OtherUserId));
+
+        var request = new SetAccountBalanceRequest { AsOf = new DateOnly(2026, 6, 28), Balance = 1500 };
+
+        var result = await this.sut.SetBalanceAsync(1, request, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(DomainErrorType.Forbidden, result.ErrorType);
+        this.transactionRepositoryMock.Verify(r => r.Add(It.IsAny<Transaction>()), Times.Never);
+    }
+
+    private static Account BuildAccount(int id, int userId)
     {
         return new Account
         {
@@ -214,8 +278,7 @@ public sealed class AccountServiceTests
             Name = "Account",
             Type = AccountType.Checking,
             Class = AccountClass.Asset,
-            Currency = "USD",
-            IsManual = isManual
+            Currency = "USD"
         };
     }
 }

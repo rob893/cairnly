@@ -25,6 +25,8 @@ public sealed class BalanceHistoryService : IBalanceHistoryService
 
     private readonly IAccountRepository accountRepository;
 
+    private readonly IAccountBalanceResolver balanceResolver;
+
     private readonly ICurrentUserService currentUserService;
 
     /// <summary>
@@ -33,16 +35,19 @@ public sealed class BalanceHistoryService : IBalanceHistoryService
     /// <param name="logger">The logger.</param>
     /// <param name="balanceHistoryRepository">The balance history repository.</param>
     /// <param name="accountRepository">The account repository.</param>
+    /// <param name="balanceResolver">The account balance resolver.</param>
     /// <param name="currentUserService">The current user service.</param>
     public BalanceHistoryService(
         ILogger<BalanceHistoryService> logger,
         IBalanceHistoryRepository balanceHistoryRepository,
         IAccountRepository accountRepository,
+        IAccountBalanceResolver balanceResolver,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.balanceHistoryRepository = balanceHistoryRepository ?? throw new ArgumentNullException(nameof(balanceHistoryRepository));
         this.accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
+        this.balanceResolver = balanceResolver ?? throw new ArgumentNullException(nameof(balanceResolver));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -65,7 +70,7 @@ public sealed class BalanceHistoryService : IBalanceHistoryService
             return;
         }
 
-        var balances = await this.ResolveBalancesAsync(accounts, cancellationToken);
+        var balances = await this.balanceResolver.ResolveBalancesAsync(accounts, cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         foreach (var account in accounts)
@@ -90,7 +95,7 @@ public sealed class BalanceHistoryService : IBalanceHistoryService
         var accounts = await this.accountRepository.SearchAsync(a => a.UserId == userId, track: false, cancellationToken);
         var classById = accounts.ToDictionary(a => a.Id, a => a.Class);
 
-        var currentBalances = await this.ResolveBalancesAsync(accounts, cancellationToken);
+        var currentBalances = await this.balanceResolver.ResolveBalancesAsync(accounts, cancellationToken);
         var currency = accounts.Count > 0 ? accounts[0].Currency : DefaultCurrency;
 
         var (currentAssets, currentLiabilities) = AggregateTotals(currentBalances, classById);
@@ -263,29 +268,5 @@ public sealed class BalanceHistoryService : IBalanceHistoryService
         }
 
         return (assets, liabilities);
-    }
-
-    /// <summary>
-    /// Resolves the current balance for each account: stored value for manual accounts, opening
-    /// balance plus the sum of transactions for derived accounts (computed in a single query).
-    /// </summary>
-    private async Task<IReadOnlyDictionary<int, long>> ResolveBalancesAsync(IReadOnlyList<Account> accounts, CancellationToken cancellationToken)
-    {
-        var derivedIds = accounts.Where(a => !a.IsManual).Select(a => a.Id).ToList();
-
-        var sums = derivedIds.Count > 0
-            ? await this.accountRepository.GetTransactionSumsAsync(derivedIds, cancellationToken)
-            : new Dictionary<int, long>();
-
-        var balances = new Dictionary<int, long>(accounts.Count);
-
-        foreach (var account in accounts)
-        {
-            balances[account.Id] = account.IsManual
-                ? account.CurrentBalance
-                : account.OpeningBalance + (sums.TryGetValue(account.Id, out var sum) ? sum : 0);
-        }
-
-        return balances;
     }
 }

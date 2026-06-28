@@ -23,6 +23,7 @@ public sealed class BalanceHistoryServiceTests
 
     private readonly Mock<IBalanceHistoryRepository> balanceHistoryRepositoryMock;
     private readonly Mock<IAccountRepository> accountRepositoryMock;
+    private readonly Mock<IAccountBalanceResolver> balanceResolverMock;
     private readonly Mock<ICurrentUserService> currentUserServiceMock;
     private readonly BalanceHistoryService sut;
 
@@ -30,13 +31,21 @@ public sealed class BalanceHistoryServiceTests
     {
         this.balanceHistoryRepositoryMock = new Mock<IBalanceHistoryRepository>();
         this.accountRepositoryMock = new Mock<IAccountRepository>();
+        this.balanceResolverMock = new Mock<IAccountBalanceResolver>();
         this.currentUserServiceMock = new Mock<ICurrentUserService>();
         this.currentUserServiceMock.Setup(s => s.UserId).Returns(UserId);
+
+        // By default, resolve each account's balance to its opening balance.
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalancesAsync(It.IsAny<IReadOnlyList<Account>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<Account> accounts, CancellationToken _) =>
+                (IReadOnlyDictionary<int, long>)accounts.ToDictionary(a => a.Id, a => a.OpeningBalance));
 
         this.sut = new BalanceHistoryService(
             NullLogger<BalanceHistoryService>.Instance,
             this.balanceHistoryRepositoryMock.Object,
             this.accountRepositoryMock.Object,
+            this.balanceResolverMock.Object,
             this.currentUserServiceMock.Object);
     }
 
@@ -56,13 +65,13 @@ public sealed class BalanceHistoryServiceTests
     [Fact]
     public async Task RecordSnapshotsAsync_DedupesAndUpsertsResolvedBalancePerAccount()
     {
-        var manual = BuildAccount(1, isManual: true, currentBalance: 500);
-        var derived = BuildAccount(2, isManual: false, openingBalance: 100);
+        var first = BuildAccount(1, openingBalance: 500);
+        var second = BuildAccount(2, openingBalance: 100);
 
-        this.SetupAccounts(manual, derived);
-        this.accountRepositoryMock
-            .Setup(r => r.GetTransactionSumsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<int, long> { [2] = 50 });
+        this.SetupAccounts(first, second);
+        this.balanceResolverMock
+            .Setup(r => r.ResolveBalancesAsync(It.IsAny<IReadOnlyList<Account>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<int, long> { [1] = 500, [2] = 150 });
 
         await this.sut.RecordSnapshotsAsync([1, 1, 2], CancellationToken.None);
 
@@ -78,8 +87,8 @@ public sealed class BalanceHistoryServiceTests
     [Fact]
     public async Task GetNetWorthHistoryAsync_ComputesTotalsAndChangeVersusEarliestPoint()
     {
-        var asset = BuildAccount(1, isManual: true, currentBalance: 1000, accountClass: AccountClass.Asset);
-        var liability = BuildAccount(2, isManual: true, currentBalance: 300, accountClass: AccountClass.Liability);
+        var asset = BuildAccount(1, openingBalance: 1000, accountClass: AccountClass.Asset);
+        var liability = BuildAccount(2, openingBalance: 300, accountClass: AccountClass.Liability);
         this.SetupAccounts(asset, liability);
 
         var earlier = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-5);
@@ -107,7 +116,7 @@ public sealed class BalanceHistoryServiceTests
     [Fact]
     public async Task GetNetWorthHistoryAsync_NoSnapshots_ReturnsSingleCurrentPointWithZeroChange()
     {
-        var asset = BuildAccount(1, isManual: true, currentBalance: 500, accountClass: AccountClass.Asset);
+        var asset = BuildAccount(1, openingBalance: 500, accountClass: AccountClass.Asset);
         this.SetupAccounts(asset);
 
         this.balanceHistoryRepositoryMock
@@ -153,7 +162,7 @@ public sealed class BalanceHistoryServiceTests
             .ReturnsAsync(accounts.ToList());
     }
 
-    private static Account BuildAccount(int id, bool isManual = false, long openingBalance = 0, long currentBalance = 0, AccountClass accountClass = AccountClass.Asset)
+    private static Account BuildAccount(int id, long openingBalance = 0, AccountClass accountClass = AccountClass.Asset)
     {
         return new Account
         {
@@ -163,9 +172,7 @@ public sealed class BalanceHistoryServiceTests
             Type = AccountType.Checking,
             Class = accountClass,
             Currency = "USD",
-            IsManual = isManual,
-            OpeningBalance = openingBalance,
-            CurrentBalance = currentBalance
+            OpeningBalance = openingBalance
         };
     }
 

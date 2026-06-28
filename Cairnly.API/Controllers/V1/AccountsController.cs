@@ -219,4 +219,33 @@ public sealed class AccountsController : ServiceControllerBase
 
         return this.NoContent();
     }
+
+    /// <summary>
+    /// Sets an account's balance to a target value as of a given day by recording a
+    /// balance-adjustment transaction for the difference.
+    /// </summary>
+    /// <param name="id">The account ID.</param>
+    /// <param name="request">The set-balance request.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The updated account.</returns>
+    /// <response code="200">Returns the updated account.</response>
+    /// <response code="400">If the request is invalid.</response>
+    /// <response code="403">If the account does not belong to the current user.</response>
+    /// <response code="404">If the account is not found.</response>
+    [HttpPut("{id}/balance", Name = nameof(SetAccountBalanceAsync))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AccountDto>> SetAccountBalanceAsync([FromRoute] int id, [FromBody] SetAccountBalanceRequest request, CancellationToken cancellationToken)
+    {
+        var result = await this.accountService.SetBalanceAsync(id, request, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return this.HandleServiceFailureResult(result);
+        }
+
+        return this.Ok(result.ValueOrThrow);
+    }
 }

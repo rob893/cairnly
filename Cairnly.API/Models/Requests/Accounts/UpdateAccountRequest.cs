@@ -31,15 +31,6 @@ public sealed record UpdateAccountRequest
     /// <summary>Gets the opening balance in integer minor units.</summary>
     public long OpeningBalance { get; init; }
 
-    /// <summary>
-    /// Gets the current balance in integer minor units. Only applied when <see cref="IsManual"/> is
-    /// <c>true</c>.
-    /// </summary>
-    public long CurrentBalance { get; init; }
-
-    /// <summary>Gets a value indicating whether the balance is maintained manually.</summary>
-    public bool IsManual { get; init; }
-
     /// <summary>Gets free-form metadata to associate with the account.</summary>
     public Dictionary<string, object>? Metadata { get; init; }
 
@@ -60,8 +51,6 @@ public sealed record UpdateAccountRequest
             Class = account.Class,
             Currency = account.Currency,
             OpeningBalance = account.OpeningBalance,
-            CurrentBalance = account.CurrentBalance,
-            IsManual = account.IsManual,
             Metadata = account.Metadata
         };
     }

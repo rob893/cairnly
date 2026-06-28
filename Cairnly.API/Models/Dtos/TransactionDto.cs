@@ -40,6 +40,9 @@ public sealed record TransactionDto : IIdentifiable<int>, IOwnedByUser<int>
     /// <summary>Gets a value indicating whether this transaction is split into children.</summary>
     public required bool IsSplit { get; init; }
 
+    /// <summary>Gets a value indicating whether this transaction is a balance adjustment.</summary>
+    public required bool IsBalanceAdjustment { get; init; }
+
     /// <summary>Gets the optional parent transaction ID when this is a split child.</summary>
     public int? ParentTransactionId { get; init; }
 
@@ -77,6 +80,7 @@ public sealed record TransactionDto : IIdentifiable<int>, IOwnedByUser<int>
             CategoryId = transaction.CategoryId,
             Source = transaction.Source,
             IsSplit = transaction.IsSplit,
+            IsBalanceAdjustment = transaction.IsBalanceAdjustment,
             ParentTransactionId = transaction.ParentTransactionId,
             TagIds = transaction.TransactionTags.Select(tt => tt.TagId).ToList(),
             Metadata = transaction.Metadata,

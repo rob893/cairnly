@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import type {
   BalanceHistoryTimeframe,
   CreateAccountRequest,
+  SetAccountBalanceRequest,
   UpdateAccountRequest
 } from '../types/accounts';
 
@@ -117,5 +118,20 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: (id: number) => accountsApi.deleteAccount(id),
     onSuccess: () => invalidateAccountQueries(queryClient)
+  });
+}
+
+export function useSetAccountBalance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, request }: { id: number; request: SetAccountBalanceRequest }) =>
+      accountsApi.setBalance(id, request),
+    onSuccess: () => {
+      invalidateAccountQueries(queryClient);
+      // Setting the balance records an adjustment transaction. Use a literal key to avoid a
+      // circular import with hooks/transactions (which imports accountQueryKeys).
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    }
   });
 }

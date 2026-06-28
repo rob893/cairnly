@@ -1,6 +1,6 @@
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Button, Modal, Spinner } from '@heroui/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Button, Chip, Modal, Spinner } from '@heroui/react';
+import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 import { CategorySelect } from '../CategorySelect';
 import { TransactionFormModal } from './TransactionFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
@@ -335,6 +335,7 @@ const TransactionRow = memo(function TransactionRow({
   onDelete
 }: TransactionRowProps) {
   const category = categoriesById.get(transaction.categoryId);
+  const isAdjustment = transaction.isBalanceAdjustment;
 
   return (
     <li className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-surface-secondary/40 lg:grid-cols-[2fr_1.5fr_1fr_1fr_auto]">
@@ -343,31 +344,54 @@ const TransactionRow = memo(function TransactionRow({
           className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-sm"
           aria-hidden="true"
         >
-          {category?.icon || (transaction.merchant || transaction.description || '?')[0]?.toUpperCase()}
+          {isAdjustment ? <Scale className="size-4 text-muted" /> : category?.icon || (transaction.merchant || transaction.description || '?')[0]?.toUpperCase()}
         </span>
-        <EditableMerchantCell transaction={transaction} fallback={category?.name} onSave={onInlineSave} />
+        {isAdjustment ? (
+          <span className="truncate font-medium text-foreground">Balance adjustment</span>
+        ) : (
+          <EditableMerchantCell transaction={transaction} fallback={category?.name} onSave={onInlineSave} />
+        )}
       </div>
 
       <div className="hidden min-w-0 lg:block">
-        <EditableCategoryCell transaction={transaction} category={category} onSave={onInlineSave} />
+        {isAdjustment ? (
+          <Chip variant="soft" size="sm">
+            Adjustment
+          </Chip>
+        ) : (
+          <EditableCategoryCell transaction={transaction} category={category} onSave={onInlineSave} />
+        )}
       </div>
 
       <div className="hidden min-w-0 items-center gap-2 text-sm text-muted lg:flex">
         {accountName ? <span className="truncate">{accountName}</span> : <span aria-hidden="true">—</span>}
       </div>
 
-      <EditableAmountCell transaction={transaction} currency={currency} onSave={onInlineSave} />
+      {isAdjustment ? (
+        <div className="text-right">
+          <span
+            className={`text-sm font-semibold tabular-nums ${transaction.amount > 0 ? 'text-success' : 'text-foreground'}`}
+          >
+            {transaction.amount > 0 ? '+' : ''}
+            {formatMoney(transaction.amount, currency)}
+          </span>
+        </div>
+      ) : (
+        <EditableAmountCell transaction={transaction} currency={currency} onSave={onInlineSave} />
+      )}
 
       <div className="flex shrink-0 items-center justify-end gap-1">
-        <Button
-          isIconOnly
-          variant="ghost"
-          size="sm"
-          onPress={() => onEdit(transaction)}
-          aria-label="Edit transaction"
-        >
-          <Pencil className="size-4" />
-        </Button>
+        {!isAdjustment && (
+          <Button
+            isIconOnly
+            variant="ghost"
+            size="sm"
+            onPress={() => onEdit(transaction)}
+            aria-label="Edit transaction"
+          >
+            <Pencil className="size-4" />
+          </Button>
+        )}
         <Button
           isIconOnly
           variant="danger-soft"

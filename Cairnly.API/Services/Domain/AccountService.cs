@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,9 +20,18 @@ namespace Cairnly.API.Services.Domain;
 /// </summary>
 public sealed class AccountService : IAccountService
 {
+    /// <summary>The name of the system category assigned to balance-adjustment transactions.</summary>
+    private const string AdjustmentCategoryName = "Uncategorized";
+
     private readonly ILogger<AccountService> logger;
 
     private readonly IAccountRepository accountRepository;
+
+    private readonly ITransactionRepository transactionRepository;
+
+    private readonly ICategoryRepository categoryRepository;
+
+    private readonly IAccountBalanceResolver balanceResolver;
 
     private readonly IBalanceHistoryService balanceHistoryService;
 
@@ -34,16 +42,25 @@ public sealed class AccountService : IAccountService
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="accountRepository">The account repository.</param>
+    /// <param name="transactionRepository">The transaction repository.</param>
+    /// <param name="categoryRepository">The category repository.</param>
+    /// <param name="balanceResolver">The account balance resolver.</param>
     /// <param name="balanceHistoryService">The balance history service.</param>
     /// <param name="currentUserService">The current user service.</param>
     public AccountService(
         ILogger<AccountService> logger,
         IAccountRepository accountRepository,
+        ITransactionRepository transactionRepository,
+        ICategoryRepository categoryRepository,
+        IAccountBalanceResolver balanceResolver,
         IBalanceHistoryService balanceHistoryService,
         ICurrentUserService currentUserService)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
+        this.transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
+        this.categoryRepository = categoryRepository ?? throw new ArgumentNullException(nameof(categoryRepository));
+        this.balanceResolver = balanceResolver ?? throw new ArgumentNullException(nameof(balanceResolver));
         this.balanceHistoryService = balanceHistoryService ?? throw new ArgumentNullException(nameof(balanceHistoryService));
         this.currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
@@ -57,7 +74,7 @@ public sealed class AccountService : IAccountService
         queryParameters.RequestingUserIsAdmin = this.currentUserService.IsAdmin;
 
         var pagedList = await this.accountRepository.SearchAsync(queryParameters, track: false, cancellationToken);
-        var balances = await this.ResolveBalancesAsync(pagedList.ToList(), cancellationToken);
+        var balances = await this.balanceResolver.ResolveBalancesAsync(pagedList.ToList(), cancellationToken);
 
         var mapped = pagedList
             .Select(account => AccountDto.FromEntity(account, balances[account.Id]))
@@ -83,7 +100,7 @@ public sealed class AccountService : IAccountService
             return Result<AccountDto>.Failure(DomainErrorType.Forbidden, "You can only access your own accounts");
         }
 
-        var balances = await this.ResolveBalancesAsync([account], cancellationToken);
+        var balances = await this.balanceResolver.ResolveBalancesAsync([account], cancellationToken);
 
         return Result<AccountDto>.Success(AccountDto.FromEntity(account, balances[account.Id]));
     }
@@ -101,8 +118,6 @@ public sealed class AccountService : IAccountService
             Class = request.Class,
             Currency = request.Currency.ToUpperInvariant(),
             OpeningBalance = request.OpeningBalance,
-            CurrentBalance = request.IsManual ? request.CurrentBalance : 0,
-            IsManual = request.IsManual,
             Metadata = request.Metadata ?? [],
             CreatedById = this.currentUserService.UserId,
             UpdatedById = this.currentUserService.UserId
@@ -115,9 +130,7 @@ public sealed class AccountService : IAccountService
 
         await this.RecordSnapshotSafelyAsync(account.Id, cancellationToken);
 
-        var balance = account.IsManual ? account.CurrentBalance : account.OpeningBalance;
-
-        return Result<AccountDto>.Success(AccountDto.FromEntity(account, balance));
+        return Result<AccountDto>.Success(AccountDto.FromEntity(account, account.OpeningBalance));
     }
 
     /// <inheritdoc />
@@ -144,8 +157,6 @@ public sealed class AccountService : IAccountService
         account.Class = request.Class;
         account.Currency = request.Currency.ToUpperInvariant();
         account.OpeningBalance = request.OpeningBalance;
-        account.IsManual = request.IsManual;
-        account.CurrentBalance = request.IsManual ? request.CurrentBalance : 0;
         account.Metadata = request.Metadata ?? [];
         account.UpdatedById = this.currentUserService.UserId;
 
@@ -153,7 +164,7 @@ public sealed class AccountService : IAccountService
 
         await this.RecordSnapshotSafelyAsync(account.Id, cancellationToken);
 
-        var balances = await this.ResolveBalancesAsync([account], cancellationToken);
+        var balances = await this.balanceResolver.ResolveBalancesAsync([account], cancellationToken);
 
         return Result<AccountDto>.Success(AccountDto.FromEntity(account, balances[account.Id]));
     }
@@ -221,6 +232,70 @@ public sealed class AccountService : IAccountService
         return await this.UpdateAccountAsync(id, request, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<Result<AccountDto>> SetBalanceAsync(int id, SetAccountBalanceRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var account = await this.accountRepository.GetByIdAsync(id, track: false, cancellationToken);
+
+        if (account == null)
+        {
+            this.logger.LogWarning("Account {AccountId} not found for balance update", id);
+            return Result<AccountDto>.Failure(DomainErrorType.NotFound, "Account not found");
+        }
+
+        if (!this.CanAccess(account))
+        {
+            this.logger.LogWarning("User {UserId} attempted to set the balance of account {AccountId} owned by {OwnerId}", this.currentUserService.UserId, id, account.UserId);
+            return Result<AccountDto>.Failure(DomainErrorType.Forbidden, "You can only update your own accounts");
+        }
+
+        var balanceAsOf = await this.balanceResolver.ResolveBalanceAsOfAsync(account, request.AsOf, cancellationToken);
+        var delta = request.Balance - balanceAsOf;
+
+        if (delta != 0)
+        {
+            var category = await this.categoryRepository.FirstOrDefaultAsync(
+                c => c.IsSystem && c.Name == AdjustmentCategoryName,
+                track: false,
+                cancellationToken);
+
+            if (category == null)
+            {
+                this.logger.LogError("System category '{CategoryName}' not found; cannot record balance adjustment", AdjustmentCategoryName);
+                return Result<AccountDto>.Failure(DomainErrorType.Validation, "Unable to record the balance adjustment.");
+            }
+
+            // Date the adjustment at the end of the chosen day so it reflects the day's closing balance.
+            var adjustmentDate = new DateTimeOffset(request.AsOf.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+
+            var adjustment = new Transaction
+            {
+                UserId = account.UserId,
+                AccountId = account.Id,
+                Date = adjustmentDate,
+                Amount = delta,
+                CategoryId = category.Id,
+                Source = TransactionSource.Manual,
+                IsBalanceAdjustment = true,
+                CreatedById = this.currentUserService.UserId,
+                UpdatedById = this.currentUserService.UserId
+            };
+
+            this.transactionRepository.Add(adjustment);
+            await this.transactionRepository.SaveChangesAsync(cancellationToken);
+
+            this.logger.LogInformation("Recorded balance adjustment of {Delta} on account {AccountId}", delta, account.Id);
+
+            await this.RecordSnapshotSafelyAsync(account.Id, cancellationToken);
+        }
+
+        var balances = await this.balanceResolver.ResolveBalancesAsync([account], cancellationToken);
+
+        return Result<AccountDto>.Success(AccountDto.FromEntity(account, balances[account.Id]));
+    }
+
     private bool CanAccess(Account account)
     {
         return account.UserId == this.currentUserService.UserId || this.currentUserService.IsAdmin;
@@ -240,29 +315,5 @@ public sealed class AccountService : IAccountService
         {
             this.logger.LogError(ex, "Failed to record balance snapshot for account {AccountId}", accountId);
         }
-    }
-
-    /// <summary>
-    /// Resolves the current balance for each account: stored value for manual accounts, opening
-    /// balance plus the sum of transactions for derived accounts (computed in a single query).
-    /// </summary>
-    private async Task<IReadOnlyDictionary<int, long>> ResolveBalancesAsync(List<Account> accounts, CancellationToken cancellationToken)
-    {
-        var derivedIds = accounts.Where(a => !a.IsManual).Select(a => a.Id).ToList();
-
-        var sums = derivedIds.Count > 0
-            ? await this.accountRepository.GetTransactionSumsAsync(derivedIds, cancellationToken)
-            : new Dictionary<int, long>();
-
-        var balances = new Dictionary<int, long>(accounts.Count);
-
-        foreach (var account in accounts)
-        {
-            balances[account.Id] = account.IsManual
-                ? account.CurrentBalance
-                : account.OpeningBalance + (sums.TryGetValue(account.Id, out var sum) ? sum : 0);
-        }
-
-        return balances;
     }
 }

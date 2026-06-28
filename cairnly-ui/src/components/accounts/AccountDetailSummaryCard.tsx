@@ -31,7 +31,6 @@ export function AccountDetailSummaryCard({ account, transactionCount }: AccountD
         <Row label="Account type" value={accountTypeLabel[account.type]} />
         <Row label="Class" value={accountClassLabel[account.class]} />
         <Row label="Currency" value={account.currency.toUpperCase()} />
-        <Row label="Balance" value={account.isManual ? 'Manual' : 'From transactions'} />
         <Row label="Opening balance" value={formatMoney(account.openingBalance, account.currency)} />
         <Row label="Current balance" value={formatMoney(account.currentBalance, account.currency)} />
         <Row label="Total transactions" value={transactionCount !== undefined ? String(transactionCount) : '—'} />

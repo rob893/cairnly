@@ -100,7 +100,8 @@ public sealed class TransactionServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(new[] { 3, 4 }, result.ValueOrThrow.TagIds);
-        this.transactionRepositoryMock.Verify(r => r.Add(It.IsAny<Transaction>()), Times.Once);
+        Assert.False(result.ValueOrThrow.IsBalanceAdjustment);
+        this.transactionRepositoryMock.Verify(r => r.Add(It.Is<Transaction>(t => !t.IsBalanceAdjustment)), Times.Once);
         this.transactionRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         this.balanceHistoryServiceMock.Verify(
             s => s.RecordSnapshotsAsync(It.Is<IEnumerable<int>>(ids => ids.Contains(10)), It.IsAny<CancellationToken>()),

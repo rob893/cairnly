@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Modal, Switch } from '@heroui/react';
+import { Button, Modal } from '@heroui/react';
 import { FormField } from '../FormField';
 import { SelectField } from '../SelectField';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
@@ -51,8 +51,6 @@ export function AccountFormModal({
   const [accountClass, setAccountClass] = useState<AccountClass>(defaultClassForType(DEFAULT_TYPE));
   const [currency, setCurrency] = useState(defaultCurrency);
   const [openingBalance, setOpeningBalance] = useState('');
-  const [currentBalance, setCurrentBalance] = useState('');
-  const [isManual, setIsManual] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Re-seed the form whenever it opens or the target account changes.
@@ -69,8 +67,6 @@ export function AccountFormModal({
     setAccountClass(item?.class ?? defaultClassForType(item?.type ?? DEFAULT_TYPE));
     setCurrency(seedCurrency);
     setOpeningBalance(item ? String(minorToMajor(item.openingBalance, seedCurrency)) : '');
-    setCurrentBalance(item ? String(minorToMajor(item.currentBalance, seedCurrency)) : '');
-    setIsManual(item?.isManual ?? false);
   }, [isOpen, item, defaultCurrency]);
 
   // Default the class from the type so liability types don't sit under Asset.
@@ -101,27 +97,12 @@ export function AccountFormModal({
       return;
     }
 
-    let currentMinor = 0;
-
-    if (isManual) {
-      const parsed = parseMoneyToMinor(currentBalance || '0', normalizedCurrency);
-
-      if (parsed === null) {
-        setLocalError('Enter a valid current balance.');
-        return;
-      }
-
-      currentMinor = parsed;
-    }
-
     const payload: CreateAccountRequest = {
       name: name.trim(),
       type,
       class: accountClass,
       currency: normalizedCurrency,
-      openingBalance: openingMinor,
-      currentBalance: currentMinor,
-      isManual
+      openingBalance: openingMinor
     };
 
     await onSubmit(payload);
@@ -178,27 +159,8 @@ export function AccountFormModal({
                 value={openingBalance}
                 onChange={setOpeningBalance}
                 placeholder="0.00"
-                description="Starting balance; derived accounts add transactions to this."
+                description="Starting balance; transactions adjust it from here. Use “Update balance” to reconcile later."
               />
-
-              <Switch isSelected={isManual} onChange={setIsManual} className="flex items-center gap-3">
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content>
-                  <span className="text-sm">Manually track this balance</span>
-                </Switch.Content>
-              </Switch>
-
-              {isManual && (
-                <FormField
-                  label={`Current balance (${currency.trim().toUpperCase() || 'USD'})`}
-                  value={currentBalance}
-                  onChange={setCurrentBalance}
-                  placeholder="0.00"
-                  description="The balance you maintain by hand."
-                />
-              )}
             </Modal.Body>
             <Modal.Footer>
               <Button slot="close" variant="outline">

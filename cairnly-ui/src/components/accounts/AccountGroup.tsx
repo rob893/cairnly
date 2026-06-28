@@ -61,10 +61,7 @@ export function AccountGroup({ group, currency, onEdit, onDelete }: AccountGroup
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-foreground">{row.account.name}</p>
-                  <p className="text-xs text-muted">
-                    {row.typeLabel}
-                    {row.account.isManual ? ' · Manual' : ''}
-                  </p>
+                  <p className="text-xs text-muted">{row.typeLabel}</p>
                 </div>
               </Link>
               {row.trend.length > 1 && <Sparkline points={row.trend} className="hidden shrink-0 sm:block" />}

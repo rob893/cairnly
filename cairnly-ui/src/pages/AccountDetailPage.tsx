@@ -4,13 +4,14 @@ import { Button, Spinner } from '@heroui/react';
 import { AccountBalanceCard } from '../components/accounts/AccountBalanceCard';
 import { AccountDetailSummaryCard } from '../components/accounts/AccountDetailSummaryCard';
 import { AccountFormModal } from '../components/accounts/AccountFormModal';
+import { SetBalanceModal } from '../components/accounts/SetBalanceModal';
 import { TransactionsTable } from '../components/transactions/TransactionsTable';
 import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { showErrorDetails } from '../utils/environment';
-import { useAccount, useAccountHistory, useUpdateAccount } from '../hooks/accounts';
+import { useAccount, useAccountHistory, useSetAccountBalance, useUpdateAccount } from '../hooks/accounts';
 import { useAccountTransactions } from '../hooks/transactions';
-import type { BalanceHistoryTimeframe, CreateAccountRequest } from '../types/accounts';
+import type { BalanceHistoryTimeframe, CreateAccountRequest, SetAccountBalanceRequest } from '../types/accounts';
 
 /**
  * The account detail page: a balance-history chart for the account, its
@@ -24,11 +25,13 @@ export function AccountDetailPage() {
 
   const [timeframe, setTimeframe] = useState<BalanceHistoryTimeframe>('All');
   const [editOpen, setEditOpen] = useState(false);
+  const [balanceOpen, setBalanceOpen] = useState(false);
 
   const accountQuery = useAccount(validId);
   const historyQuery = useAccountHistory(timeframe);
   const transactionsQuery = useAccountTransactions(validId);
   const updateAccount = useUpdateAccount();
+  const setAccountBalance = useSetAccountBalance();
 
   const account = accountQuery.data;
 
@@ -57,9 +60,14 @@ export function AccountDetailPage() {
         </span>
       ),
       actions: account ? (
-        <Button variant="outline" size="sm" onPress={() => setEditOpen(true)}>
-          Edit
-        </Button>
+        <>
+          <Button variant="outline" size="sm" onPress={() => setBalanceOpen(true)}>
+            Update balance
+          </Button>
+          <Button variant="outline" size="sm" onPress={() => setEditOpen(true)}>
+            Edit
+          </Button>
+        </>
       ) : undefined
     }),
     [account]
@@ -74,6 +82,15 @@ export function AccountDetailPage() {
 
     await updateAccount.mutateAsync({ id: validId, request: payload });
     setEditOpen(false);
+  };
+
+  const handleSetBalance = async (payload: SetAccountBalanceRequest) => {
+    if (!validId) {
+      return;
+    }
+
+    await setAccountBalance.mutateAsync({ id: validId, request: payload });
+    setBalanceOpen(false);
   };
 
   if (validId === undefined) {
@@ -136,6 +153,16 @@ export function AccountDetailPage() {
         onSubmit={handleEditSubmit}
         isPending={updateAccount.isPending}
         error={updateAccount.error as Error | null}
+      />
+
+      <SetBalanceModal
+        currency={account.currency}
+        currentBalance={account.currentBalance}
+        isOpen={balanceOpen}
+        onOpenChange={setBalanceOpen}
+        onSubmit={handleSetBalance}
+        isPending={setAccountBalance.isPending}
+        error={setAccountBalance.error as Error | null}
       />
     </div>
   );

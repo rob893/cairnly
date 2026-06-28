@@ -7,6 +7,7 @@ import type {
   BalanceHistoryTimeframe,
   CreateAccountRequest,
   NetWorthHistory,
+  SetAccountBalanceRequest,
   UpdateAccountRequest
 } from '../types/accounts';
 
@@ -47,6 +48,11 @@ export const accountsApi = {
 
   async deleteAccount(id: number): Promise<void> {
     await apiClient.delete(`/api/v1/accounts/${id}`);
+  },
+
+  async setBalance(id: number, request: SetAccountBalanceRequest): Promise<Account> {
+    const response = await apiClient.put<Account>(`/api/v1/accounts/${id}/balance`, request);
+    return response.data;
   },
 
   async getNetWorthHistory(timeframe: BalanceHistoryTimeframe): Promise<NetWorthHistory> {

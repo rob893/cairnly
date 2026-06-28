@@ -95,8 +95,6 @@ namespace Cairnly.API.Migrations
                     Class = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     Currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
                     OpeningBalance = table.Column<long>(type: "bigint", nullable: false),
-                    CurrentBalance = table.Column<long>(type: "bigint", nullable: false),
-                    IsManual = table.Column<bool>(type: "boolean", nullable: false),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
@@ -352,6 +350,38 @@ namespace Cairnly.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AccountBalanceSnapshots",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    AccountId = table.Column<int>(type: "integer", nullable: false),
+                    AsOf = table.Column<DateOnly>(type: "date", nullable: false),
+                    Balance = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedById = table.Column<int>(type: "integer", nullable: true),
+                    UpdatedById = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountBalanceSnapshots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountBalanceSnapshots_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountBalanceSnapshots_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Transactions",
                 columns: table => new
                 {
@@ -366,6 +396,7 @@ namespace Cairnly.API.Migrations
                     CategoryId = table.Column<int>(type: "integer", nullable: false),
                     Source = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     IsSplit = table.Column<bool>(type: "boolean", nullable: false),
+                    IsBalanceAdjustment = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ParentTransactionId = table.Column<int>(type: "integer", nullable: true),
                     Metadata = table.Column<Dictionary<string, object>>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
@@ -559,6 +590,17 @@ namespace Cairnly.API.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AccountBalanceSnapshots_AccountId_AsOf",
+                table: "AccountBalanceSnapshots",
+                columns: new[] { "AccountId", "AsOf" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountBalanceSnapshots_UserId_AsOf",
+                table: "AccountBalanceSnapshots",
+                columns: new[] { "UserId", "AsOf" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Accounts_UserId",
                 table: "Accounts",
                 column: "UserId");
@@ -721,6 +763,9 @@ namespace Cairnly.API.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AccountBalanceSnapshots");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
