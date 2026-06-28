@@ -42,7 +42,7 @@ var baseAppSettings = [
     // Telemetry is wired in code via UseAzureMonitor, so the auto-instrumentation agent
     // (ApplicationInsightsAgent_EXTENSION_VERSION) is intentionally NOT enabled to avoid
     // double-instrumentation. Name must match the flat config key exactly.
-    name: 'ApplicationInsightsConnectionString'
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
     value: appInsightsConnectionString
   }
 ]
