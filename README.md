@@ -18,8 +18,6 @@
   sample authenticated page that calls the API and pages through data.
 - **CI/CD**: GitHub Actions (PR validation, API → App Service via OIDC, UI → GitHub Pages) and
   **Azure Bicep** that provisions the whole environment.
-- Sample **Hello World** (v1 + v2) and a **Notes** resource demonstrating the full stack end-to-end
-  (these are disposable demos — see [Using this template](#using-this-template) to remove them).
 
 ## Tech stack
 
@@ -263,7 +261,7 @@ config: `az webapp restart -g rherber-cairnly-rg-uc-d -n rherber-cairnly-api-uc-
 
 #### 6. Deploy the code & verify
 
-Enable the workflow triggers (see [Using this template](#using-this-template)) and push to `main`, or
+Enable the workflow triggers and push to `main`, or
 run the deploy workflows manually (`workflow_dispatch`). The API deploys to App Service via OIDC and the
 UI deploys to GitHub Pages. Then verify the database wiring end-to-end:
 
@@ -293,9 +291,6 @@ an app setting `Cors__AllowedOrigins__0`, or a Key Vault secret).
 | `vmNsgName`                       | `rherber-vm-ue-d-nsg`           | VM NSG to open PostgreSQL on                                                      |
 
 ### GitHub Actions workflows (`.github/workflows/`)
-
-> Triggers are intentionally commented out so the template repo stays idle. Enable the
-> `pull_request`/`push` blocks after configuring the secrets above.
 
 - **`ci.yml`** — PR / branch validation. **api**: `dotnet restore` → `build -c Release` → `test`;
   **ui**: `npm ci` → `lint` → `test` → `build`.

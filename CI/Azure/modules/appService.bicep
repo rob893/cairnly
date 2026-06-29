@@ -73,6 +73,9 @@ resource webApp 'Microsoft.Web/sites@2024-11-01' = {
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
+      // Keeps the app warm so the connection pool isn't dropped on idle (avoids cold
+      // cross-region Postgres reconnects). Not supported on Free/Shared tiers.
+      alwaysOn: true
       appSettings: baseAppSettings
     }
   }

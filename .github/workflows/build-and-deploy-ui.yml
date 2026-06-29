@@ -4,7 +4,7 @@
 #   1. Enable GitHub Pages: Settings → Pages → Source → GitHub Actions
 #   2. If deploying to a project site (not a user/org site), set the Vite base path
 #      in cairnly-ui/vite.config.ts:
-#        base: '/<repo-name>/'        (e.g. '/cairnly-template/')
+#        base: '/<repo-name>/'        (e.g. '/cairnly/')
 #      For a custom domain or user/org site (username.github.io), use:
 #        base: '/'
 #      The UI already uses HashRouter, so client-side routing works on Pages.

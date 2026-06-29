@@ -1,5 +1,5 @@
 {
-  "name": "cairnly-template",
+  "name": "cairnly",
   "private": true,
   "scripts": {
     "start": "cd Cairnly.API && dotnet watch run --launch-profile https",
