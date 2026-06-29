@@ -1,8 +1,4 @@
-import {
-  accountTypeColor,
-  accountTypeLabel,
-  accountTypeOrder
-} from '../types/accounts';
+import { accountTypeColor, accountTypeLabel, accountTypeOrder } from '../types/accounts';
 import type { Account, AccountBalancePoint, AccountType } from '../types/accounts';
 
 /** A single account prepared for display within a group. */

@@ -77,6 +77,7 @@ Run from repo root unless noted.
   `record` with `get; init;`. Repos extend `Repository<…>` / `IRepository<…>`.
 - **TypeScript:** ESLint via `eslint.config.js`, format with `npm run prettier`. Prefer method syntax
   `func(): Type {}` over arrow signatures.
+- Run `npm run format` from root of repo to format files.
 
 ## Testing
 

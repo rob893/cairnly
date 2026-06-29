@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter as Router } from 'react-router';
+import { ToastProvider } from '@heroui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -32,12 +33,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-          <LazyDevTools />
-        </Router>
+        <ToastProvider placement="bottom" maxVisibleToasts={3}>
+          <Router>
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+            <LazyDevTools />
+          </Router>
+        </ToastProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </React.StrictMode>

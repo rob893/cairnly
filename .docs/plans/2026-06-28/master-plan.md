@@ -23,7 +23,7 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 | Wave | Items                                   | Status         |
 | ---- | --------------------------------------- | -------------- |
 | 1    | S1, S2, S3, S4, P2, U3, U4, U5 (8)      | ✅ Complete    |
-| 2    | U1, U2, P1, P3, S5, P4 (6)              | ⬜ Pending     |
+| 2    | U1, U2, P1, P3, S5, P4 (6)              | ✅ Complete    |
 | 3    | Q1, F1, F5, Q3+Q5, Q4, Q2 (6)           | ⬜ Pending     |
 | 4    | F3, F4, F2 (3)                          | ⬜ Pending     |
 
@@ -42,16 +42,16 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 | 7   | UX       | U5 — Shared `EmptyState` (esp. Transactions); guided first-run | Low    | Medium | ✅ Done |
 | 8   | UX       | U4 — Align `DateField` to `--field-radius`/`--field-background`| Low    | Low    | ✅ Done |
 
-### Wave 2: High Priority / Minimal Dependencies
+### Wave 2: High Priority / Minimal Dependencies — ✅ COMPLETE
 
-| #   | Area     | Finding                                                            | Effort | Impact | Dependencies |
-| --- | -------- | ----------------------------------------------------------------- | ------ | ------ | ------------ |
-| 9   | UX       | U1 — Global toast + `aria-live` success feedback on mutations     | Medium | High   | None         |
-| 10  | UX       | U2 — Refactor Forgot/Reset password onto branded `AuthShell`      | Medium | High   | U3 (W1 #6)   |
-| 11  | Perf     | P1 — On-demand paging + virtualize TransactionsTable              | Medium | High   | None         |
-| 12  | Perf     | P3 — Batch `GET /spending-plans/summaries` endpoint               | Medium | Medium | None         |
-| 13  | Security | S5 — Host `frame-ancestors`/X-Frame-Options; CORS header allowlist| Medium | Low    | None         |
-| 14  | Perf     | P4 — HeroUI deep imports (verify v3 support first)                | Medium | Medium | None         |
+| #   | Area     | Finding                                                            | Effort | Impact | Status  |
+| --- | -------- | ----------------------------------------------------------------- | ------ | ------ | ------- |
+| 9   | UX       | U1 — Global toast + `aria-live` success feedback on mutations     | Medium | High   | ✅ Done |
+| 10  | UX       | U2 — Refactor Forgot/Reset password onto branded `AuthShell`      | Medium | High   | ✅ Done |
+| 11  | Perf     | P1 — On-demand paging + virtualize TransactionsTable              | Medium | High   | ✅ Done |
+| 12  | Perf     | P3 — Batch `GET /spending-plans/summaries` endpoint               | Medium | Medium | ✅ Done |
+| 13  | Security | S5 — Host `frame-ancestors`/X-Frame-Options; CORS header allowlist| Medium | Low    | ✅ Done |
+| 14  | Perf     | P4 — HeroUI deep imports (verified supported, no measurable win)  | Medium | Medium | ✅ Done |
 
 ### Wave 3: Refactors + Feature Foundations
 
@@ -101,6 +101,17 @@ All 8 Wave 1 items implemented via 3 parallel sub-agents; API build + 161 tests 
 - **U3** — emoji/legacy v2 tokens → lucide icons + theme tokens in `ApiErrorDisplay`/`ErrorBoundary`/`ProfileSection`.
 - **U4** — `DateField` uses `--field-radius`/`--field-background`.
 - **U5** — new shared `EmptyState` used in Transactions/Home/SpendingPlans/Accounts.
+
+## Wave 2 Implementation Log (2026-06-28)
+
+All 6 Wave 2 items implemented via parallel sub-agents; API build + 165 tests pass, UI lint + build + 118 tests pass. No commits made. The W1+W2 hardening fixes (S1–S4) were also ported to the sibling reference repos `derpcode` and `starter-app-template`.
+
+- **U1** — global `ToastProvider` in `main.tsx` + `utils/notifications.ts`; success/`aria-live` toasts on transactions, accounts, balance reconcile, spending-plan, and profile/preferences mutations.
+- **U2** — `ForgotPasswordPage`/`ResetPasswordPage` refactored onto branded `AuthShell` with theme tokens + lucide icons.
+- **P1** — `TransactionsTable` on-demand paging (no eager drain) + `@tanstack/react-virtual` row virtualization.
+- **P3** — `GET /spending-plans/summaries` batch endpoint; `HomePage` uses one `useQuery`.
+- **S5** — `SecurityHeadersMiddleware` adds `X-Frame-Options: DENY` + `frame-ancestors 'none'`; CORS header allowlist (Authorization, Content-Type, X-CSRF-Token, X-Correlation-Id).
+- **P4** — verified HeroUI v3 deep imports supported but no measurable size win (~0.5 KB gzip); left as-is.
 
 ## Area Plans
 

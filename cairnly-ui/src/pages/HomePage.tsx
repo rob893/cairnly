@@ -37,8 +37,7 @@ export function HomePage() {
     [spendingPlansQuery.data]
   );
 
-  const spendingPlanIds = useMemo(() => spendingPlans.map(b => b.id), [spendingPlans]);
-  const { results, isLoading: summariesLoading } = useSpendingPlanSummaries(spendingPlanIds);
+  const { results, isLoading: summariesLoading } = useSpendingPlanSummaries();
 
   const primaryCurrency = spendingPlans[0]?.currency ?? 'USD';
 

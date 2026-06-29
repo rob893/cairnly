@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Card, CardContent, CardHeader, Button, Chip, Spinner } from '@heroui/react';
+import { Button, Chip, Spinner } from '@heroui/react';
+import { MailCheck } from 'lucide-react';
+import { AuthShell } from '../components/AuthShell';
 import { FormField } from '../components/FormField';
 import { authApi } from '../services/auth';
 
@@ -26,90 +28,92 @@ export function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-background to-content1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-2xl">
-          <CardHeader className="flex flex-col items-center pb-6 pt-8">
-            <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
-            <Chip color="success" variant="soft">
-              ✅ Email Sent
-            </Chip>
-          </CardHeader>
+      <AuthShell
+        heading="Check Your Email"
+        subheading="If an account with that email exists, we've sent a password reset link. Please check your inbox."
+        topPrompt={
+          <>
+            Remember your password?
+            <Link to="/login" className="font-semibold text-accent hover:opacity-80 transition-opacity">
+              Back to Sign In
+            </Link>
+          </>
+        }
+        brandTitle={
+          <>
+            Account security with <span className="cairnly-text-gradient">calm confirmation</span>.
+          </>
+        }
+        brandSubtitle="Cairnly keeps password recovery clear without revealing whether an email belongs to an account."
+      >
+        <div className="space-y-6 text-center">
+          <Chip color="success" variant="soft" className="mx-auto">
+            <MailCheck className="size-4" aria-hidden="true" />
+            <span>Email Sent</span>
+          </Chip>
+          <p className="text-sm text-muted">Didn't receive an email? Check your spam folder or try again.</p>
 
-          <CardContent className="px-8 pb-8 text-center">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Check Your Email</h2>
-            <p className="text-default-600 mb-6 leading-relaxed">
-              If an account with that email exists, we've sent a password reset link. Please check your inbox.
-            </p>
-            <p className="text-sm text-default-500 mb-8">
-              Didn't receive an email? Check your spam folder or try again.
-            </p>
-
-            <div className="space-y-3">
-              <Button fullWidth onPress={() => navigate('/login')}>
-                Back to Sign In
-              </Button>
-              <Button
-                variant="ghost"
-                fullWidth
-                onPress={() => {
-                  setIsSubmitted(false);
-                  setEmail('');
-                }}
-              >
-                Try Different Email
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="space-y-3">
+            <Button fullWidth onPress={() => navigate('/login')}>
+              Back to Sign In
+            </Button>
+            <Button
+              variant="ghost"
+              fullWidth
+              onPress={() => {
+                setIsSubmitted(false);
+                setEmail('');
+              }}
+            >
+              Try Different Email
+            </Button>
+          </div>
+        </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background to-content1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="flex flex-col items-center pb-6 pt-8">
-          <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Forgot Password</h2>
-          <p className="text-default-600 text-center">
-            Enter your email and we'll send you a link to reset your password.
-          </p>
-        </CardHeader>
+    <AuthShell
+      heading="Forgot Password"
+      subheading="Enter your email and we'll send you a link to reset your password."
+      topPrompt={
+        <>
+          Remember your password?
+          <Link to="/login" className="font-semibold text-accent hover:opacity-80 transition-opacity">
+            Back to Sign In
+          </Link>
+        </>
+      }
+      brandTitle={
+        <>
+          A safer path back to your <span className="cairnly-text-gradient">financial plan</span>.
+        </>
+      }
+      brandSubtitle="Request a reset link and return to tracking budgets, accounts, and spending with confidence."
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <FormField
+          label="Email Address"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          isRequired
+          isDisabled={isLoading}
+          placeholder="Enter your email address"
+          autoComplete="email"
+          description="We'll send a password reset link to this address"
+        />
 
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <FormField
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              isRequired
-              isDisabled={isLoading}
-              placeholder="Enter your email address"
-              autoComplete="email"
-              description="We'll send a password reset link to this address"
-            />
-
-            <Button type="submit" fullWidth className="font-semibold" isPending={isLoading} isDisabled={!email}>
-              {({ isPending }) => (
-                <>
-                  {isPending && <Spinner color="current" size="sm" className="mr-2" />}
-                  {isPending ? 'Sending Reset Link...' : 'Send Reset Link'}
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-default-600">
-              Remember your password?{' '}
-              <Link to="/login" className="text-primary hover:text-primary-600 font-medium transition-colors">
-                Back to Sign In
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <Button type="submit" fullWidth className="font-semibold" isPending={isLoading} isDisabled={!email}>
+          {({ isPending }) => (
+            <>
+              {isPending && <Spinner color="current" size="sm" className="mr-2" />}
+              {isPending ? 'Sending Reset Link...' : 'Send Reset Link'}
+            </>
+          )}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

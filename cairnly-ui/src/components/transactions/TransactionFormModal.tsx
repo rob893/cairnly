@@ -183,7 +183,13 @@ export function TransactionFormModal({
                 />
               </div>
 
-              <FormField label="Merchant" value={merchant} onChange={setMerchant} isRequired placeholder="e.g. Microsoft" />
+              <FormField
+                label="Merchant"
+                value={merchant}
+                onChange={setMerchant}
+                isRequired
+                placeholder="e.g. Microsoft"
+              />
 
               <CategorySelect label="Category" value={categoryId} onChange={setCategoryId} isRequired />
 
@@ -208,7 +214,11 @@ export function TransactionFormModal({
               <Button slot="close" variant="outline">
                 Cancel
               </Button>
-              <Button onPress={handleSubmit} isPending={isPending} isDisabled={!amount.trim() || !merchant.trim() || categoryId === null}>
+              <Button
+                onPress={handleSubmit}
+                isPending={isPending}
+                isDisabled={!amount.trim() || !merchant.trim() || categoryId === null}
+              >
                 {isEdit ? 'Save changes' : 'Add transaction'}
               </Button>
             </Modal.Footer>

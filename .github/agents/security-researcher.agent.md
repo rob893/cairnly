@@ -138,6 +138,10 @@ Status table for every finding. Mark `⬜ Pending` initially; implementers flip 
 - **Recommendation:** Specific fix with code example
 ```
 
+## Updating the Plan
+
+When a finding is implemented, update this plan in place — never leave it stale: flip its **Status** row to `✅ Done (W#)` and add a `- **What was done:**` bullet under the finding describing the implemented fix and how it addressed the issue (with file paths). Leave unimplemented items `⬜ Pending`.
+
 ## Key Principles
 
 - **Assume breach mentality**: Test every trust boundary

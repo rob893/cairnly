@@ -115,7 +115,13 @@ export function NetWorthCard({ history, currency, timeframe, onTimeframeChange, 
                   }}
                   formatter={value => [formatMoney(Number(value), currency), 'Net worth']}
                 />
-                <Area type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} fill="url(#netWorthFill)" />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--accent)"
+                  strokeWidth={2}
+                  fill="url(#netWorthFill)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}

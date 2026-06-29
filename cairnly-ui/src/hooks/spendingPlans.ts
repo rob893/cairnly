@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { spendingPlanExpensesApi, spendingPlanIncomesApi, spendingPlansApi } from '../services/spendingPlans';
 import { useAuth } from './useAuth';
 import type {
@@ -17,6 +17,7 @@ const PAGE_SIZE = 100;
 export const spendingPlanQueryKeys = {
   spendingPlans: () => ['spendingPlans'] as const,
   spendingPlan: (id: number) => ['spendingPlans', id] as const,
+  summaries: () => ['spendingPlans', 'summaries'] as const,
   summary: (id: number) => ['spendingPlans', id, 'summary'] as const,
   incomes: (spendingPlanId: number) => ['spendingPlans', spendingPlanId, 'income'] as const,
   expenses: (spendingPlanId: number) => ['spendingPlans', spendingPlanId, 'expenses'] as const
@@ -78,13 +79,10 @@ export interface SpendingPlanSummaryResult {
 }
 
 /**
- * Fetches the cadence summary for several spendingPlans in parallel and reports a
- * combined loading/error state. Used by the dashboard to aggregate totals across
- * all of the user's spendingPlans. Gated on authentication.
- *
- * @param spendingPlanIds The spendingPlan IDs to fetch summaries for.
+ * Fetches all spendingPlan summaries in a single request. Used by the dashboard to
+ * aggregate totals across all of the user's spendingPlans. Gated on authentication.
  */
-export function useSpendingPlanSummaries(spendingPlanIds: number[]): {
+export function useSpendingPlanSummaries(): {
   results: SpendingPlanSummaryResult[];
   isLoading: boolean;
   isError: boolean;
@@ -92,19 +90,17 @@ export function useSpendingPlanSummaries(spendingPlanIds: number[]): {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const enabled = isAuthenticated && !isAuthLoading;
 
-  const queries = useQueries({
-    queries: spendingPlanIds.map(id => ({
-      queryKey: spendingPlanQueryKeys.summary(id),
-      queryFn: () => spendingPlansApi.getSpendingPlanSummary(id),
-      enabled,
-      staleTime: 30 * 1000
-    }))
+  const query = useQuery({
+    queryKey: spendingPlanQueryKeys.summaries(),
+    queryFn: () => spendingPlansApi.getSpendingPlanSummaries(),
+    enabled,
+    staleTime: 30 * 1000
   });
 
   return {
-    results: spendingPlanIds.map((spendingPlanId, index) => ({ spendingPlanId, summary: queries[index]?.data })),
-    isLoading: enabled && queries.some(q => q.isLoading),
-    isError: queries.some(q => q.isError)
+    results: (query.data ?? []).map(summary => ({ spendingPlanId: summary.spendingPlanId, summary })),
+    isLoading: enabled && query.isLoading,
+    isError: query.isError
   };
 }
 
@@ -115,6 +111,7 @@ export function useCreateSpendingPlan() {
     mutationFn: (request: CreateSpendingPlanRequest) => spendingPlansApi.createSpendingPlan(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.spendingPlans() });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -127,6 +124,7 @@ export function useUpdateSpendingPlan(id: number) {
     onSuccess: updated => {
       queryClient.setQueryData(spendingPlanQueryKeys.spendingPlan(id), updated);
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.spendingPlans() });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -139,6 +137,7 @@ export function useDeleteSpendingPlan() {
     onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: spendingPlanQueryKeys.spendingPlan(id) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.spendingPlans() });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -171,6 +170,7 @@ export function useCreateIncome(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.incomes(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -184,6 +184,7 @@ export function useUpdateIncome(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.incomes(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -196,6 +197,7 @@ export function useDeleteIncome(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.incomes(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -228,6 +230,7 @@ export function useCreateExpense(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.expenses(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -241,6 +244,7 @@ export function useUpdateExpense(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.expenses(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }
@@ -253,6 +257,7 @@ export function useDeleteExpense(spendingPlanId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.expenses(spendingPlanId) });
       queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summary(spendingPlanId) });
+      queryClient.invalidateQueries({ queryKey: spendingPlanQueryKeys.summaries() });
     }
   });
 }

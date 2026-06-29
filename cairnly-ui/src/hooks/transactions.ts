@@ -8,7 +8,7 @@ import type {
   UpdateTransactionRequest
 } from '../types/transactions';
 
-/** Default page size for the transactions list endpoint. */
+/** On-demand page size for the transactions list endpoint. */
 const PAGE_SIZE = 100;
 
 /** Filters that scope a transactions list (excluding pagination cursors). */
@@ -30,8 +30,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
   return useInfiniteQuery({
     queryKey: transactionQueryKeys.list(filters),
-    queryFn: ({ pageParam }) =>
-      transactionsApi.getTransactions({ ...filters, first: PAGE_SIZE, after: pageParam }),
+    queryFn: ({ pageParam }) => transactionsApi.getTransactions({ ...filters, first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
     enabled: isAuthenticated && !isAuthLoading,
@@ -50,8 +49,7 @@ export function useAccountTransactions(accountId: number | undefined) {
 
   return useInfiniteQuery({
     queryKey: transactionQueryKeys.list({ accountId }),
-    queryFn: ({ pageParam }) =>
-      transactionsApi.getTransactions({ accountId, first: PAGE_SIZE, after: pageParam }),
+    queryFn: ({ pageParam }) => transactionsApi.getTransactions({ accountId, first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
     enabled: isAuthenticated && !isAuthLoading && typeof accountId === 'number',

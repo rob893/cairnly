@@ -9,6 +9,7 @@ import { TransactionsTable } from '../components/transactions/TransactionsTable'
 import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { showErrorDetails } from '../utils/environment';
+import { showSuccessToast } from '../utils/notifications';
 import { useAccount, useAccountHistory, useSetAccountBalance, useUpdateAccount } from '../hooks/accounts';
 import { useAccountTransactions } from '../hooks/transactions';
 import type { BalanceHistoryTimeframe, CreateAccountRequest, SetAccountBalanceRequest } from '../types/accounts';
@@ -81,6 +82,7 @@ export function AccountDetailPage() {
     }
 
     await updateAccount.mutateAsync({ id: validId, request: payload });
+    showSuccessToast('Account saved');
     setEditOpen(false);
   };
 
@@ -90,6 +92,7 @@ export function AccountDetailPage() {
     }
 
     await setAccountBalance.mutateAsync({ id: validId, request: payload });
+    showSuccessToast('Balance updated');
     setBalanceOpen(false);
   };
 

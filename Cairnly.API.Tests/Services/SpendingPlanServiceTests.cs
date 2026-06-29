@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -117,6 +118,75 @@ public sealed class SpendingPlanServiceTests
         Assert.Equal(90, summary.Remaining.Daily);
         Assert.Equal(632, summary.Remaining.Weekly);
         Assert.Equal(2738, summary.Remaining.Monthly);
+    }
+
+    [Fact]
+    public async Task GetSpendingPlanSummariesAsync_ReturnsSummariesForCurrentUserPlans()
+    {
+        var spendingPlans = new List<SpendingPlan>
+        {
+            BuildSpendingPlan(1, UserId),
+            BuildSpendingPlan(2, UserId),
+            BuildSpendingPlan(3, OtherUserId)
+        };
+        var incomes = new List<SpendingPlanIncome>
+        {
+            new() { UserId = UserId, SpendingPlanId = 1, Amount = 12000, Cadence = SpendingPlanCadence.Annual },
+            new() { UserId = UserId, SpendingPlanId = 2, Amount = 2400, Cadence = SpendingPlanCadence.Monthly },
+            new() { UserId = OtherUserId, SpendingPlanId = 3, Amount = 99999, Cadence = SpendingPlanCadence.Annual }
+        };
+        var expenses = new List<SpendingPlanExpense>
+        {
+            new() { UserId = UserId, SpendingPlanId = 1, Amount = 3000, Cadence = SpendingPlanCadence.Annual },
+            new() { UserId = UserId, SpendingPlanId = 2, Amount = 1200, Cadence = SpendingPlanCadence.Monthly },
+            new() { UserId = OtherUserId, SpendingPlanId = 3, Amount = 99999, Cadence = SpendingPlanCadence.Annual }
+        };
+
+        this.spendingPlanRepositoryMock
+            .Setup(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlan, bool>>>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<SpendingPlan, bool>> condition, bool _, CancellationToken _) => spendingPlans.Where(condition.Compile()).ToList());
+        this.incomeRepositoryMock
+            .Setup(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlanIncome, bool>>>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<SpendingPlanIncome, bool>> condition, bool _, CancellationToken _) => incomes.Where(condition.Compile()).ToList());
+        this.expenseRepositoryMock
+            .Setup(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlanExpense, bool>>>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Expression<Func<SpendingPlanExpense, bool>> condition, bool _, CancellationToken _) => expenses.Where(condition.Compile()).ToList());
+
+        var result = await this.sut.GetSpendingPlanSummariesAsync(CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var summaries = result.ValueOrThrow.OrderBy(s => s.SpendingPlanId).ToList();
+        Assert.Collection(
+            summaries,
+            first =>
+            {
+                Assert.Equal(1, first.SpendingPlanId);
+                Assert.Equal(12000, first.Income.Annual);
+                Assert.Equal(3000, first.Expenses.Annual);
+                Assert.Equal(9000, first.Remaining.Annual);
+            },
+            second =>
+            {
+                Assert.Equal(2, second.SpendingPlanId);
+                Assert.Equal(28800, second.Income.Annual);
+                Assert.Equal(14400, second.Expenses.Annual);
+                Assert.Equal(14400, second.Remaining.Annual);
+            });
+    }
+
+    [Fact]
+    public async Task GetSpendingPlanSummariesAsync_NoPlans_ReturnsEmptyList()
+    {
+        this.spendingPlanRepositoryMock
+            .Setup(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlan, bool>>>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await this.sut.GetSpendingPlanSummariesAsync(CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.ValueOrThrow);
+        this.incomeRepositoryMock.Verify(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlanIncome, bool>>>(), false, It.IsAny<CancellationToken>()), Times.Never);
+        this.expenseRepositoryMock.Verify(r => r.SearchAsync(It.IsAny<Expression<Func<SpendingPlanExpense, bool>>>(), false, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

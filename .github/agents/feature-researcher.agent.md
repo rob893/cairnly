@@ -135,6 +135,10 @@ Status table for every finding. Mark `⬜ Pending` initially; implementers flip 
 - **Recommendation:** High-level implementation approach
 ```
 
+## Updating the Plan
+
+When a feature is implemented, update this plan in place — never leave it stale: flip its **Status** row to `✅ Done (W#)` and add a `- **What was done:**` bullet under the finding describing the implemented work and how it addressed the gap (with file paths). Leave unimplemented items `⬜ Pending`.
+
 ## Key Principles
 
 - **User value first**: Prioritize features that directly improve the user experience

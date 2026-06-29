@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { useUpdatePreferences } from '../../hooks/preferences';
 import { ACCENT_PRESETS, type ThemeMode } from '../../constants/theme';
+import { showSuccessToast } from '../../utils/notifications';
 
 /**
  * The Preferences settings section: appearance controls (color scheme and accent
@@ -13,9 +14,10 @@ export function PreferencesSection() {
   const { mode, accent, setMode, setAccent } = useTheme();
   const updatePreferences = useUpdatePreferences(user?.id ?? 0);
 
-  const persist = (next: { mode: ThemeMode; accent: string }) => {
+  const persist = async (next: { mode: ThemeMode; accent: string }) => {
     if (user) {
-      updatePreferences.mutate({ theme: next });
+      await updatePreferences.mutateAsync({ theme: next });
+      showSuccessToast('Preferences updated');
     }
   };
 
@@ -37,7 +39,7 @@ export function PreferencesSection() {
               const next = [...keys][0] as ThemeMode | undefined;
               if (next) {
                 setMode(next);
-                persist({ mode: next, accent });
+                void persist({ mode: next, accent });
               }
             }}
             aria-label="Color scheme"
@@ -60,7 +62,7 @@ export function PreferencesSection() {
               const next = [...keys][0];
               if (next != null) {
                 setAccent(String(next));
-                persist({ mode, accent: String(next) });
+                void persist({ mode, accent: String(next) });
               }
             }}
             aria-label="Accent color"

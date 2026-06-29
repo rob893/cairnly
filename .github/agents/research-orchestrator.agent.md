@@ -146,6 +146,10 @@ Status table for every finding. Mark `⬜ Pending` initially; implementers flip 
 ...
 ```
 
+## Updating the Plan
+
+When an item is implemented, update the plans in place — never leave them stale: flip the item's row in both the master-plan Status Overview and the area plan's **Status** table to `✅ Done (W#)`, and add a `- **What was done:**` bullet to the area-plan finding describing the implemented fix and how it addressed the issue (with file paths). Record per-wave verification in the master-plan Implementation Log.
+
 ## Key Principles
 
 - **Parallel execution**: Always dispatch all research agents simultaneously

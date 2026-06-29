@@ -46,6 +46,11 @@ export const spendingPlansApi = {
     return response.data;
   },
 
+  async getSpendingPlanSummaries(): Promise<SpendingPlanSummary[]> {
+    const response = await apiClient.get<SpendingPlanSummary[]>('/api/v1/spending-plans/summaries');
+    return response.data;
+  },
+
   async createSpendingPlan(request: CreateSpendingPlanRequest): Promise<SpendingPlan> {
     const response = await apiClient.post<SpendingPlan>('/api/v1/spending-plans', request);
     return response.data;

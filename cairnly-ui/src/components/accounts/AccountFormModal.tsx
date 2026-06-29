@@ -127,16 +127,15 @@ export function AccountFormModal({
                 </div>
               )}
 
-              <FormField
-                label="Name"
-                value={name}
-                onChange={setName}
-                isRequired
-                placeholder="e.g. Checking ····1234"
-              />
+              <FormField label="Name" value={name} onChange={setName} isRequired placeholder="e.g. Checking ····1234" />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SelectField<AccountType> label="Type" value={type} onChange={handleTypeChange} options={TYPE_OPTIONS} />
+                <SelectField<AccountType>
+                  label="Type"
+                  value={type}
+                  onChange={handleTypeChange}
+                  options={TYPE_OPTIONS}
+                />
                 <SelectField<AccountClass>
                   label="Class"
                   value={accountClass}

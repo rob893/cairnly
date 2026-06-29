@@ -6,6 +6,7 @@ import { SpendingPlanFormModal } from './SpendingPlanFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { EmptyState } from '../EmptyState';
 import { showErrorDetails } from '../../utils/environment';
+import { showSuccessToast } from '../../utils/notifications';
 import { useSpendingPlans, useDeleteSpendingPlan, useUpdateSpendingPlan } from '../../hooks/spendingPlans';
 import type { SpendingPlan, CreateSpendingPlanRequest } from '../../types/spendingPlans';
 
@@ -71,11 +72,13 @@ function SpendingPlanCard({ spendingPlan }: { spendingPlan: SpendingPlan }) {
 
   const handleEdit = async (payload: CreateSpendingPlanRequest) => {
     await updateSpendingPlan.mutateAsync(payload);
+    showSuccessToast('Spending plan saved');
     setEditOpen(false);
   };
 
   const handleDelete = async () => {
     await deleteSpendingPlan.mutateAsync(spendingPlan.id);
+    showSuccessToast('Spending plan deleted');
     setDeleteOpen(false);
   };
 

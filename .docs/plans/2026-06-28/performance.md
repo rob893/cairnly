@@ -8,10 +8,10 @@ The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `Cancella
 
 | #   | Finding                                                       | Impact | Effort | Status       |
 | --- | ------------------------------------------------------------ | ------ | ------ | ------------ |
-| 1   | TransactionsTable drains all pages; no virtualization        | High   | Medium | ⬜ Pending   |
+| 1   | TransactionsTable drains all pages; no virtualization        | High   | Medium | ✅ Done (W2) |
 | 2   | Charts vendor chunk on dashboard critical path               | Medium | Low    | ✅ Done (W1) |
-| 3   | Dashboard fans out one summary request per spending plan     | Medium | Medium | ⬜ Pending   |
-| 4   | Whole HeroUI shipped via barrel import                        | Medium | Medium | ⬜ Pending   |
+| 3   | Dashboard fans out one summary request per spending plan     | Medium | Medium | ✅ Done (W2) |
+| 4   | Whole HeroUI shipped via barrel import                        | Medium | Medium | ✅ Done (W2) |
 
 ## Findings
 
@@ -24,6 +24,7 @@ The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `Cancella
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Stop draining all pages. Render visible pages and add an IntersectionObserver "load more" sentinel (or a button) so paging is on-demand, and virtualize rows for large sets (`@tanstack/react-virtual`). If a complete client-side grouped view is required, raise `PAGE_SIZE` (e.g. 250) to cut round-trips and cap total rows with a "show all" affordance. Even just on-demand paging removes the serial waterfall.
+- **What was done (W2):** Removed the eager `fetchNextPage` drain in `TransactionsTable` so pages load on demand via a sentinel, and added `@tanstack/react-virtual` row virtualization so only visible rows render — eliminating the ~50-request serial waterfall and ~5,000-row DOM. Inline edit + day grouping preserved.
 
 ### 2. Charts vendor chunk (~121 KB gzip) is on the dashboard's critical path
 
@@ -32,6 +33,7 @@ The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `Cancella
 - **Impact:** Medium
 - **Effort:** Low (< 1hr)
 - **Recommendation:** `React.lazy` the chart cards (`SpendingChartCard`, `CashFlowChart`, `NetWorthCard`) behind `Suspense` so the recharts chunk loads after first paint of the stat cards. Defers ~121 KB gzip off the initial dashboard render with no UX loss.
+- **What was done (W1):** `HomePage` now `React.lazy`-loads the chart cards behind `Suspense`, so the ~121 KB gzip recharts chunk loads after the stat cards paint instead of blocking initial dashboard render.
 - **Dependencies:** None
 - **Breaking Changes:** No
 
@@ -44,6 +46,7 @@ The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `Cancella
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Add a batch summaries endpoint (e.g. `GET /spending-plans/summaries`) that aggregates all plans for the user in one query, and back it with a single `useQuery`. Keep `staleTime` so the dashboard isn't refetching per navigation.
+- **What was done (W2):** Added `GET /api/v1/spending-plans/summaries` (`SpendingPlanService.GetSpendingPlanSummariesAsync`) returning all the user's plan summaries, and switched `HomePage` from N `useQueries` to one `useQuery` — N requests + 2N queries collapse to a single round-trip.
 
 ### 4. Whole HeroUI library shipped via barrel import (~159 KB gzip, all routes)
 
@@ -54,6 +57,8 @@ The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `Cancella
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Confirm whether `@heroui/react` is side-effect-free / supports per-component entry points; if so, switch hot paths to deep imports. Otherwise leave as-is — gzip 159 KB cached cross-deploy is acceptable, so only pursue if measured TTI is a concern.
+- **P4 verification:** HeroUI v3.2.1 supports side-effect-free deep imports, but converting imports only reduced `vendor-ui` from 166.50 KB gzip to 165.95 KB gzip, so source was left as-is.
+- **What was done (W2):** Verified `@heroui/react` v3.2.1 exposes `sideEffects:false` + per-component `exports`; a deep-import trial saved ~0.5 KB gzip (166.50→165.95), below the noise floor, so no source changes were kept — closed as an intentional no-op.
 
 ## Notes (verified clean — no action)
 

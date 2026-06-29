@@ -1,5 +1,6 @@
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Button, Chip, Modal, Spinner } from '@heroui/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 import { CategorySelect } from '../CategorySelect';
 import { TransactionFormModal } from './TransactionFormModal';
@@ -8,6 +9,7 @@ import { EmptyState } from '../EmptyState';
 import { showErrorDetails } from '../../utils/environment';
 import { formatMoney, minorToMajor, parseMoneyToMinor } from '../../utils/money';
 import { formatLongDate } from '../../utils/datetime';
+import { showSuccessToast } from '../../utils/notifications';
 import { useAccounts } from '../../hooks/accounts';
 import { useCategories } from '../../hooks/categories';
 import {
@@ -48,8 +50,19 @@ interface TransactionGroup {
   transactions: Transaction[];
 }
 
+type TransactionListItem =
+  | { type: 'group'; key: string; group: TransactionGroup }
+  | { type: 'transaction'; key: string; transaction: Transaction };
+
+function estimateTransactionListItemSize(item: TransactionListItem): number {
+  return item.type === 'group' ? 38 : 66;
+}
+
 /** Builds a full update request from an existing transaction plus patched fields. */
-function buildUpdateRequest(transaction: Transaction, patch: Partial<UpdateTransactionRequest>): UpdateTransactionRequest {
+function buildUpdateRequest(
+  transaction: Transaction,
+  patch: Partial<UpdateTransactionRequest>
+): UpdateTransactionRequest {
   return {
     accountId: transaction.accountId,
     date: transaction.date,
@@ -99,10 +112,9 @@ function groupByDay(transactions: Transaction[]): TransactionGroup[] {
 }
 
 /**
- * A reusable, editable list of transactions grouped by day. Loads every matching
- * page client-side, supports inline editing of merchant, category, and amount, and
- * full create/edit via a modal plus delete. Used on the account detail page
- * (scoped to one account) and the global Transactions page.
+ * A reusable, editable list of transactions grouped by day. Pages are loaded on
+ * demand and the loaded rows are virtualized, while inline edits, modal
+ * create/edit, and delete remain available.
  */
 export const TransactionsTable = forwardRef<TransactionsTableHandle, TransactionsTableProps>(function TransactionsTable(
   { filters, currency, showAccount, lockedAccountId, title = 'Transactions', showToolbar = true },
@@ -120,13 +132,7 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | undefined>(undefined);
-
-  // Eagerly pull every page so the grouped list is complete.
-  useEffect(() => {
-    if (query.hasNextPage && !query.isFetchingNextPage) {
-      void query.fetchNextPage();
-    }
-  }, [query.hasNextPage, query.isFetchingNextPage, query]);
+  const virtualListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (accountsQuery.hasNextPage && !accountsQuery.isFetchingNextPage) {
@@ -153,14 +159,50 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
   }, [accounts]);
 
   const groups = useMemo(() => groupByDay(transactions), [transactions]);
+  const listItems = useMemo<TransactionListItem[]>(
+    () =>
+      groups.flatMap(group => [
+        { type: 'group' as const, key: `group-${group.key}`, group },
+        ...group.transactions.map(transaction => ({
+          type: 'transaction' as const,
+          key: `transaction-${transaction.id}`,
+          transaction
+        }))
+      ]),
+    [groups]
+  );
 
   const baseCurrency = currency ?? accounts[0]?.currency ?? 'USD';
+  // TanStack Virtual exposes imperative helpers that React Compiler cannot memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: listItems.length,
+    getScrollElement: () => virtualListRef.current,
+    estimateSize: index => (listItems[index] ? estimateTransactionListItemSize(listItems[index]) : 66),
+    initialRect: { width: 0, height: 600 },
+    overscan: 8
+  });
+  const fallbackVirtualItems = useMemo(() => {
+    let offset = 0;
+    return listItems.slice(0, 20).map((item, index) => {
+      const size = estimateTransactionListItemSize(item);
+      const start = offset;
+      offset += size;
+      return { index, key: item.key, start, size, end: offset, lane: 0 };
+    });
+  }, [listItems]);
+  const measuredVirtualItems = rowVirtualizer.getVirtualItems();
+  const virtualItems = measuredVirtualItems.length > 0 ? measuredVirtualItems : fallbackVirtualItems;
+  const virtualHeight =
+    rowVirtualizer.getTotalSize() ||
+    listItems.reduce((total, item) => total + estimateTransactionListItemSize(item), 0);
 
   const updateAsync = updateTransaction.mutateAsync;
 
   const handleInlineSave = useCallback(
     async (transaction: Transaction, patch: Partial<UpdateTransactionRequest>) => {
       await updateAsync({ id: transaction.id, request: buildUpdateRequest(transaction, patch) });
+      showSuccessToast('Transaction saved');
     },
     [updateAsync]
   );
@@ -199,6 +241,7 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
       await createTransaction.mutateAsync(payload);
     }
 
+    showSuccessToast('Transaction saved');
     setFormOpen(false);
     setEditing(undefined);
   };
@@ -209,6 +252,7 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
     }
 
     await deleteTransaction.mutateAsync(deleteTarget.id);
+    showSuccessToast('Transaction deleted');
     setDeleteTarget(undefined);
   };
 
@@ -243,33 +287,44 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          {groups.map(group => {
-            const groupTotal = amountDisplay(group.total, baseCurrency);
+          <div ref={virtualListRef} className="max-h-[min(70vh,48rem)] overflow-auto" role="list">
+            <div className="relative w-full" style={{ height: `${virtualHeight}px` }}>
+              {virtualItems.map(virtualItem => {
+                const item = listItems[virtualItem.index];
 
-            return (
-              <section key={group.key}>
-                <div className="flex items-center justify-between gap-3 bg-surface-secondary/60 px-4 py-2 text-sm">
-                  <span className="font-medium text-muted">{group.label}</span>
-                  <span className={`tabular-nums ${groupTotal.className}`}>{groupTotal.text}</span>
-                </div>
-
-                <ul className="divide-y divide-border">
-                  {group.transactions.map(transaction => (
-                    <TransactionRow
-                      key={transaction.id}
-                      transaction={transaction}
-                      currency={baseCurrency}
-                      categoriesById={categoriesById}
-                      accountName={showAccount ? accountsById.get(transaction.accountId)?.name : undefined}
-                      onInlineSave={handleInlineSave}
-                      onEdit={openEdit}
-                      onDelete={openDelete}
-                    />
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
+                return (
+                  <div
+                    key={item.key}
+                    ref={rowVirtualizer.measureElement}
+                    data-index={virtualItem.index}
+                    className="absolute left-0 top-0 w-full"
+                    style={{ transform: `translateY(${virtualItem.start}px)` }}
+                  >
+                    {item.type === 'group' ? (
+                      <TransactionGroupHeader group={item.group} currency={baseCurrency} />
+                    ) : (
+                      <TransactionRow
+                        transaction={item.transaction}
+                        currency={baseCurrency}
+                        categoriesById={categoriesById}
+                        accountName={showAccount ? accountsById.get(item.transaction.accountId)?.name : undefined}
+                        onInlineSave={handleInlineSave}
+                        onEdit={openEdit}
+                        onDelete={openDelete}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {query.hasNextPage && (
+            <div className="flex justify-center border-t border-border bg-surface px-4 py-3">
+              <Button variant="outline" onPress={() => query.fetchNextPage()} isPending={query.isFetchingNextPage}>
+                Load more transactions
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -300,9 +355,7 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
                     showDetails={showErrorDetails}
                   />
                 )}
-                <p className="text-sm text-muted">
-                  Permanently delete this transaction? This cannot be undone.
-                </p>
+                <p className="text-sm text-muted">Permanently delete this transaction? This cannot be undone.</p>
               </Modal.Body>
               <Modal.Footer>
                 <Button slot="close" variant="outline">
@@ -319,6 +372,20 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
     </div>
   );
 });
+
+function TransactionGroupHeader({ group, currency }: { group: TransactionGroup; currency: string }) {
+  const groupTotal = amountDisplay(group.total, currency);
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 bg-surface-secondary/60 px-4 py-2 text-sm"
+      role="presentation"
+    >
+      <span className="font-medium text-muted">{group.label}</span>
+      <span className={`tabular-nums ${groupTotal.className}`}>{groupTotal.text}</span>
+    </div>
+  );
+}
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -344,13 +411,20 @@ const TransactionRow = memo(function TransactionRow({
   const isAdjustment = transaction.isBalanceAdjustment;
 
   return (
-    <li className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-surface-secondary/40 lg:grid-cols-[2fr_1.5fr_1fr_1fr_auto]">
+    <div
+      className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 border-t border-border px-4 py-3 transition-colors hover:bg-surface-secondary/40 lg:grid-cols-[2fr_1.5fr_1fr_1fr_auto]"
+      role="listitem"
+    >
       <div className="flex min-w-0 items-center gap-3">
         <span
           className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-sm"
           aria-hidden="true"
         >
-          {isAdjustment ? <Scale className="size-4 text-muted" /> : category?.icon || (transaction.merchant || transaction.description || '?')[0]?.toUpperCase()}
+          {isAdjustment ? (
+            <Scale className="size-4 text-muted" />
+          ) : (
+            category?.icon || (transaction.merchant || transaction.description || '?')[0]?.toUpperCase()
+          )}
         </span>
         {isAdjustment ? (
           <span className="truncate font-medium text-foreground">Balance adjustment</span>
@@ -408,7 +482,7 @@ const TransactionRow = memo(function TransactionRow({
           <Trash2 className="size-4" />
         </Button>
       </div>
-    </li>
+    </div>
   );
 });
 

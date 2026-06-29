@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
@@ -36,6 +37,13 @@ public interface ISpendingPlanService
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The spendingPlan summary if found and accessible; otherwise a failure result.</returns>
     Task<Result<SpendingPlanSummaryDto>> GetSpendingPlanSummaryAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets computed summaries for all spendingPlans accessible to the current user.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The spendingPlan summaries for the current user.</returns>
+    Task<Result<IReadOnlyList<SpendingPlanSummaryDto>>> GetSpendingPlanSummariesAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a new spendingPlan for the current user.

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Extensions;
@@ -68,6 +69,26 @@ public sealed class SpendingPlansController : ServiceControllerBase
     public async Task<ActionResult<SpendingPlanDto>> GetSpendingPlanByIdAsync([FromRoute] int id, CancellationToken cancellationToken)
     {
         var result = await this.spendingPlanService.GetSpendingPlanByIdAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return this.HandleServiceFailureResult(result);
+        }
+
+        return this.Ok(result.ValueOrThrow);
+    }
+
+    /// <summary>
+    /// Gets computed summaries for all spendingPlans accessible to the current user.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The current user's spendingPlan summaries.</returns>
+    /// <response code="200">Returns the spendingPlan summaries.</response>
+    [HttpGet("summaries", Name = nameof(GetSpendingPlanSummariesAsync))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<SpendingPlanSummaryDto>>> GetSpendingPlanSummariesAsync(CancellationToken cancellationToken)
+    {
+        var result = await this.spendingPlanService.GetSpendingPlanSummariesAsync(cancellationToken);
 
         if (!result.IsSuccess)
         {

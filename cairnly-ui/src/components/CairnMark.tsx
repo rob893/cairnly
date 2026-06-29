@@ -9,12 +9,5 @@ interface CairnMarkProps {
  * Decorative by default — pair it with the visible "Cairnly" wordmark for labeling.
  */
 export function CairnMark({ className }: CairnMarkProps) {
-  return (
-    <img
-      src={`${import.meta.env.BASE_URL}logo.png`}
-      alt=""
-      aria-hidden="true"
-      className={className}
-    />
-  );
+  return <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" aria-hidden="true" className={className} />;
 }

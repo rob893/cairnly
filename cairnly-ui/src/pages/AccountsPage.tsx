@@ -11,6 +11,7 @@ import { EmptyState } from '../components/EmptyState';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { showErrorDetails } from '../utils/environment';
 import { buildAccountGroups, buildSummary } from '../utils/accounts';
+import { showSuccessToast } from '../utils/notifications';
 import {
   useAccountHistory,
   useAccounts,
@@ -98,8 +99,7 @@ export function AccountsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formOpen, editing]);
 
-  const isRefreshing =
-    accountsQuery.isFetching || netWorthQuery.isFetching || accountHistoryQuery.isFetching;
+  const isRefreshing = accountsQuery.isFetching || netWorthQuery.isFetching || accountHistoryQuery.isFetching;
 
   const actions = useMemo(
     () => <AccountsHeaderActions onAdd={openCreate} onRefresh={handleRefresh} isRefreshing={isRefreshing} />,
@@ -115,6 +115,7 @@ export function AccountsPage() {
       await createAccount.mutateAsync(payload);
     }
 
+    showSuccessToast('Account saved');
     setFormOpen(false);
     setEditing(undefined);
   };
@@ -125,6 +126,7 @@ export function AccountsPage() {
     }
 
     await deleteAccount.mutateAsync(deleteTarget.id);
+    showSuccessToast('Account deleted');
     setDeleteTarget(undefined);
   };
 

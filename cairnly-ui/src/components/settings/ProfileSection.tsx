@@ -6,6 +6,7 @@ import { useSendEmailConfirmation, useUpdateUsername, useUserDetails } from '../
 import { FormField } from '../FormField';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { showErrorDetails } from '../../utils/environment';
+import { showSuccessToast } from '../../utils/notifications';
 
 /** Formats an ISO date string as a localized long date. */
 function formatDate(iso: string): string {
@@ -50,6 +51,7 @@ export function ProfileSection() {
       return;
     }
     await updateUsername.mutateAsync({ newUsername: newUsername.trim() });
+    showSuccessToast('Profile updated');
     setUsernameOpen(false);
   };
 

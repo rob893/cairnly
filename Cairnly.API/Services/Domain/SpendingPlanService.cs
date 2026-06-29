@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,24 +108,50 @@ public sealed class SpendingPlanService : ISpendingPlanService
         var incomeAnnual = incomes.Sum(i => i.Amount * i.Cadence.PeriodsPerYear());
         var expenseAnnual = expenses.Sum(e => e.Amount * e.Cadence.PeriodsPerYear());
 
-        var income = BuildCadenceAmounts(incomeAnnual);
-        var expense = BuildCadenceAmounts(expenseAnnual);
-        var remaining = new CadenceAmountsDto
-        {
-            Daily = income.Daily - expense.Daily,
-            Weekly = income.Weekly - expense.Weekly,
-            Monthly = income.Monthly - expense.Monthly,
-            Annual = income.Annual - expense.Annual
-        };
+        var summary = BuildSummary(spendingPlan.Id, spendingPlan.Currency, incomeAnnual, expenseAnnual);
 
-        return Result<SpendingPlanSummaryDto>.Success(new SpendingPlanSummaryDto
+        return Result<SpendingPlanSummaryDto>.Success(summary);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<SpendingPlanSummaryDto>>> GetSpendingPlanSummariesAsync(CancellationToken cancellationToken)
+    {
+        var userId = this.currentUserService.UserId;
+        var isAdmin = this.currentUserService.IsAdmin;
+        var spendingPlans = await this.spendingPlanRepository.SearchAsync(b => isAdmin || b.UserId == userId, track: false, cancellationToken);
+
+        if (spendingPlans.Count == 0)
         {
-            SpendingPlanId = spendingPlan.Id,
-            Currency = spendingPlan.Currency,
-            Income = income,
-            Expenses = expense,
-            Remaining = remaining
-        });
+            return Result<IReadOnlyList<SpendingPlanSummaryDto>>.Success([]);
+        }
+
+        var spendingPlanIds = spendingPlans.Select(b => b.Id).ToArray();
+        var incomes = await this.incomeRepository.SearchAsync(
+            i => spendingPlanIds.Contains(i.SpendingPlanId) && (isAdmin || i.UserId == userId),
+            track: false,
+            cancellationToken);
+        var expenses = await this.expenseRepository.SearchAsync(
+            e => spendingPlanIds.Contains(e.SpendingPlanId) && (isAdmin || e.UserId == userId),
+            track: false,
+            cancellationToken);
+        var incomeAnnualBySpendingPlanId = incomes
+            .GroupBy(i => i.SpendingPlanId)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount * i.Cadence.PeriodsPerYear()));
+        var expenseAnnualBySpendingPlanId = expenses
+            .GroupBy(e => e.SpendingPlanId)
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount * e.Cadence.PeriodsPerYear()));
+        var summaries = spendingPlans
+            .OrderBy(b => b.Id)
+            .Select(b =>
+            {
+                incomeAnnualBySpendingPlanId.TryGetValue(b.Id, out var incomeAnnual);
+                expenseAnnualBySpendingPlanId.TryGetValue(b.Id, out var expenseAnnual);
+
+                return BuildSummary(b.Id, b.Currency, incomeAnnual, expenseAnnual);
+            })
+            .ToList();
+
+        return Result<IReadOnlyList<SpendingPlanSummaryDto>>.Success(summaries);
     }
 
     /// <inheritdoc />
@@ -252,6 +279,28 @@ public sealed class SpendingPlanService : ISpendingPlanService
             Weekly = (long)Math.Round(annualDecimal / 52m, MidpointRounding.AwayFromZero),
             Monthly = (long)Math.Round(annualDecimal / 12m, MidpointRounding.AwayFromZero),
             Annual = annual
+        };
+    }
+
+    private static SpendingPlanSummaryDto BuildSummary(int spendingPlanId, string currency, long incomeAnnual, long expenseAnnual)
+    {
+        var income = BuildCadenceAmounts(incomeAnnual);
+        var expense = BuildCadenceAmounts(expenseAnnual);
+        var remaining = new CadenceAmountsDto
+        {
+            Daily = income.Daily - expense.Daily,
+            Weekly = income.Weekly - expense.Weekly,
+            Monthly = income.Monthly - expense.Monthly,
+            Annual = income.Annual - expense.Annual
+        };
+
+        return new SpendingPlanSummaryDto
+        {
+            SpendingPlanId = spendingPlanId,
+            Currency = currency,
+            Income = income,
+            Expenses = expense,
+            Remaining = remaining
         };
     }
 

@@ -4,6 +4,7 @@ import { SpendingPlansSection } from '../components/spendingPlans/SpendingPlansS
 import { SpendingPlanFormModal } from '../components/spendingPlans/SpendingPlanFormModal';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { useCreateSpendingPlan } from '../hooks/spendingPlans';
+import { showSuccessToast } from '../utils/notifications';
 import { Plus } from 'lucide-react';
 import type { CreateSpendingPlanRequest } from '../types/spendingPlans';
 
@@ -18,6 +19,7 @@ export function SpendingPlansPage() {
 
   const handleCreate = async (payload: CreateSpendingPlanRequest) => {
     await createSpendingPlan.mutateAsync(payload);
+    showSuccessToast('Spending plan saved');
     setFormOpen(false);
   };
 

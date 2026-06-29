@@ -1,5 +1,6 @@
 /**
- * Content-Security-Policy helpers for the production SPA build.
+ * Content-Security-Policy helpers for the production SPA build. Directives unsupported by
+ * meta-delivered CSP, such as `frame-ancestors`, must be emitted by the hosting layer.
  *
  * The frontend (SPA) and backend (API) are deployed on different origins, so `connect-src`
  * must explicitly allow the API origin (derived from `VITE_API_BASE_URL`) in addition to

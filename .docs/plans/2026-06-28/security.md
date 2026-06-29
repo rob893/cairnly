@@ -12,7 +12,7 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 | 2   | PII (emails) logged in account-recovery flows       | Medium | Low    | ✅ Done (W1)   |
 | 3   | Anonymous password endpoints bypass strict bucket   | Low    | Low    | ✅ Done (W1)   |
 | 4   | Logout leaves CSRF/OAuth cookies + JWT usable       | Low    | Low    | ✅ Done (W1)   |
-| 5   | CSP meta frame-ancestors; CORS AllowAnyHeader       | Low    | Medium | ⬜ Pending     |
+| 5   | CSP meta frame-ancestors; CORS AllowAnyHeader       | Low    | Medium | ✅ Done (W2)   |
 
 ## Findings
 
@@ -24,6 +24,7 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 - **Dependencies:** None
 - **Breaking Changes:** No (set the value to the existing Google client id)
 - **Recommendation:** Default `GoogleOAuthAudiences` to `[GoogleOAuthClientId]` and validate at startup that the list is non-empty (mirroring the APISecret length check in `AuthenticationServiceCollectionExtensions`). Fail fast if empty in non-dev environments.
+- **What was done (W1):** Added `GoogleOAuthService.ResolveGoogleOAuthAudiences` which falls back to `[GoogleOAuthClientId]` when the configured list is empty, so the `aud` claim is now always pinned to our client; added a non-Dev startup guard in `AuthenticationServiceCollectionExtensions` that throws if no audience resolves. Closes the bypass while keeping Dev permissive. Same fix backported to `derpcode` + `starter-app-template`.
 
 ### 2. PII (email addresses) written to logs in account-recovery flows
 - **Description:** Forgot-password, reset-password, and confirm-email log the raw email address. App Insights ingestion (50% sampling) persists these warning/error rows, so a log compromise exposes the email of every user who triggered recovery and links emails to user ids. The rest of the app deliberately logs only `UserId`, so this is inconsistent with the established standard.
@@ -33,6 +34,7 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Log `user.Id` (or a hash) instead of `request.Email`/`user.Email`. For the "user not found" paths, omit the identifier entirely to avoid storing attacker-supplied emails.
+- **What was done (W1):** Rewrote the four `LogWarning` calls in `UserService` (forgot/reset/confirm) to log `user.Id` only, and dropped the identifier entirely on user-not-found paths so attacker-supplied emails are never persisted. PII no longer reaches App Insights. Backported to `starter-app-template`.
 
 ### 3. Anonymous password endpoints bypass the strict auth rate-limit bucket
 - **Description:** The rate limiter only tightens partitions for paths under `/api/v1/auth/` (and `/register`). `POST /api/v1/users/forgotPassword` and `POST /api/v1/users/resetPassword` are `[AllowAnonymous]` but fall into the default bucket (50 req / 15s). Per-user throttles inside the service blunt email-bombing, but the reset-token submission endpoint is left at the generous default. They should share the stricter auth limits.
@@ -42,6 +44,7 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Add path matches for `/api/v1/users/forgotpassword`, `/resetpassword`, and `/emailconfirmations` to the strict bucket, or move recovery endpoints under `/auth`.
+- **What was done (W1):** Extracted an `IsStrictAuthRateLimitedPath` helper that returns the strict bucket for `/api/v1/auth/` plus forgot/reset/email-confirm paths, so anonymous recovery endpoints now share the tight 25-req/60s limit instead of the default 50/15s. Backported to `starter-app-template`.
 
 ### 4. Logout leaves CSRF/OAuth cookies and access JWT usable
 - **Description:** `LogoutAsync` revokes refresh tokens and deletes the `refresh_token` cookie but leaves `csrf_token` and `oauth_flow` cookies, and the bearer JWT stays valid for its full 60-minute lifetime (no revocation list). A token captured before logout still authorizes requests until expiry. Acceptable for a hobby app, but worth tightening given financial data.
@@ -51,6 +54,7 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Also delete `csrf_token` (and `oauth_flow`) on logout; consider shortening access-token lifetime to ~15 min so the post-logout window is small.
+- **What was done (W1):** `AuthController.LogoutAsync` now also deletes `csrf_token` and calls `DeleteOAuthFlowCookie()`, and `TokenExpirationTimeInMinutes` dropped 60→15 so a captured access token is usable for ≤15 min post-logout. Backported to `starter-app-template`.
 
 ### 5. CSP delivered via `<meta>` cannot set frame-ancestors; CORS allows any header
 - **Description:** Production CSP is injected via `<meta http-equiv>`, which cannot enforce `frame-ancestors`, so clickjacking protection depends on a host-layer `X-Frame-Options`/`frame-ancestors` that is not in the repo. CORS also uses `AllowAnyHeader()` with credentials; origins are correctly restricted, so impact is minor, but headers should be allowlisted defensively.
@@ -60,3 +64,4 @@ Cairnly's security posture is strong: tenant isolation is enforced both in repos
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Add `X-Frame-Options: DENY` / CSP `frame-ancestors 'none'` at nginx/App Service. Replace `AllowAnyHeader()` with an explicit allowlist (Authorization, Content-Type, X-CSRF-Token, X-Correlation-Id).
+- **What was done (W2):** Added `SecurityHeadersMiddleware` emitting `X-Frame-Options: DENY` + `Content-Security-Policy: frame-ancestors 'none'` on API responses (enforceable, unlike meta-CSP), and replaced `AllowAnyHeader()` with an explicit CORS allowlist of Authorization, Content-Type, X-CSRF-Token, X-Correlation-Id while keeping origins restricted + credentials on.
