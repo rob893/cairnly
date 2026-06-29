@@ -23,8 +23,7 @@ export function useTags() {
     queryFn: ({ pageParam }) => tagsApi.getTags({ first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 5 * 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 
   const tags = useMemo<Tag[]>(() => query.data?.pages.flatMap(page => page.nodes ?? []) ?? [], [query.data]);

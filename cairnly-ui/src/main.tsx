@@ -15,13 +15,21 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'status' in error &&
+          typeof error.status === 'number' &&
+          error.status < 500 &&
+          error.status !== 429
+        ) {
           return false;
         }
         return failureCount < 2;
       },
       refetchOnWindowFocus: false,
-      staleTime: 60 * 1000
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000
     },
     mutations: {
       retry: false

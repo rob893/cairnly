@@ -30,8 +30,7 @@ export function useCategories() {
     queryFn: ({ pageParam }) => categoriesApi.getCategories({ first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 5 * 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 
   const categories = useMemo<Category[]>(() => query.data?.pages.flatMap(page => page.nodes ?? []) ?? [], [query.data]);

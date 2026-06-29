@@ -33,8 +33,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     queryFn: ({ pageParam }) => transactionsApi.getTransactions({ ...filters, first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 }
 
@@ -52,8 +51,7 @@ export function useAccountTransactions(accountId: number | undefined) {
     queryFn: ({ pageParam }) => transactionsApi.getTransactions({ accountId, first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading && typeof accountId === 'number',
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof accountId === 'number'
   });
 }
 

@@ -18,8 +18,7 @@ export function useUserDetails(id: number | undefined) {
   return useQuery({
     queryKey: userQueryKeys.userDetails(id ?? 0),
     queryFn: () => usersApi.getUser(id as number),
-    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
-    staleTime: 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number'
   });
 }
 

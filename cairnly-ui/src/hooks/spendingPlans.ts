@@ -35,8 +35,7 @@ export function useSpendingPlans() {
     queryFn: ({ pageParam }) => spendingPlansApi.getSpendingPlans({ first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 }
 
@@ -51,8 +50,7 @@ export function useSpendingPlan(id: number | undefined) {
   return useQuery({
     queryKey: spendingPlanQueryKeys.spendingPlan(id ?? 0),
     queryFn: () => spendingPlansApi.getSpendingPlan(id as number),
-    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
-    staleTime: 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number'
   });
 }
 
@@ -67,8 +65,7 @@ export function useSpendingPlanSummary(id: number | undefined) {
   return useQuery({
     queryKey: spendingPlanQueryKeys.summary(id ?? 0),
     queryFn: () => spendingPlansApi.getSpendingPlanSummary(id as number),
-    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number'
   });
 }
 
@@ -93,8 +90,7 @@ export function useSpendingPlanSummaries(): {
   const query = useQuery({
     queryKey: spendingPlanQueryKeys.summaries(),
     queryFn: () => spendingPlansApi.getSpendingPlanSummaries(),
-    enabled,
-    staleTime: 30 * 1000
+    enabled
   });
 
   return {
@@ -156,8 +152,7 @@ export function useSpendingPlanIncomes(spendingPlanId: number | undefined) {
       spendingPlanIncomesApi.getIncomes(spendingPlanId as number, { first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number',
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number'
   });
 }
 
@@ -216,8 +211,7 @@ export function useSpendingPlanExpenses(spendingPlanId: number | undefined) {
       spendingPlanExpensesApi.getExpenses(spendingPlanId as number, { first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number',
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof spendingPlanId === 'number'
   });
 }
 

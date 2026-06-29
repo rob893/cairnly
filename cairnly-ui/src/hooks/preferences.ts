@@ -18,8 +18,7 @@ export function usePreferences(userId: number | undefined) {
   return useQuery({
     queryKey: preferenceQueryKeys.preferences(userId ?? 0),
     queryFn: () => preferencesApi.getPreferences(userId as number),
-    enabled: isAuthenticated && !isAuthLoading && typeof userId === 'number',
-    staleTime: 5 * 60 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof userId === 'number'
   });
 }
 

@@ -30,8 +30,7 @@ export function useAccounts() {
     queryFn: ({ pageParam }) => accountsApi.getAccounts({ first: PAGE_SIZE, after: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage => (lastPage.pageInfo.hasNextPage ? lastPage.pageInfo.endCursor : undefined),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 }
 
@@ -46,8 +45,7 @@ export function useAccount(id: number | undefined) {
   return useQuery({
     queryKey: accountQueryKeys.account(id ?? 0),
     queryFn: () => accountsApi.getAccount(id as number),
-    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number',
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading && typeof id === 'number'
   });
 }
 
@@ -63,8 +61,7 @@ export function useNetWorthHistory(timeframe: BalanceHistoryTimeframe) {
   return useQuery({
     queryKey: accountQueryKeys.netWorth(timeframe),
     queryFn: () => accountsApi.getNetWorthHistory(timeframe),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 }
 
@@ -80,8 +77,7 @@ export function useAccountHistory(timeframe: BalanceHistoryTimeframe) {
   return useQuery({
     queryKey: accountQueryKeys.history(timeframe),
     queryFn: () => accountsApi.getAccountHistory(timeframe),
-    enabled: isAuthenticated && !isAuthLoading,
-    staleTime: 30 * 1000
+    enabled: isAuthenticated && !isAuthLoading
   });
 }
 
