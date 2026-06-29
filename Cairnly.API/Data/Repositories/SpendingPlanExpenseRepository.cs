@@ -8,7 +8,7 @@ namespace Cairnly.API.Data.Repositories;
 /// <summary>
 /// Repository for spendingPlan expense line item data access.
 /// </summary>
-public sealed class SpendingPlanExpenseRepository : Repository<SpendingPlanExpense, SpendingPlanExpenseQueryParameters>, ISpendingPlanExpenseRepository
+public sealed class SpendingPlanExpenseRepository : SpendingPlanLineItemRepository<SpendingPlanExpense, SpendingPlanExpenseQueryParameters>, ISpendingPlanExpenseRepository
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SpendingPlanExpenseRepository"/> class.
@@ -25,23 +25,11 @@ public sealed class SpendingPlanExpenseRepository : Repository<SpendingPlanExpen
     }
 
     /// <inheritdoc />
-    protected override IQueryable<SpendingPlanExpense> AddWhereClauses(IQueryable<SpendingPlanExpense> query, SpendingPlanExpenseQueryParameters searchParams)
+    protected override IQueryable<SpendingPlanExpense> AddLineItemWhereClauses(IQueryable<SpendingPlanExpense> query, SpendingPlanExpenseQueryParameters searchParams)
     {
-        query = query.Where(e => e.SpendingPlanId == searchParams.SpendingPlanId);
-
-        if (!searchParams.RequestingUserIsAdmin)
-        {
-            query = query.Where(e => e.UserId == searchParams.RequestingUserId);
-        }
-
         if (searchParams.Cadence.HasValue)
         {
-            query = query.Where(e => e.Cadence == searchParams.Cadence.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(searchParams.Name))
-        {
-            query = query.Where(e => EF.Functions.ILike(e.Name, $"%{searchParams.Name}%"));
+            query = query.Where(e => EF.Property<SpendingPlanCadence>(e, nameof(ISpendingPlanLineItem.Cadence)) == searchParams.Cadence.Value);
         }
 
         return query;

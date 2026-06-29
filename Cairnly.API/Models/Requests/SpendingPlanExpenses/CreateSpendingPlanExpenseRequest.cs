@@ -7,7 +7,7 @@ namespace Cairnly.API.Models.Requests.SpendingPlanExpenses;
 /// <summary>
 /// Request model for creating a new spendingPlan expense line item.
 /// </summary>
-public sealed record CreateSpendingPlanExpenseRequest
+public sealed record CreateSpendingPlanExpenseRequest : Cairnly.API.Models.Requests.ISpendingPlanLineItemRequest
 {
     /// <summary>Gets the expense line name.</summary>
     [Required]

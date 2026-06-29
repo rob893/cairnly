@@ -7,7 +7,7 @@ namespace Cairnly.API.Models.Entities;
 /// <summary>
 /// Represents a single income line item within a spendingPlan.
 /// </summary>
-public sealed class SpendingPlanIncome : IIdentifiable<int>, IOwnedByUser<int>, IAuditableEntity
+public sealed class SpendingPlanIncome : ISpendingPlanLineItem
 {
     /// <summary>Gets or sets the income line ID.</summary>
     public int Id { get; set; }

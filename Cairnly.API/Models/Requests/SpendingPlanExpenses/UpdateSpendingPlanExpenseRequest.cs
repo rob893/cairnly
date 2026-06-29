@@ -9,7 +9,7 @@ namespace Cairnly.API.Models.Requests.SpendingPlanExpenses;
 /// <summary>
 /// Request model for fully updating an existing spendingPlan expense line item.
 /// </summary>
-public sealed record UpdateSpendingPlanExpenseRequest
+public sealed record UpdateSpendingPlanExpenseRequest : Cairnly.API.Models.Requests.ISpendingPlanLineItemRequest
 {
     /// <summary>Gets the expense line name.</summary>
     [Required]

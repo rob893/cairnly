@@ -55,6 +55,7 @@ Run from repo root unless noted.
 
 ## UI Components
 
+- UI must be both desktop and mobile friendly
 - The UI uses heroui v3 components. See docs https://heroui.com/react/llms.txt
 - Prefer built in components from heroui when available but feel free to make custom components when the heroui components are not suitable.
 

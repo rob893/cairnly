@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Security.Claims;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Constants;
@@ -11,16 +10,12 @@ using Cairnly.API.Core;
 using Cairnly.API.Data.Repositories;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Models.Requests.Auth;
-using Cairnly.API.Models.Settings;
 using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Core;
 using Cairnly.API.Services.Domain;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Cairnly.API.Tests.Controllers;
@@ -32,16 +27,12 @@ public sealed class AuthControllerTests
 {
     private const string DeviceId = "device-1";
 
-    private const string UIBaseUrl = "http://localhost:5173";
-
     private readonly Mock<IUserRepository> userRepositoryMock;
     private readonly Mock<IJwtTokenService> jwtTokenServiceMock;
     private readonly Mock<IUserService> userServiceMock;
-    private readonly Mock<IGitHubOAuthService> gitHubOAuthServiceMock;
-    private readonly Mock<IGoogleOAuthService> googleOAuthServiceMock;
-    private readonly Mock<IExternalLoginService> externalLoginServiceMock;
+    private readonly Mock<IAuthTokenCookieService> authTokenCookieServiceMock;
+    private readonly Mock<IOAuthFlowCookieService> oauthFlowCookieServiceMock;
     private readonly Mock<ICorrelationIdService> correlationIdServiceMock;
-    private readonly IDataProtector oauthFlowProtector;
     private readonly AuthController sut;
 
     public AuthControllerTests()
@@ -49,46 +40,22 @@ public sealed class AuthControllerTests
         this.userRepositoryMock = new Mock<IUserRepository>();
         this.jwtTokenServiceMock = new Mock<IJwtTokenService>();
         this.userServiceMock = new Mock<IUserService>();
-        this.gitHubOAuthServiceMock = new Mock<IGitHubOAuthService>();
-        this.googleOAuthServiceMock = new Mock<IGoogleOAuthService>();
-        this.externalLoginServiceMock = new Mock<IExternalLoginService>();
+        this.authTokenCookieServiceMock = new Mock<IAuthTokenCookieService>();
+        this.oauthFlowCookieServiceMock = new Mock<IOAuthFlowCookieService>();
         this.correlationIdServiceMock = new Mock<ICorrelationIdService>();
         this.correlationIdServiceMock.Setup(s => s.CorrelationId).Returns("corr-id");
 
-        this.jwtTokenServiceMock
-            .Setup(s => s.GenerateJwtTokenForUser(It.IsAny<User>()))
-            .Returns("access-token");
-        this.jwtTokenServiceMock
-            .Setup(s => s.GenerateAndSaveRefreshTokenForUserAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("refresh-token");
-
-        var settings = Options.Create(new AuthenticationSettings
-        {
-            APISecret = "this-is-a-sufficiently-long-api-secret-of-at-least-64-characters!!",
-            TokenIssuer = "https://issuer",
-            TokenAudience = "https://audience",
-            RefreshTokenExpirationTimeInMinutes = 60,
-            UIBaseUrl = new Uri(UIBaseUrl),
-            GitHubOAuthClientId = "github-client-id",
-            GitHubOAuthRedirectUri = new Uri("https://localhost:7234/api/v1/auth/github/callback"),
-            GoogleOAuthClientId = "google-client-id",
-            GoogleOAuthRedirectUri = new Uri("https://localhost:7234/api/v1/auth/google/callback")
-        });
-
-        var dataProtectionProvider = new EphemeralDataProtectionProvider();
-        this.oauthFlowProtector = dataProtectionProvider.CreateProtector(OAuthConstants.DataProtectionPurpose);
+        this.authTokenCookieServiceMock
+            .Setup(s => s.GenerateAndSaveAccessAndRefreshTokensAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync("access-token");
 
         this.sut = new AuthController(
             this.userRepositoryMock.Object,
             this.jwtTokenServiceMock.Object,
             this.userServiceMock.Object,
-            this.gitHubOAuthServiceMock.Object,
-            this.googleOAuthServiceMock.Object,
-            this.externalLoginServiceMock.Object,
-            settings,
-            dataProtectionProvider,
-            this.correlationIdServiceMock.Object,
-            NullLogger<AuthController>.Instance);
+            this.authTokenCookieServiceMock.Object,
+            this.oauthFlowCookieServiceMock.Object,
+            this.correlationIdServiceMock.Object);
 
         this.sut.ControllerContext = new ControllerContext
         {
@@ -393,140 +360,8 @@ public sealed class AuthControllerTests
         var result = await this.sut.LogoutAsync(CancellationToken.None);
 
         Assert.IsType<NoContentResult>(result);
-        var setCookie = this.sut.ControllerContext.HttpContext.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{CookieKeys.RefreshToken}=", setCookie, StringComparison.Ordinal);
-        Assert.Contains($"{CookieKeys.CsrfToken}=", setCookie, StringComparison.Ordinal);
-        Assert.Contains($"{CookieKeys.OAuthFlow}=", setCookie, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void GitHubStart_SetsOAuthFlowCookieAndRedirectsToGitHub()
-    {
-        var result = this.sut.GitHubStart();
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.StartsWith(OAuthConstants.GitHubAuthorizeUrl, redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("client_id=github-client-id", redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("code_challenge=", redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("code_challenge_method=S256", redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("state=", redirect.Url, StringComparison.Ordinal);
-
-        var setCookie = this.sut.ControllerContext.HttpContext.Response.Headers["Set-Cookie"].ToString();
-        Assert.Contains($"{CookieKeys.OAuthFlow}=", setCookie, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GoogleStart_SetsOAuthFlowCookieAndRedirectsToGoogle()
-    {
-        var result = this.sut.GoogleStart();
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.StartsWith(OAuthConstants.GoogleAuthorizeUrl, redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("response_type=code", redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("access_type=offline", redirect.Url, StringComparison.Ordinal);
-        Assert.Contains("code_challenge_method=S256", redirect.Url, StringComparison.Ordinal);
-
-        var setCookie = this.sut.ControllerContext.HttpContext.Response.Headers["Set-Cookie"].ToString();
-        Assert.Contains($"{CookieKeys.OAuthFlow}=", setCookie, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GitHubCallback_StateMismatch_RedirectsWithInvalidStateError()
-    {
-        this.SetOAuthFlowRequestCookie(OAuthConstants.GitHubProvider, "expected-state", "verifier");
-
-        var result = this.sut.GitHubCallback("the-code", "wrong-state");
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("error=invalid_state", redirect.Url, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GitHubCallback_NoCookie_RedirectsWithInvalidStateError()
-    {
-        var result = this.sut.GitHubCallback("the-code", "some-state");
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("error=invalid_state", redirect.Url, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GitHubCallback_ValidState_RedirectsWithCode()
-    {
-        this.SetOAuthFlowRequestCookie(OAuthConstants.GitHubProvider, "matching-state", "verifier");
-
-        var result = this.sut.GitHubCallback("the-code", "matching-state");
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("code=the-code", redirect.Url, StringComparison.Ordinal);
-        Assert.DoesNotContain("error=", redirect.Url, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GoogleCallback_ValidState_RedirectsWithCode()
-    {
-        this.SetOAuthFlowRequestCookie(OAuthConstants.GoogleProvider, "matching-state", "verifier");
-
-        var result = this.sut.GoogleCallback("the-code", "matching-state");
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("code=the-code", redirect.Url, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GitHubCallback_ValidStateButMissingCode_RedirectsWithMissingCodeError()
-    {
-        this.SetOAuthFlowRequestCookie(OAuthConstants.GitHubProvider, "matching-state", "verifier");
-
-        var result = this.sut.GitHubCallback(null!, "matching-state");
-
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("error=missing_code", redirect.Url, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task LoginGitHubAsync_MissingOAuthFlowCookie_ReturnsUnauthorized()
-    {
-        var result = await this.sut.LoginGitHubAsync(new OAuthCodeLoginRequest { Code = "the-code", DeviceId = DeviceId }, CancellationToken.None);
-
-        Assert.IsType<UnauthorizedObjectResult>(result.Result);
-    }
-
-    [Fact]
-    public async Task LoginGoogleAsync_MissingOAuthFlowCookie_ReturnsUnauthorized()
-    {
-        var result = await this.sut.LoginGoogleAsync(new OAuthCodeLoginRequest { Code = "the-code", DeviceId = DeviceId }, CancellationToken.None);
-
-        Assert.IsType<UnauthorizedObjectResult>(result.Result);
-    }
-
-    [Fact]
-    public async Task LoginGitHubAsync_ValidFlow_ClearsOAuthFlowCookie()
-    {
-        this.SetOAuthFlowRequestCookie(OAuthConstants.GitHubProvider, "state", "the-verifier");
-
-        this.gitHubOAuthServiceMock
-            .Setup(s => s.ExchangeCodeForGithubAccessTokenAsync("the-code", "the-verifier", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(string.Empty);
-
-        var result = await this.sut.LoginGitHubAsync(new OAuthCodeLoginRequest { Code = "the-code", DeviceId = DeviceId }, CancellationToken.None);
-
-        Assert.IsType<UnauthorizedObjectResult>(result.Result);
-        this.gitHubOAuthServiceMock.Verify(
-            s => s.ExchangeCodeForGithubAccessTokenAsync("the-code", "the-verifier", It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        var setCookie = this.sut.ControllerContext.HttpContext.Response.Headers["Set-Cookie"].ToString();
-        Assert.Contains($"{CookieKeys.OAuthFlow}=", setCookie, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void SetOAuthFlowRequestCookie(string provider, string state, string codeVerifier)
-    {
-        var payload = JsonSerializer.Serialize(new { Provider = provider, State = state, CodeVerifier = codeVerifier });
-        var protectedValue = this.oauthFlowProtector.Protect(payload);
-        this.sut.ControllerContext.HttpContext.Request.Headers["Cookie"] = $"{CookieKeys.OAuthFlow}={protectedValue}";
+        this.authTokenCookieServiceMock.Verify(s => s.DeleteAuthCookies(), Times.Once);
+        this.oauthFlowCookieServiceMock.Verify(s => s.DeleteOAuthFlowCookie(), Times.Once);
     }
 
     private static Mock<UserManager<User>> BuildUserManagerMock()

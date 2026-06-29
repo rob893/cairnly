@@ -7,7 +7,7 @@ namespace Cairnly.API.Models.QueryParameters;
 /// <summary>
 /// Query parameters for searching a spendingPlan's expense line items.
 /// </summary>
-public sealed record SpendingPlanExpenseQueryParameters : OwnedEntityQueryParameters
+public sealed record SpendingPlanExpenseQueryParameters : OwnedEntityQueryParameters, ISpendingPlanLineItemQueryParameters
 {
     /// <summary>
     /// Gets or sets the parent spendingPlan ID. Set by the service from the route; not bound from the

@@ -8,7 +8,7 @@ namespace Cairnly.API.Data.Repositories;
 /// <summary>
 /// Repository for spendingPlan income line item data access.
 /// </summary>
-public sealed class SpendingPlanIncomeRepository : Repository<SpendingPlanIncome, SpendingPlanIncomeQueryParameters>, ISpendingPlanIncomeRepository
+public sealed class SpendingPlanIncomeRepository : SpendingPlanLineItemRepository<SpendingPlanIncome, SpendingPlanIncomeQueryParameters>, ISpendingPlanIncomeRepository
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SpendingPlanIncomeRepository"/> class.
@@ -24,21 +24,4 @@ public sealed class SpendingPlanIncomeRepository : Repository<SpendingPlanIncome
         return query.Include(i => i.SpendingPlanIncomeTags);
     }
 
-    /// <inheritdoc />
-    protected override IQueryable<SpendingPlanIncome> AddWhereClauses(IQueryable<SpendingPlanIncome> query, SpendingPlanIncomeQueryParameters searchParams)
-    {
-        query = query.Where(i => i.SpendingPlanId == searchParams.SpendingPlanId);
-
-        if (!searchParams.RequestingUserIsAdmin)
-        {
-            query = query.Where(i => i.UserId == searchParams.RequestingUserId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(searchParams.Name))
-        {
-            query = query.Where(i => EF.Functions.ILike(i.Name, $"%{searchParams.Name}%"));
-        }
-
-        return query;
-    }
 }

@@ -13,11 +13,11 @@ new findings.
 
 | #   | Finding                                                  | Impact | Effort | Status     |
 | --- | ------------------------------------------------------- | ------ | ------ | ---------- |
-| 1   | SpendingPlan Income/Expense vertical duplicated         | High   | High   | ⬜ Pending |
-| 2   | AuthController 668-line, 10-dep god controller          | Medium | High   | ⬜ Pending |
-| 3   | LineItemsSection.tsx 760 lines, 7 components            | Medium | Medium | ⬜ Pending |
-| 4   | SpendingPlanCharts.tsx 697 lines + unsafe casts         | Medium | Medium | ⬜ Pending |
-| 5   | Editable-cell + request-builder duplicated across tables| Medium | Medium | ⬜ Pending |
+| 1   | SpendingPlan Income/Expense vertical duplicated         | High   | High   | ✅ Done (W3) |
+| 2   | AuthController 668-line, 10-dep god controller          | Medium | High   | ✅ Done (W3) |
+| 3   | LineItemsSection.tsx 760 lines, 7 components            | Medium | Medium | ✅ Done (W3) |
+| 4   | SpendingPlanCharts.tsx 697 lines + unsafe casts         | Medium | Medium | ✅ Done (W3) |
+| 5   | Editable-cell + request-builder duplicated across tables| Medium | Medium | ✅ Done (W3) |
 
 ## Metrics
 
@@ -38,6 +38,7 @@ new findings.
 - **Dependencies:** None
 - **Breaking Changes:** No — internal refactor; public routes/DTOs unchanged
 - **Recommendation:** Introduce a generic `SpendingPlanLineItemService<TEntity,TTag,TDto,TCreate,TUpdate>` base (and matching repository base) holding the shared CRUD/validation/authorization flow; keep thin `Income`/`Expense` subclasses for entity-specific factory deltas. Collapses ~95% of ~550 duplicated lines.
+- **What was done (W3):** Added generic line-item service + repository bases with shared request/query/entity interfaces; Income/Expense are now thin subclasses (net +3 lines but the ~550 duplicated lines collapse to one shared flow). Routes/DTOs unchanged; tests pass 170/170.
 
 ### 2. `AuthController` is a 668-line, 10-dependency god controller
 - **Category:** Architecture / Size
@@ -48,6 +49,7 @@ new findings.
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Split into `AuthController` (register/login/logout/refresh) and `OAuthController` (start/callback/social login); extract token+cookie issuance and OAuth-flow cookie crypto into a service to drop dep count; rename `dnumerationErrorCodes`.
+- **What was done (W3):** Split into auth-only `AuthController` (10→6 deps) + new `OAuthController` (6 deps); extracted token/cookie issuance and OAuth-flow cookie crypto into services; renamed `dnumerationErrorCodes`→`enumerationErrorCodes`. Routes/behaviour unchanged; W1/W2 logout + 15m JWT preserved.
 
 ### 3. `LineItemsSection.tsx` is 760 lines with 7 components in one file
 - **Category:** Frontend / Size
@@ -58,6 +60,7 @@ new findings.
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Extract `LineItemsTable`, the editable cells, `DetailsModal`, and `TableFooter` into sibling files; keep `LineItemsSection` as the orchestrator under ~200 lines.
+- **What was done (W3):** Extracted LineItemsTable/cells/DetailsModal/TableFooter/DeleteModal/SortableColumn + `useLineItemsClientTable` into sibling files; `LineItemsSection` is now a 198-line orchestrator. Lint/build/125 tests pass.
 
 ### 4. `SpendingPlanCharts.tsx` is 697 lines mixing two chart families + unsafe casts
 - **Category:** Frontend / Size / Unsafe
@@ -68,6 +71,7 @@ new findings.
 - **Dependencies:** None
 - **Breaking Changes:** No
 - **Recommendation:** Split donut vs Sankey into separate files (shared transforms in `utils`); replace `as unknown as` with a typed payload narrowing helper/guard.
+- **What was done (W3):** Split into `DonutCard`/`CashFlowSankeyCard`/`ChartModeDropdown` + `spendingPlanChartUtils` (orchestrator now 140 lines); typed recharts payloads removed both `as unknown as` casts (0 remain in src).
 
 ### 5. Inline editable-cell + request-builder components duplicated across tables
 - **Category:** DRY / Frontend
@@ -78,3 +82,4 @@ new findings.
 - **Dependencies:** Pairs with #3 (extract cells once during that split)
 - **Breaking Changes:** No
 - **Recommendation:** Promote a shared `EditableCategoryCell` and a generic `<EditableTextCell>` into `components/`, and centralize the patch-merge builder, so both tables consume one implementation.
+- **What was done (W3):** Promoted shared `EditableTextCell`/`EditableCategoryCell` + `utils/patchRequest` into `components/`; both LineItems and Transactions tables now consume one implementation. Done alongside Q3 split; tests pass.

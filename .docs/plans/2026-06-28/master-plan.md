@@ -24,8 +24,8 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 | ---- | --------------------------------------- | -------------- |
 | 1    | S1, S2, S3, S4, P2, U3, U4, U5 (8)      | ✅ Complete    |
 | 2    | U1, U2, P1, P3, S5, P4 (6)              | ✅ Complete    |
-| 3    | Q1, F1, F5, Q3+Q5, Q4, Q2 (6)           | ⬜ Pending     |
-| 4    | F3, F4, F2 (3)                          | ⬜ Pending     |
+| 3    | Q1, Q3+Q5, Q4, Q2 (4)                   | ✅ Complete    |
+| 4    | F1, F5, F3, F4, F2 (5)                  | ⬜ Pending     |
 
 ## Execution Waves
 
@@ -53,21 +53,21 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 | 13  | Security | S5 — Host `frame-ancestors`/X-Frame-Options; CORS header allowlist| Medium | Low    | ✅ Done |
 | 14  | Perf     | P4 — HeroUI deep imports (verified supported, no measurable win)  | Medium | Medium | ✅ Done |
 
-### Wave 3: Refactors + Feature Foundations
+### Wave 3: Quality Refactors — ✅ COMPLETE
 
-| #   | Area     | Finding                                                          | Effort    | Impact | Dependencies |
-| --- | -------- | ---------------------------------------------------------------- | --------- | ------ | ------------ |
-| 15  | Quality  | Q1 — Generic SpendingPlan line-item base (de-dupe ~550 lines)    | High      | High   | None         |
-| 16  | Features | F1 — Real Cash Flow & trends API; retire `mockCashFlow.ts`       | High      | High   | None         |
-| 17  | Features | F5 — CSV transaction import (staged → confirm)                   | High      | High   | None         |
-| 18  | Quality  | Q3 + Q5 — Split `LineItemsSection`; promote shared editable cells| Medium    | Medium | None         |
-| 19  | Quality  | Q4 — Split `SpendingPlanCharts`; type recharts payloads          | Medium    | Medium | None         |
-| 20  | Quality  | Q2 — Split `AuthController` → Auth/OAuth; extract token service   | High      | Medium | None         |
+| #   | Area     | Finding                                                          | Effort    | Impact | Status  |
+| --- | -------- | ---------------------------------------------------------------- | --------- | ------ | ------- |
+| 15  | Quality  | Q1 — Generic SpendingPlan line-item base (de-dupe ~550 lines)    | High      | High   | ✅ Done |
+| 18  | Quality  | Q3 + Q5 — Split `LineItemsSection`; promote shared editable cells| Medium    | Medium | ✅ Done |
+| 19  | Quality  | Q4 — Split `SpendingPlanCharts`; type recharts payloads          | Medium    | Medium | ✅ Done |
+| 20  | Quality  | Q2 — Split `AuthController` → Auth/OAuth; extract token service   | High      | Medium | ✅ Done |
 
-### Wave 4: Major Features (build on Wave 3)
+### Wave 4: Major Features (build on Wave 3; F1/F5 deferred from W3)
 
 | #   | Area     | Finding                                            | Effort    | Impact   | Dependencies   |
 | --- | -------- | -------------------------------------------------- | --------- | -------- | -------------- |
+| 16  | Features | F1 — Real Cash Flow & trends API; retire mock data | High      | High     | None           |
+| 17  | Features | F5 — CSV transaction import (staged → confirm)     | High      | High     | None           |
 | 21  | Features | F3 — Goals (progress + projected completion)       | High      | High     | None           |
 | 22  | Features | F4 — Recurring / subscription detection            | Very High | High     | F5 (boosts data)|
 | 23  | Features | F2 — Budgets (per-category limits, budget-vs-actual)| Very High | Critical | F1, Q1         |
@@ -112,6 +112,15 @@ All 6 Wave 2 items implemented via parallel sub-agents; API build + 165 tests pa
 - **P3** — `GET /spending-plans/summaries` batch endpoint; `HomePage` uses one `useQuery`.
 - **S5** — `SecurityHeadersMiddleware` adds `X-Frame-Options: DENY` + `frame-ancestors 'none'`; CORS header allowlist (Authorization, Content-Type, X-CSRF-Token, X-Correlation-Id).
 - **P4** — verified HeroUI v3 deep imports supported but no measurable size win (~0.5 KB gzip); left as-is.
+
+## Wave 3 Implementation Log (2026-06-28)
+
+Four quality refactors implemented via parallel sub-agents; API build + 170 tests pass, UI build + 125 tests pass. No breaking changes, no commits. F1/F5 deferred to Wave 4.
+
+- **Q1** — generic SpendingPlan line-item service + repository bases; Income/Expense now thin subclasses (~550 duplicated lines collapsed). Routes/DTOs unchanged.
+- **Q2** — split `AuthController` (10→6 deps) + new `OAuthController`; extracted token/cookie + oauth-flow services; fixed `dnumerationErrorCodes` typo.
+- **Q3+Q5** — `LineItemsSection` 760→198 lines via sibling extraction; shared `EditableTextCell`/`EditableCategoryCell` + `patchRequest` consumed by both tables.
+- **Q4** — `SpendingPlanCharts` 697→140 lines (DonutCard/CashFlowSankeyCard/utils); 0 `as unknown as` casts remain.
 
 ## Area Plans
 

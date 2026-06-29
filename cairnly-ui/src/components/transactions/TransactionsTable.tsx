@@ -2,7 +2,8 @@ import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo,
 import { Button, Chip, Modal, Spinner } from '@heroui/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
-import { CategorySelect } from '../CategorySelect';
+import { EditableCategoryCell } from '../EditableCategoryCell';
+import { EditableTextCell } from '../EditableTextCell';
 import { TransactionFormModal } from './TransactionFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
 import { EmptyState } from '../EmptyState';
@@ -10,6 +11,7 @@ import { showErrorDetails } from '../../utils/environment';
 import { formatMoney, minorToMajor, parseMoneyToMinor } from '../../utils/money';
 import { formatLongDate } from '../../utils/datetime';
 import { showSuccessToast } from '../../utils/notifications';
+import { buildTransactionUpdateRequest } from '../../utils/patchRequest';
 import { useAccounts } from '../../hooks/accounts';
 import { useCategories } from '../../hooks/categories';
 import {
@@ -56,26 +58,6 @@ type TransactionListItem =
 
 function estimateTransactionListItemSize(item: TransactionListItem): number {
   return item.type === 'group' ? 38 : 66;
-}
-
-/** Builds a full update request from an existing transaction plus patched fields. */
-function buildUpdateRequest(
-  transaction: Transaction,
-  patch: Partial<UpdateTransactionRequest>
-): UpdateTransactionRequest {
-  return {
-    accountId: transaction.accountId,
-    date: transaction.date,
-    amount: transaction.amount,
-    merchant: transaction.merchant ?? null,
-    description: transaction.description ?? null,
-    categoryId: transaction.categoryId,
-    source: transaction.source,
-    parentTransactionId: transaction.parentTransactionId ?? null,
-    tagIds: transaction.tagIds,
-    metadata: transaction.metadata,
-    ...patch
-  };
 }
 
 /** Formats a signed minor-unit amount: inflows are prefixed with `+` and tinted. */
@@ -201,7 +183,7 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
 
   const handleInlineSave = useCallback(
     async (transaction: Transaction, patch: Partial<UpdateTransactionRequest>) => {
-      await updateAsync({ id: transaction.id, request: buildUpdateRequest(transaction, patch) });
+      await updateAsync({ id: transaction.id, request: buildTransactionUpdateRequest(transaction, patch) });
       showSuccessToast('Transaction saved');
     },
     [updateAsync]
@@ -439,7 +421,7 @@ const TransactionRow = memo(function TransactionRow({
             Adjustment
           </Chip>
         ) : (
-          <EditableCategoryCell transaction={transaction} category={category} onSave={onInlineSave} />
+          <TransactionCategoryCell transaction={transaction} category={category} onSave={onInlineSave} />
         )}
       </div>
 
@@ -497,77 +479,23 @@ function EditableMerchantCell({
   onSave(transaction: Transaction, patch: Partial<UpdateTransactionRequest>): Promise<void>;
 }) {
   const current = transaction.merchant ?? '';
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(current);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!editing) {
-      setValue(current);
-    }
-  }, [current, editing]);
-
-  const cancel = () => {
-    setValue(current);
-    setEditing(false);
-  };
-
-  const commit = async () => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === current) {
-      cancel();
-      return;
-    }
-    setSaving(true);
-    try {
-      await onSave(transaction, { merchant: trimmed });
-      setEditing(false);
-    } catch {
-      setValue(current);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (!editing) {
-    const label = transaction.merchant || transaction.description || fallback || 'Transaction';
-    return (
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        aria-label="Edit merchant"
-        className="-mx-1 max-w-full truncate rounded px-1 text-left font-medium text-foreground transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        {label}
-      </button>
-    );
-  }
-
+  const label = transaction.merchant || transaction.description || fallback || 'Transaction';
   return (
-    <input
-      type="text"
-      autoFocus
-      value={value}
-      disabled={saving}
-      aria-label="Merchant"
-      onChange={event => setValue(event.target.value)}
-      onBlur={() => void commit()}
-      onKeyDown={event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          void commit();
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          cancel();
-        }
-      }}
-      className="w-full min-w-32 rounded border border-border bg-surface px-2 py-1 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    <EditableTextCell
+      item={transaction}
+      value={current}
+      displayValue={label}
+      editAriaLabel="Edit merchant"
+      inputAriaLabel="Merchant"
+      buttonClassName="-mx-1 max-w-full truncate rounded px-1 text-left font-medium text-foreground transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      inputClassName="w-full min-w-32 rounded border border-border bg-surface px-2 py-1 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      onSave={(item, merchant) => onSave(item, { merchant })}
     />
   );
 }
 
 /** Category cell that switches to an inline picker on click; saves on selection. */
-function EditableCategoryCell({
+function TransactionCategoryCell({
   transaction,
   category,
   onSave
@@ -576,39 +504,14 @@ function EditableCategoryCell({
   category: Category | undefined;
   onSave(transaction: Transaction, patch: Partial<UpdateTransactionRequest>): Promise<void>;
 }) {
-  const [editing, setEditing] = useState(false);
-
-  if (!editing) {
-    return (
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        aria-label="Edit category"
-        className="-mx-1 flex max-w-full items-center gap-1.5 rounded px-1 text-left text-sm text-muted transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        {category?.icon && <span aria-hidden="true">{category.icon}</span>}
-        <span className="truncate">{category?.name || '—'}</span>
-      </button>
-    );
-  }
-
   return (
-    <CategorySelect
-      aria-label="Category"
-      value={transaction.categoryId}
-      defaultOpen
-      onChange={categoryId => {
-        if (categoryId !== transaction.categoryId) {
-          void onSave(transaction, { categoryId });
-        }
-        setEditing(false);
-      }}
-      onOpenChange={open => {
-        if (!open) {
-          setEditing(false);
-        }
-      }}
-      className="w-full min-w-44"
+    <EditableCategoryCell
+      item={transaction}
+      categoryId={transaction.categoryId}
+      category={category}
+      editAriaLabel="Edit category"
+      buttonClassName="-mx-1 flex max-w-full items-center gap-1.5 rounded px-1 text-left text-sm text-muted transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      onSave={(item, categoryId) => onSave(item, { categoryId })}
     />
   );
 }
