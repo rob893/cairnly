@@ -41,14 +41,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider placement="bottom" maxVisibleToasts={3}>
-          <Router>
-            <ErrorBoundary>
-              <App />
-            </ErrorBoundary>
-            <LazyDevTools />
-          </Router>
-        </ToastProvider>
+        <Router>
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+          <ToastProvider placement="bottom" maxVisibleToasts={3} />
+          <LazyDevTools />
+        </Router>
       </QueryClientProvider>
     </ThemeProvider>
   </React.StrictMode>

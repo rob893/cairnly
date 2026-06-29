@@ -62,6 +62,8 @@ export function useAccountTransactions(accountId: number | undefined) {
 function invalidateAfterMutation(queryClient: ReturnType<typeof useQueryClient>): void {
   queryClient.invalidateQueries({ queryKey: transactionQueryKeys.all() });
   queryClient.invalidateQueries({ queryKey: accountQueryKeys.accounts() });
+  // Cash-flow reports are transaction-derived; literal key avoids a circular import.
+  queryClient.invalidateQueries({ queryKey: ['reports'] });
 }
 
 export function useCreateTransaction() {

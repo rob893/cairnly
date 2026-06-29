@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Cairnly.API.Models.Entities;
 
 namespace Cairnly.API.Models.QueryParameters;
@@ -13,6 +14,12 @@ public sealed record TransactionQueryParameters : OwnedEntityQueryParameters
 
     /// <summary>Gets an optional category ID filter.</summary>
     public int? CategoryId { get; init; }
+
+    /// <summary>
+    /// Gets an optional set of category IDs to filter by. When non-empty, returns transactions in
+    /// any of these categories (used to drill into a category group's children).
+    /// </summary>
+    public IReadOnlyCollection<int>? CategoryIds { get; init; }
 
     /// <summary>Gets an optional tag ID filter.</summary>
     public int? TagId { get; init; }

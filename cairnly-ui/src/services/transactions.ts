@@ -22,7 +22,9 @@ function toParams<T extends object>(query: T | undefined): Record<string, unknow
 export const transactionsApi = {
   async getTransactions(query?: TransactionQueryParameters): Promise<CursorPaginatedResponse<Transaction>> {
     const response = await apiClient.get<CursorPaginatedResponse<Transaction>>('/api/v1/transactions', {
-      params: toParams(query)
+      params: toParams(query),
+      // Repeat keys (categoryIds=1&categoryIds=2) so ASP.NET binds the array filter.
+      paramsSerializer: { indexes: null }
     });
     return response.data;
   },

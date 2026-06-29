@@ -23,6 +23,7 @@ public static class DomainServiceCollectionExtensions
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAccountBalanceResolver, AccountBalanceResolver>();
         services.AddScoped<IBalanceHistoryService, BalanceHistoryService>();
+        services.AddScoped<IReportsService, ReportsService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<ITransactionService, TransactionService>();

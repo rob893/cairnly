@@ -33,6 +33,8 @@ export interface Transaction {
 export interface TransactionQueryParameters extends CursorPaginationQueryParameters {
   accountId?: number;
   categoryId?: number;
+  /** Filter to transactions in any of these categories (e.g. a group's children). */
+  categoryIds?: number[];
   tagId?: number;
   source?: TransactionSource;
   dateFrom?: string;

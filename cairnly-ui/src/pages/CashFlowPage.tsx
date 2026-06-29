@@ -1,26 +1,22 @@
 import { useMemo, useState } from 'react';
-import { Button, Card, CardContent } from '@heroui/react';
+import { useNavigate } from 'react-router';
+import { Button, Card, CardContent, Spinner } from '@heroui/react';
 import { SelectField } from '../components/SelectField';
+import { TrendingUp } from 'lucide-react';
 import { CashFlowChart } from '../components/cashflow/CashFlowChart';
 import { CategoryBreakdown } from '../components/cashflow/CategoryBreakdown';
+import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
+import { EmptyState } from '../components/EmptyState';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { Filter } from 'lucide-react';
+import { useCashFlowReport } from '../hooks/reports';
+import { showErrorDetails } from '../utils/environment';
+import { aggregatePoint, summaryFor } from '../utils/cashflow';
 import { formatMoney } from '../utils/money';
-import {
-  mockCashFlowCurrency,
-  mockCashFlowSeries,
-  mockCashFlowSummary,
-  mockExpenseCategories,
-  mockIncomeCategories
-} from '../constants/mockCashFlow';
-
-type Period = 'monthly' | 'quarterly' | 'yearly';
-
-const periods: ReadonlyArray<{ id: Period; label: string }> = [
-  { id: 'monthly', label: 'Monthly' },
-  { id: 'quarterly', label: 'Quarterly' },
-  { id: 'yearly', label: 'Yearly' }
-];
+import { routePaths } from '../constants/routes';
+import { balanceHistoryTimeframes } from '../types/accounts';
+import { cashFlowPeriods } from '../types/reports';
+import type { BalanceHistoryTimeframe } from '../types/accounts';
+import type { CashFlowBreakdownItem, CashFlowDimension, CashFlowPeriod } from '../types/reports';
 
 const viewOptions = [
   { value: 'bar', label: 'Bar Chart' },
@@ -48,38 +44,55 @@ function StatTile({ value, label, tone = 'neutral' }: StatTileProps) {
 }
 
 /**
- * The Cash Flow page: a monthly income/expense/net chart, a summary row, and
- * income/expense category breakdowns. Currently backed by placeholder data.
+ * The Cash Flow page: a period income/expense/net chart, a summary row, and
+ * income/expense breakdowns, backed by the reports API. Click a chart bucket to
+ * drill into one period, and a breakdown bar to drill into its transactions.
  */
 export function CashFlowPage() {
-  const [period, setPeriod] = useState<Period>('monthly');
+  const [timeframe, setTimeframe] = useState<BalanceHistoryTimeframe>('OneYear');
+  const [period, setPeriod] = useState<CashFlowPeriod>('Monthly');
   const [view, setView] = useState('bar');
-  const currency = mockCashFlowCurrency;
+  const [selectedStart, setSelectedStart] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const report = useCashFlowReport(timeframe, period);
+  const currency = report.data?.currency ?? 'USD';
+  const series = useMemo(() => report.data?.series ?? [], [report.data]);
+
+  const selectedPoint = useMemo(() => series.find(p => p.periodStart === selectedStart), [series, selectedStart]);
+
+  const active = useMemo(() => {
+    if (selectedPoint) {
+      return {
+        income: selectedPoint.income,
+        expenses: selectedPoint.expenses,
+        incomeBreakdowns: selectedPoint.incomeBreakdowns,
+        expenseBreakdowns: selectedPoint.expenseBreakdowns
+      };
+    }
+    return aggregatePoint(series);
+  }, [selectedPoint, series]);
+
+  const summary = useMemo(() => summaryFor(active.income, active.expenses), [active]);
 
   const header = useMemo(
     () => ({
       title: 'Cash Flow',
       actions: (
-        <div className="flex items-center gap-2">
-          <div className="hidden rounded-lg border border-border p-0.5 text-sm sm:flex">
-            {periods.map(option => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setPeriod(option.id)}
-                className={[
-                  'rounded-md px-3 py-1 transition-colors',
-                  period === option.id ? 'bg-surface-secondary text-foreground' : 'text-muted hover:text-foreground'
-                ].join(' ')}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <Button variant="outline" size="sm">
-            <Filter className="size-4" />
-            Filters
-          </Button>
+        <div className="hidden rounded-lg border border-border p-0.5 text-sm sm:flex">
+          {cashFlowPeriods.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setPeriod(option.value)}
+              className={[
+                'rounded-md px-3 py-1 transition-colors',
+                period === option.value ? 'bg-surface-secondary text-foreground' : 'text-muted hover:text-foreground'
+              ].join(' ')}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       )
     }),
@@ -88,36 +101,99 @@ export function CashFlowPage() {
 
   usePageHeader(header);
 
+  const handleDrill = (section: 'income' | 'expense', dimension: CashFlowDimension, item: CashFlowBreakdownItem) => {
+    const sp = new URLSearchParams({ section, label: item.label, timeframe, period });
+    if (selectedStart) {
+      sp.set('from', selectedStart);
+    }
+    navigate(`${routePaths.cashFlow}/${dimension}/${encodeURIComponent(item.key)}?${sp.toString()}`);
+  };
+
+  if (report.isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner color="accent" />
+      </div>
+    );
+  }
+
+  if (report.isError) {
+    return <ApiErrorDisplay error={report.error} showDetails={showErrorDetails} />;
+  }
+
+  if (series.length === 0) {
+    return (
+      <EmptyState
+        icon={<TrendingUp className="size-6" />}
+        title="No cash flow yet"
+        subtitle="Add transactions to see your income and spending trends."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card className="bg-surface border border-border">
-        <CardContent className="space-y-4 p-4 sm:p-6">
-          <CashFlowChart data={mockCashFlowSeries} />
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <h2 className="text-lg font-semibold">June 2026</h2>
-            <div className="flex items-center gap-2 text-sm text-muted">
-              <span>View</span>
-              <div className="w-36">
-                <SelectField aria-label="Chart view" value={view} onChange={setView} options={viewOptions} />
-              </div>
-            </div>
-          </div>
+        <CardContent className="p-4 sm:p-6">
+          <CashFlowChart
+            data={series}
+            view={view as 'bar' | 'line'}
+            currency={currency}
+            selectedStart={selectedStart}
+            onSelectPeriod={setSelectedStart}
+          />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile value={formatMoney(mockCashFlowSummary.income, currency)} label="Income" tone="income" />
-        <StatTile value={formatMoney(mockCashFlowSummary.expenses, currency)} label="Expenses" tone="expense" />
-        <StatTile
-          value={formatMoney(mockCashFlowSummary.savings, currency)}
-          label="Total Savings"
-          tone={mockCashFlowSummary.savings < 0 ? 'expense' : 'income'}
-        />
-        <StatTile value={`${mockCashFlowSummary.savingsRate}%`} label="Savings Rate" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">{selectedPoint ? selectedPoint.label : 'All periods'}</h2>
+          {selectedPoint && (
+            <Button variant="ghost" size="sm" onClick={() => setSelectedStart(null)}>
+              Clear
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted">
+          <div className="w-32">
+            <SelectField
+              aria-label="Timeframe"
+              value={timeframe}
+              onChange={value => setTimeframe(value as BalanceHistoryTimeframe)}
+              options={balanceHistoryTimeframes.map(t => ({ value: t.value, label: t.label }))}
+            />
+          </div>
+          <div className="w-36">
+            <SelectField aria-label="Chart view" value={view} onChange={setView} options={viewOptions} />
+          </div>
+        </div>
       </div>
 
-      <CategoryBreakdown title="Income" items={mockIncomeCategories} currency={currency} tone="income" />
-      <CategoryBreakdown title="Expenses" items={mockExpenseCategories} currency={currency} tone="expense" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile value={formatMoney(summary.income, currency)} label="Income" tone="income" />
+        <StatTile value={formatMoney(summary.expenses, currency)} label="Expenses" tone="expense" />
+        <StatTile
+          value={formatMoney(summary.savings, currency)}
+          label="Total Savings"
+          tone={summary.savings < 0 ? 'expense' : 'income'}
+        />
+        <StatTile value={`${Math.round(summary.savingsRate)}%`} label="Savings Rate" />
+      </div>
+
+      <CategoryBreakdown
+        title="Income"
+        breakdowns={active.incomeBreakdowns}
+        currency={currency}
+        tone="income"
+        onDrill={(dimension, item) => handleDrill('income', dimension, item)}
+      />
+      <CategoryBreakdown
+        title="Expenses"
+        breakdowns={active.expenseBreakdowns}
+        currency={currency}
+        tone="expense"
+        onDrill={(dimension, item) => handleDrill('expense', dimension, item)}
+      />
     </div>
   );
 }

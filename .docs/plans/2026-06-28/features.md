@@ -8,7 +8,7 @@ Cairnly's foundation (accounts, transactions, categories, tags, net-worth histor
 
 | #   | Feature                                              | Impact   | Effort    | Status     |
 | --- | --------------------------------------------------- | -------- | --------- | ---------- |
-| 1   | Real Cash Flow & spending-trends API                | High     | High      | ⬜ Pending |
+| 1   | Real Cash Flow & spending-trends API                | High     | High      | ✅ Done    |
 | 2   | Budgets (per-category limits + budget-vs-actual)    | Critical | Very High | ⬜ Pending |
 | 3   | Goals with progress + projected completion          | High     | High      | ⬜ Pending |
 | 4   | Recurring / subscription detection                  | High     | Very High | ⬜ Pending |
@@ -16,7 +16,7 @@ Cairnly's foundation (accounts, transactions, categories, tags, net-worth histor
 
 ## Findings
 
-### 1. Real Cash Flow & spending-trends API (retire `mockCashFlow.ts`)
+### 1. Real Cash Flow & spending-trends API (retire `mockCashFlow.ts`) — ✅ Done
 - **Description:** `CashFlowPage` is fully placeholder — income/expense series, summary, and category breakdowns all come from `mockCashFlow.ts`. Every input needed (signed `Transaction.Amount`, `Date`, `CategoryId`, `Category.Kind`) already exists, so a single read-aggregate endpoint converts a fake screen into a trusted one: monthly income/expense/net, savings rate, and top spend categories. This is the cheapest path to real "clarity" and directly powers the dashboard (Pillar 4) and Insights (Pillar 9).
 - **Location:** `cairnly-ui/src/pages/CashFlowPage.tsx`, `cairnly-ui/src/constants/mockCashFlow.ts`, `cairnly-ui/src/components/cashflow/CashFlowChart.tsx`, `CategoryBreakdown.tsx`; API: model on `AccountRepository.GetTransactionSumsAsync` group-by pattern (`Cairnly.API/Data/Repositories/AccountRepository.cs`), `TransactionRepository`, `CategoryKind` (Income/Expense/Transfer), exclude `IsBalanceAdjustment`/split children.
 - **Impact:** High
@@ -24,6 +24,7 @@ Cairnly's foundation (accounts, transactions, categories, tags, net-worth histor
 - **Dependencies:** None (transactions exist today); pairs with finding #2 for "budget utilization."
 - **Breaking Changes:** No
 - **Recommendation:** Add `GET /api/v1/reports/cashflow?period=monthly&from=…&to=…` returning per-period income/expense/net + per-category rollups, grouped via EF `GroupBy` on `date_trunc` + `CategoryId`, filtering out `ParentTransactionId != null` and `IsBalanceAdjustment`. Expose via `hooks/api.ts` query, delete the mock import. Reuse currency from accounts.
+- **Implemented:** `GET /api/v1/reports/cashflow?timeframe=…&period=Monthly|Quarterly|Yearly` (`ReportsController`/`ReportsService`) returns per-period income/expense/net + window summary (savings rate) + per-period income/expense breakdowns by category/group/merchant; excludes split children, balance adjustments, transfers. UI split into `types/services/hooks/reports.ts`; `CashFlowPage` adds clickable slice; bar/group/merchant drill opens a dedicated `CashFlowDetailPage` (route `/cash-flow/:dimension/:key`) with per-slice chart, filtered transactions, and summary (new `categoryIds` filter); `mockCashFlow.ts` deleted.
 
 ### 2. Budgets (per-category limits + budget-vs-actual)
 - **Description:** The "Budget" name is reserved for a Monarch-style tracker; today only forward-looking SpendingPlans exist (no comparison to real spend). A `Budget` entity (category + period + amount + optional rollover) plus a status aggregate answers "Am I on track? / $350 left this month" — the core of Pillar 1 and the dashboard's "budget utilization" metric. SpendingPlan + cadence give a near-copy template, and categorized transactions provide actuals.

@@ -11,6 +11,7 @@ export const routePaths = {
   accountDetail: '/accounts/:accountId',
   transactions: '/transactions',
   cashFlow: '/cash-flow',
+  cashFlowDetail: '/cash-flow/:dimension/:key',
   spendingPlans: '/spending-plans',
   spendingPlanDetail: '/spending-plans/:spendingPlanId',
   settings: '/settings',

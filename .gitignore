@@ -314,3 +314,4 @@ dev-dist/
 test-results/
 # Compiled Bicep output
 CI/Azure/main.json
+.playwright-cli

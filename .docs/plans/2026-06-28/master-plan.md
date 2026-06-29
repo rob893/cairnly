@@ -25,7 +25,7 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 | 1    | S1, S2, S3, S4, P2, U3, U4, U5 (8)      | ✅ Complete    |
 | 2    | U1, U2, P1, P3, S5, P4 (6)              | ✅ Complete    |
 | 3    | Q1, Q3+Q5, Q4, Q2 (4)                   | ✅ Complete    |
-| 4    | F1, F5, F3, F4, F2 (5)                  | ⬜ Pending     |
+| 4    | F1, F5, F3, F4, F2 (5)                  | ⬜ F1 ✅, rest Pending |
 
 ## Execution Waves
 
@@ -66,7 +66,7 @@ line-item stack and ship real Cash Flow aggregation before cloning it into Budge
 
 | #   | Area     | Finding                                            | Effort    | Impact   | Dependencies   |
 | --- | -------- | -------------------------------------------------- | --------- | -------- | -------------- |
-| 16  | Features | F1 — Real Cash Flow & trends API; retire mock data | High      | High     | None           |
+| 16  | Features | F1 — Real Cash Flow & trends API; retire mock data | High      | High     | None ✅ Done   |
 | 17  | Features | F5 — CSV transaction import (staged → confirm)     | High      | High     | None           |
 | 21  | Features | F3 — Goals (progress + projected completion)       | High      | High     | None           |
 | 22  | Features | F4 — Recurring / subscription detection            | Very High | High     | F5 (boosts data)|
@@ -121,6 +121,12 @@ Four quality refactors implemented via parallel sub-agents; API build + 170 test
 - **Q2** — split `AuthController` (10→6 deps) + new `OAuthController`; extracted token/cookie + oauth-flow services; fixed `dnumerationErrorCodes` typo.
 - **Q3+Q5** — `LineItemsSection` 760→198 lines via sibling extraction; shared `EditableTextCell`/`EditableCategoryCell` + `patchRequest` consumed by both tables.
 - **Q4** — `SpendingPlanCharts` 697→140 lines (DonutCard/CashFlowSankeyCard/utils); 0 `as unknown as` casts remain.
+
+## Wave 4 Implementation Log (2026-06-28)
+
+F1 implemented; API build + 175 tests pass, UI lint + build + 133 tests pass. No commits.
+
+- **F1** — `GET /api/v1/reports/cashflow?timeframe&period` (`ReportsController`/`ReportsService` + `TransactionRepository.GetCashFlowEntriesAsync`) returns per-period income/expense/net, window summary (savings rate), and per-period income/expense breakdowns by category/group/merchant; excludes split children, balance adjustments, transfers. UI `types/services/hooks/reports.ts`; `CashFlowPage` wired with functional period + bar/line toggles, clickable slice, and category/group/merchant bar drill to a dedicated `CashFlowDetailPage` (route `/cash-flow/:dimension/:key`) with per-slice chart + filtered transactions + summary (added `categoryIds` filter). `mockCashFlow.ts` deleted.
 
 ## Area Plans
 

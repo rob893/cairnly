@@ -86,6 +86,14 @@ Run from repo root unless noted.
 - **UI unit:** Vitest (`*.test.ts(x)` / `*.spec.ts(x)` under `src/`).
 - **UI e2e:** Playwright in `cairnly-ui/e2e/`.
 
+## Validation
+
+- After something has been implemented, do the following to validate the implementation:
+  1. Run unit tests for both API and UI
+  2. Run `npm run format` from root of repo
+  3. Run lint in the UI
+  4. Use Playwright CLI skills to run full end to end testing of your implementation
+
 ## Commits & PRs
 
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `test:`. One logical change per commit.

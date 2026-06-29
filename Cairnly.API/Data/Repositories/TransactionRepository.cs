@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Cairnly.API.Models.Entities;
 using Cairnly.API.Models.QueryParameters;
+using Cairnly.API.Models.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cairnly.API.Data.Repositories;
@@ -16,6 +21,39 @@ public sealed class TransactionRepository : Repository<Transaction, TransactionQ
     /// <param name="context">The database context.</param>
     public TransactionRepository(DataContext context) : base(context)
     {
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<CashFlowEntry>> GetCashFlowEntriesAsync(int userId, DateTimeOffset? from, CancellationToken cancellationToken = default)
+    {
+        var query = this.Context.Transactions
+            .AsNoTracking()
+            .Where(t => t.UserId == userId
+                && t.ParentTransactionId == null
+                && !t.IsBalanceAdjustment
+                && t.Category.Kind != CategoryKind.Transfer);
+
+        if (from.HasValue)
+        {
+            query = query.Where(t => t.Date >= from.Value);
+        }
+
+        return await query
+            .OrderBy(t => t.Date)
+            .Select(t => new CashFlowEntry
+            {
+                Date = t.Date,
+                Amount = t.Amount,
+                Kind = t.Category.Kind,
+                CategoryId = t.CategoryId,
+                CategoryName = t.Category.Name,
+                CategoryIcon = t.Category.Icon,
+                ParentCategoryId = t.Category.ParentId,
+                ParentName = t.Category.Parent != null ? t.Category.Parent.Name : null,
+                ParentIcon = t.Category.Parent != null ? t.Category.Parent.Icon : null,
+                Merchant = t.Merchant
+            })
+            .ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -51,6 +89,11 @@ public sealed class TransactionRepository : Repository<Transaction, TransactionQ
             query = query.Where(t => t.CategoryId == searchParams.CategoryId.Value);
         }
 
+        if (searchParams.CategoryIds is { Count: > 0 } categoryIds)
+        {
+            query = query.Where(t => categoryIds.Contains(t.CategoryId));
+        }
+
         if (searchParams.TagId.HasValue)
         {
             query = query.Where(t => t.TransactionTags.Any(tt => tt.TagId == searchParams.TagId.Value));
@@ -63,12 +106,14 @@ public sealed class TransactionRepository : Repository<Transaction, TransactionQ
 
         if (searchParams.DateFrom.HasValue)
         {
-            query = query.Where(t => t.Date >= searchParams.DateFrom.Value);
+            var dateFrom = searchParams.DateFrom.Value.ToUniversalTime();
+            query = query.Where(t => t.Date >= dateFrom);
         }
 
         if (searchParams.DateTo.HasValue)
         {
-            query = query.Where(t => t.Date <= searchParams.DateTo.Value);
+            var dateTo = searchParams.DateTo.Value.ToUniversalTime();
+            query = query.Where(t => t.Date <= dateTo);
         }
 
         if (searchParams.MinAmount.HasValue)

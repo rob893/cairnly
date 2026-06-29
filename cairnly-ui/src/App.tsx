@@ -13,6 +13,9 @@ const AccountsPage = lazy(() => import('./pages/AccountsPage').then(m => ({ defa
 const AccountDetailPage = lazy(() => import('./pages/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })));
 const TransactionsPage = lazy(() => import('./pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
 const CashFlowPage = lazy(() => import('./pages/CashFlowPage').then(m => ({ default: m.CashFlowPage })));
+const CashFlowDetailPage = lazy(() =>
+  import('./pages/CashFlowDetailPage').then(m => ({ default: m.CashFlowDetailPage }))
+);
 const SpendingPlansPage = lazy(() => import('./pages/SpendingPlansPage').then(m => ({ default: m.SpendingPlansPage })));
 const SpendingPlanDetailPage = lazy(() =>
   import('./pages/SpendingPlanDetailPage').then(m => ({ default: m.SpendingPlanDetailPage }))
@@ -99,6 +102,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <CashFlowPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={routePaths.cashFlowDetail}
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CashFlowDetailPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
