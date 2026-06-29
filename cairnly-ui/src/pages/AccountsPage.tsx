@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal, Spinner } from '@heroui/react';
+import { Wallet } from 'lucide-react';
 import { NetWorthCard } from '../components/accounts/NetWorthCard';
 import { AccountGroup } from '../components/accounts/AccountGroup';
 import { AccountSummaryCard } from '../components/accounts/AccountSummaryCard';
 import { AccountsHeaderActions } from '../components/accounts/AccountsHeaderActions';
 import { AccountFormModal } from '../components/accounts/AccountFormModal';
 import { ApiErrorDisplay } from '../components/ApiErrorDisplay';
+import { EmptyState } from '../components/EmptyState';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { showErrorDetails } from '../utils/environment';
 import { buildAccountGroups, buildSummary } from '../utils/accounts';
@@ -147,12 +149,12 @@ export function AccountsPage() {
           showDetails={showErrorDetails}
         />
       ) : accounts.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-surface p-10 text-center">
-          <p className="text-sm text-muted">No accounts yet. Add one to start tracking your net worth.</p>
-          <Button className="mt-4" onPress={openCreate}>
-            Add account
-          </Button>
-        </div>
+        <EmptyState
+          icon={<Wallet className="size-5" />}
+          title="No accounts yet"
+          subtitle="Add one to start tracking your net worth."
+          cta={{ label: 'Add account', onPress: openCreate }}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="space-y-4 xl:col-span-2">

@@ -4,6 +4,16 @@
 
 Cairnly's foundation (accounts, transactions, categories, tags, net-worth history, spending plans) is solid, but the highest-value spend "clarity" surfaces are still stubs: the Cash Flow page renders entirely from `mockCashFlow.ts`, the dashboard charts only *planned* spending-plan numbers, and there is no actual-vs-plan, goals, recurring detection, or import. The biggest wins are turning existing screens into real, transaction-backed insights and adding the Monarch-style "Budget" feature that the codebase reserves. The top five below all build directly on existing entities/services and map onto the team's own roadmap in `.docs/specs`.
 
+## Status
+
+| #   | Feature                                              | Impact   | Effort    | Status     |
+| --- | --------------------------------------------------- | -------- | --------- | ---------- |
+| 1   | Real Cash Flow & spending-trends API                | High     | High      | ⬜ Pending |
+| 2   | Budgets (per-category limits + budget-vs-actual)    | Critical | Very High | ⬜ Pending |
+| 3   | Goals with progress + projected completion          | High     | High      | ⬜ Pending |
+| 4   | Recurring / subscription detection                  | High     | Very High | ⬜ Pending |
+| 5   | CSV transaction import                               | High     | High      | ⬜ Pending |
+
 ## Findings
 
 ### 1. Real Cash Flow & spending-trends API (retire `mockCashFlow.ts`)

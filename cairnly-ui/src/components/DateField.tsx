@@ -53,7 +53,7 @@ export function DateField({
       className={className ?? 'w-full'}
     >
       {label && <Label isRequired={isRequired}>{label}</Label>}
-      <Group className="mt-1 flex w-full items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-within:ring-2 focus-within:ring-focus data-[disabled]:opacity-50">
+      <Group className="mt-1 flex w-full items-center gap-2 rounded-[var(--field-radius)] border border-[var(--field-border)] bg-[var(--field-background)] px-3 py-2 text-sm text-[var(--field-foreground)] outline-none focus-within:ring-2 focus-within:ring-focus data-[disabled]:opacity-50">
         <DateInput className="flex shrink-0 items-center">
           {segment => (
             <DateSegment

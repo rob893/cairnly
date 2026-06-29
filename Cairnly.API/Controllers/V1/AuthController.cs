@@ -465,7 +465,7 @@ public sealed class AuthController : ServiceControllerBase
     }
 
     /// <summary>
-    /// Logs the user out by revoking all refresh tokens and clearing the refresh token cookie.
+    /// Logs the user out by revoking all refresh tokens and clearing auth cookies.
     /// </summary>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>No content.</returns>
@@ -499,6 +499,15 @@ public sealed class AuthController : ServiceControllerBase
             IsEssential = true,
             Domain = this.authSettings.CookieDomain
         });
+        this.Response.Cookies.Delete(CookieKeys.CsrfToken, new CookieOptions
+        {
+            HttpOnly = false,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            IsEssential = true,
+            Domain = this.authSettings.CookieDomain
+        });
+        this.DeleteOAuthFlowCookie();
 
         return this.NoContent();
     }

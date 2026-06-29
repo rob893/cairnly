@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -377,6 +378,26 @@ public sealed class AuthControllerTests
         var result = await this.sut.RefreshTokenAsync(null!, CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task LogoutAsync_AuthenticatedUser_DeletesRefreshCsrfAndOAuthFlowCookies()
+    {
+        var user = BuildUser();
+        this.sut.ControllerContext.HttpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())], "Test"));
+        this.userRepositoryMock
+            .Setup(r => r.GetByIdAsync(user.Id, It.IsAny<Expression<Func<User, object>>[]>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var result = await this.sut.LogoutAsync(CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+        var setCookie = this.sut.ControllerContext.HttpContext.Response.Headers.SetCookie.ToString();
+        Assert.Contains($"{CookieKeys.RefreshToken}=", setCookie, StringComparison.Ordinal);
+        Assert.Contains($"{CookieKeys.CsrfToken}=", setCookie, StringComparison.Ordinal);
+        Assert.Contains($"{CookieKeys.OAuthFlow}=", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card, CardContent, CardHeader, Button, Chip } from '@heroui/react';
+import { TriangleAlert } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -47,18 +48,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-linear-to-br from-background to-content1 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-background to-surface flex items-center justify-center p-4">
           <Card className="w-full max-w-md shadow-2xl">
             <CardHeader className="flex flex-col items-center pb-6 pt-8">
-              <h1 className="text-3xl font-bold text-primary mb-4">Cairnly</h1>
+              <h1 className="text-3xl font-bold text-accent mb-4">Cairnly</h1>
               <Chip color="danger" variant="soft">
-                ⚠️ Something went wrong
+                <span className="inline-flex items-center gap-1">
+                  <TriangleAlert className="size-4" aria-hidden="true" />
+                  Something went wrong
+                </span>
               </Chip>
             </CardHeader>
 
             <CardContent className="px-8 pb-8 text-center">
               <h2 className="text-2xl font-bold text-foreground mb-4">Unexpected Error</h2>
-              <p className="text-default-600 mb-8 leading-relaxed">
+              <p className="text-muted mb-8 leading-relaxed">
                 The application ran into an unexpected problem. Please reload the page to continue.
               </p>
               <Button fullWidth className="font-semibold" onPress={() => this.handleReload()}>

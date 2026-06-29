@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Modal, Spinner } from '@heroui/react';
+import { CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSendEmailConfirmation, useUpdateUsername, useUserDetails } from '../../hooks/users';
 import { FormField } from '../FormField';
@@ -118,7 +119,10 @@ export function ProfileSection() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium">{details.email}</span>
             {details.emailConfirmed ? (
-              <span className="text-success text-xs font-medium">✓ Verified</span>
+              <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
+                <CheckCircle2 className="size-4" aria-hidden="true" />
+                Verified
+              </span>
             ) : (
               <Button
                 variant="outline"

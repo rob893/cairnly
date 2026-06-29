@@ -4,6 +4,15 @@
 
 The backend is in strong shape: no blocking `.Result`/`.Wait()` calls, `CancellationToken` is propagated throughout, balances are snapshot-backed with `SUM`/`GROUP BY` aggregation (not row-by-row replay), and the transactions table already has an `IX_Transactions_AccountId` index that lets the balance-sum queries seek rather than scan. The impactful opportunities are all on the frontend, centered on the transactions list, which eagerly drains every page over sequential round-trips and renders every row, and on shaving the post-login critical path. Four findings pass the gate; the bundle is otherwise well chunked and routes/devtools are lazy-loaded.
 
+## Status
+
+| #   | Finding                                                       | Impact | Effort | Status       |
+| --- | ------------------------------------------------------------ | ------ | ------ | ------------ |
+| 1   | TransactionsTable drains all pages; no virtualization        | High   | Medium | ⬜ Pending   |
+| 2   | Charts vendor chunk on dashboard critical path               | Medium | Low    | ✅ Done (W1) |
+| 3   | Dashboard fans out one summary request per spending plan     | Medium | Medium | ⬜ Pending   |
+| 4   | Whole HeroUI shipped via barrel import                        | Medium | Medium | ⬜ Pending   |
+
 ## Findings
 
 ### 1. TransactionsTable drains all pages sequentially and renders every row (no virtualization)

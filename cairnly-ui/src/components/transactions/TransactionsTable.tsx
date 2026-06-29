@@ -4,6 +4,7 @@ import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 import { CategorySelect } from '../CategorySelect';
 import { TransactionFormModal } from './TransactionFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
+import { EmptyState } from '../EmptyState';
 import { showErrorDetails } from '../../utils/environment';
 import { formatMoney, minorToMajor, parseMoneyToMinor } from '../../utils/money';
 import { formatLongDate } from '../../utils/datetime';
@@ -234,7 +235,12 @@ export const TransactionsTable = forwardRef<TransactionsTableHandle, Transaction
           showDetails={showErrorDetails}
         />
       ) : transactions.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">No transactions yet. Add one to get started.</p>
+        <EmptyState
+          icon={<Scale className="size-5" />}
+          title="No transactions yet"
+          subtitle="Add one to get started tracking income and spending."
+          cta={{ label: 'Add transaction', onPress: openCreate }}
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
           {groups.map(group => {

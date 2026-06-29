@@ -18,20 +18,29 @@ Recommended priority: knock out the low-effort security + UX consistency fixes f
 transactions perf fix and global toasts, then refactor before building the big features (de-dupe the
 line-item stack and ship real Cash Flow aggregation before cloning it into Budgets).
 
+## Status Overview
+
+| Wave | Items                                   | Status         |
+| ---- | --------------------------------------- | -------------- |
+| 1    | S1, S2, S3, S4, P2, U3, U4, U5 (8)      | ✅ Complete    |
+| 2    | U1, U2, P1, P3, S5, P4 (6)              | ⬜ Pending     |
+| 3    | Q1, F1, F5, Q3+Q5, Q4, Q2 (6)           | ⬜ Pending     |
+| 4    | F3, F4, F2 (3)                          | ⬜ Pending     |
+
 ## Execution Waves
 
-### Wave 1: Critical / No Dependencies (quick, high-trust, low-effort)
+### Wave 1: Critical / No Dependencies (quick, high-trust, low-effort) — ✅ COMPLETE
 
-| #   | Area     | Finding                                                        | Effort | Impact | Dependencies |
-| --- | -------- | -------------------------------------------------------------- | ------ | ------ | ------------ |
-| 1   | Security | S1 — Pin Google ID-token audience + startup guard              | Low    | Medium | None         |
-| 2   | Security | S2 — Stop logging PII (emails) in recovery flows; log UserId   | Low    | Medium | None         |
-| 3   | Security | S3 — Put anonymous forgot/reset password in strict rate bucket | Low    | Low    | None         |
-| 4   | Security | S4 — Clear csrf/oauth cookies on logout; shorten JWT lifetime  | Low    | Low    | None         |
-| 5   | Perf     | P2 — Lazy-load dashboard chart cards (~121 KB gzip off paint)  | Low    | Medium | None         |
-| 6   | UX       | U3 — Replace emoji/legacy tokens with lucide + theme tokens    | Low    | Medium | None         |
-| 7   | UX       | U5 — Shared `EmptyState` (esp. Transactions); guided first-run | Low    | Medium | None         |
-| 8   | UX       | U4 — Align `DateField` to `--field-radius`/`--field-background`| Low    | Low    | None         |
+| #   | Area     | Finding                                                        | Effort | Impact | Status  |
+| --- | -------- | -------------------------------------------------------------- | ------ | ------ | ------- |
+| 1   | Security | S1 — Pin Google ID-token audience + startup guard              | Low    | Medium | ✅ Done |
+| 2   | Security | S2 — Stop logging PII (emails) in recovery flows; log UserId   | Low    | Medium | ✅ Done |
+| 3   | Security | S3 — Put anonymous forgot/reset password in strict rate bucket | Low    | Low    | ✅ Done |
+| 4   | Security | S4 — Clear csrf/oauth cookies on logout; shorten JWT lifetime  | Low    | Low    | ✅ Done |
+| 5   | Perf     | P2 — Lazy-load dashboard chart cards (~121 KB gzip off paint)  | Low    | Medium | ✅ Done |
+| 6   | UX       | U3 — Replace emoji/legacy tokens with lucide + theme tokens    | Low    | Medium | ✅ Done |
+| 7   | UX       | U5 — Shared `EmptyState` (esp. Transactions); guided first-run | Low    | Medium | ✅ Done |
+| 8   | UX       | U4 — Align `DateField` to `--field-radius`/`--field-background`| Low    | Low    | ✅ Done |
 
 ### Wave 2: High Priority / Minimal Dependencies
 
@@ -79,6 +88,19 @@ rollups), **U3 before U2** (token mapping). Everything in Waves 1–2 is indepen
 ## Previous Plan Status
 
 No previous plan directory existed. All 23 findings are new this cycle.
+
+## Wave 1 Implementation Log (2026-06-28)
+
+All 8 Wave 1 items implemented via 3 parallel sub-agents; API build + 161 tests pass, UI lint + build pass. No commits made.
+
+- **S1** — `GoogleOAuthService.ResolveGoogleOAuthAudiences` defaults to client id; startup guard in `AuthenticationServiceCollectionExtensions` fails fast non-dev if empty.
+- **S2** — `UserService` recovery flows log `user.Id` (or nothing on not-found), never emails.
+- **S3** — `RateLimiterServiceCollectionExtensions.IsStrictAuthRateLimitedPath` covers forgot/reset/email-confirm.
+- **S4** — `AuthController.LogoutAsync` deletes csrf+oauth cookies; `TokenExpirationTimeInMinutes` 60→15.
+- **P2** — `HomePage` lazy-loads chart cards behind Suspense.
+- **U3** — emoji/legacy v2 tokens → lucide icons + theme tokens in `ApiErrorDisplay`/`ErrorBoundary`/`ProfileSection`.
+- **U4** — `DateField` uses `--field-radius`/`--field-background`.
+- **U5** — new shared `EmptyState` used in Transactions/Home/SpendingPlans/Accounts.
 
 ## Area Plans
 

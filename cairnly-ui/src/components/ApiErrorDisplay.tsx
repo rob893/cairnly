@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from '@heroui/react';
+import { AlertCircle } from 'lucide-react';
 import { ApiError } from '../types/errors';
 
 interface ApiErrorDisplayProps {
@@ -16,7 +17,7 @@ export function ApiErrorDisplay({ error, title = 'Error', className = '', showDe
       <CardHeader className="pb-3">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-danger flex items-center gap-2">
-            <span>❌</span>
+            <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
             {title}
           </h3>
         </div>
@@ -40,10 +41,10 @@ export function ApiErrorDisplay({ error, title = 'Error', className = '', showDe
 
           {showDetails && isApiError && (error.correlationId || error.traceId) && (
             <div className="pt-2 border-t border-danger/20">
-              <h4 className="text-xs font-medium text-default-600 mb-2">Debug Information:</h4>
-              <div className="space-y-1 text-xs text-default-500">
+              <h4 className="text-xs font-medium text-muted mb-2">Debug Information:</h4>
+              <div className="space-y-1 text-xs text-muted">
                 {error.status && (
-                  <p className="text-sm text-default-600 mt-1">
+                  <p className="text-sm text-muted mt-1">
                     Status: {error.status} {error.statusText}
                   </p>
                 )}

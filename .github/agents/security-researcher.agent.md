@@ -115,6 +115,14 @@ When invoked directly, determine today's date, create `.docs/plans/<date>/securi
 
 (If a previous plan exists) Which items were fixed, which carry forward.
 
+## Status
+
+Status table for every finding. Mark `⬜ Pending` initially; implementers flip to `✅ Done (W#)` once shipped.
+
+| #   | Finding | Impact | Effort | Status     |
+| --- | ------- | ------ | ------ | ---------- |
+| 1   | ...     | ...    | ...    | ⬜ Pending |
+
 ## Findings
 
 ### 1. <Finding Title>

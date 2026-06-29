@@ -4,6 +4,16 @@
 
 Cairnly's authenticated app is well-built on HeroUI v3 with disciplined theme-token usage and a strong, consistent brand on the Landing/Login/Register surfaces. The biggest gaps are about *trust feedback* and *consistency on secondary surfaces*: the app gives users no success confirmation (or screen-reader announcement) after money actions, and the password-reset/error surfaces diverge from the brand system with leftover HeroUI-v2 tokens and emoji. Below are the 5 most impactful new findings, ranked by impact.
 
+## Status
+
+| #   | Finding                                                    | Impact | Effort | Status       |
+| --- | --------------------------------------------------------- | ------ | ------ | ------------ |
+| 1   | No success feedback or live-region after mutations        | High   | Medium | ⬜ Pending   |
+| 2   | Forgot/Reset password bypass branded AuthShell            | High   | Medium | ⬜ Pending   |
+| 3   | Error components use emoji + dead tokens                   | Medium | Low    | ✅ Done (W1) |
+| 4   | DateField visually inconsistent with HeroUI inputs        | Low    | Low    | ✅ Done (W1) |
+| 5   | Empty states styled three different ways                  | Medium | Low    | ✅ Done (W1) |
+
 ## Findings
 
 ### 1. No success feedback or live-region after any mutation

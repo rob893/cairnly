@@ -69,15 +69,23 @@ Create `.docs/plans/<date>/master-plan.md` with:
 
 Brief overview of all findings across all research areas, key themes, and recommended priorities.
 
+## Status Overview
+
+Per-wave roll-up; flip to ✅ Complete as waves ship.
+
+| Wave | Items | Status     |
+| ---- | ----- | ---------- |
+| 1    | ...   | ⬜ Pending |
+
 ## Execution Waves
 
 ### Wave 1: Critical / No Dependencies
 
 Items that should be addressed immediately and have no cross-dependencies.
 
-| #   | Area     | Finding | Effort | Impact   | Dependencies |
-| --- | -------- | ------- | ------ | -------- | ------------ |
-| 1   | Security | ...     | Low    | Critical | None         |
+| #   | Area     | Finding | Effort | Impact   | Status     |
+| --- | -------- | ------- | ------ | -------- | ---------- |
+| 1   | Security | ...     | Low    | Critical | ⬜ Pending |
 
 ### Wave 2: High Priority / Minimal Dependencies
 
@@ -92,6 +100,10 @@ Visual or tabular representation of how findings relate across areas.
 ## Previous Plan Status
 
 Summary of what was resolved from the previous plan (if applicable).
+
+## Implementation Log
+
+As waves are implemented, record what shipped, files changed, and verification (build/test). Flip the per-item status to ✅ Done in this master plan **and** in each area plan's Status table.
 ```
 
 ## Sub-Agent Plan Format
@@ -108,6 +120,14 @@ Each research agent must produce plans in this format:
 ## Previous Plan Status
 
 (If a previous plan exists) Which items were fixed, which carry forward.
+
+## Status
+
+Status table for every finding. Mark `⬜ Pending` initially; implementers flip to `✅ Done (W#)` once shipped.
+
+| #   | Finding | Impact | Effort | Status     |
+| --- | ------- | ------ | ------ | ---------- |
+| 1   | ...     | ...    | ...    | ⬜ Pending |
 
 ## Findings
 

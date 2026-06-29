@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Core;
@@ -9,6 +10,7 @@ using Cairnly.API.Services.Auth;
 using Cairnly.API.Services.Domain;
 using Cairnly.API.Services.Email;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -297,14 +299,17 @@ public sealed class UserServiceTests
     [Fact]
     public async Task ForgotPasswordAsync_UnknownEmail_ReturnsSuccessToPreventEnumeration()
     {
+        var logger = new CapturingLogger<UserService>();
+        var sut = this.BuildService(logger);
         var userManagerMock = BuildUserManagerMock();
         userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
         this.userRepositoryMock.Setup(r => r.UserManager).Returns(userManagerMock.Object);
 
-        var result = await this.sut.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "unknown@b.com" }, CancellationToken.None);
+        var result = await sut.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "unknown@b.com" }, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.True(result.ValueOrThrow);
+        Assert.DoesNotContain(logger.Messages, message => message.Contains("unknown@b.com", StringComparison.Ordinal));
         this.emailServiceMock.Verify(
             e => e.SendResetPasswordToUserAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -313,14 +318,41 @@ public sealed class UserServiceTests
     [Fact]
     public async Task ResetPasswordAsync_UnknownEmail_ReturnsSuccessToPreventEnumeration()
     {
+        var logger = new CapturingLogger<UserService>();
+        var sut = this.BuildService(logger);
         var userManagerMock = BuildUserManagerMock();
         userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
         this.userRepositoryMock.Setup(r => r.UserManager).Returns(userManagerMock.Object);
 
-        var result = await this.sut.ResetPasswordAsync(new ResetPasswordRequest { Email = "unknown@b.com", Password = "Password1!", Token = "tok" }, CancellationToken.None);
+        var result = await sut.ResetPasswordAsync(new ResetPasswordRequest { Email = "unknown@b.com", Password = "Password1!", Token = "tok" }, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.True(result.ValueOrThrow);
+        Assert.DoesNotContain(logger.Messages, message => message.Contains("unknown@b.com", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ConfirmEmailAsync_UserNotFound_DoesNotLogEmail()
+    {
+        var logger = new CapturingLogger<UserService>();
+        var sut = this.BuildService(logger);
+        var userManagerMock = BuildUserManagerMock();
+        userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        this.userRepositoryMock.Setup(r => r.UserManager).Returns(userManagerMock.Object);
+
+        var result = await sut.ConfirmEmailAsync(new ConfirmEmailRequest { Email = "attacker@example.com", Token = "tok" }, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.DoesNotContain(logger.Messages, message => message.Contains("attacker@example.com", StringComparison.Ordinal));
+    }
+
+    private UserService BuildService(ILogger<UserService> logger)
+    {
+        return new UserService(
+            logger,
+            this.userRepositoryMock.Object,
+            this.emailServiceMock.Object,
+            this.currentUserServiceMock.Object);
     }
 
     private static Mock<UserManager<User>> BuildUserManagerMock()
@@ -335,4 +367,27 @@ public sealed class UserServiceTests
         UserName = "user" + id,
         Email = $"user{id}@example.com"
     };
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            this.Messages.Add(formatter(state, exception));
+        }
+    }
 }

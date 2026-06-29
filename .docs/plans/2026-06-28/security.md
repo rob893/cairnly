@@ -4,6 +4,16 @@
 
 Cairnly's security posture is strong: tenant isolation is enforced both in repositories (user-scoped `Where` clauses) and services (`CanAccess`/`IsUserAuthorizedForResource`), comparisons are timing-safe, OAuth uses CSPRNG state + PKCE, JWTs are HMAC-SHA512 with audience/issuer/lifetime validation, access tokens live in memory (not localStorage), CSP blocks inline script, errors are generic, and X-Forwarded-* is trusted only from an allowlist. No new Critical/High findings this cycle. The items below are Medium/Low hardening gaps — primarily an OAuth ID-token audience that is unvalidated in config, PII (email) written to logs, and a rate-limit gap on anonymous password endpoints.
 
+## Status
+
+| #   | Finding                                              | Impact | Effort | Status         |
+| --- | --------------------------------------------------- | ------ | ------ | -------------- |
+| 1   | Google ID-token audience validation disabled        | Medium | Low    | ✅ Done (W1)   |
+| 2   | PII (emails) logged in account-recovery flows       | Medium | Low    | ✅ Done (W1)   |
+| 3   | Anonymous password endpoints bypass strict bucket   | Low    | Low    | ✅ Done (W1)   |
+| 4   | Logout leaves CSRF/OAuth cookies + JWT usable       | Low    | Low    | ✅ Done (W1)   |
+| 5   | CSP meta frame-ancestors; CORS AllowAnyHeader       | Low    | Medium | ⬜ Pending     |
+
 ## Findings
 
 ### 1. Google ID-token audience validation effectively disabled (empty audience list)

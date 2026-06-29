@@ -216,6 +216,12 @@ export function LandingPage() {
             Cairnly — financial clarity for the long journey.
           </span>
           <div className="flex items-center gap-5">
+            <a href="/privacy" className="transition-colors hover:text-foreground">
+              Privacy
+            </a>
+            <a href="/terms" className="transition-colors hover:text-foreground">
+              Terms
+            </a>
             <Link to="/login" className="transition-colors hover:text-foreground">
               Sign in
             </Link>

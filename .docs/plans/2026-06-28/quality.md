@@ -9,6 +9,16 @@ fully duplicated income/expense vertical on the backend and a handful of oversiz
 files (one controller, three React components) that should be split. Reported below are the top 5
 new findings.
 
+## Status
+
+| #   | Finding                                                  | Impact | Effort | Status     |
+| --- | ------------------------------------------------------- | ------ | ------ | ---------- |
+| 1   | SpendingPlan Income/Expense vertical duplicated         | High   | High   | ⬜ Pending |
+| 2   | AuthController 668-line, 10-dep god controller          | Medium | High   | ⬜ Pending |
+| 3   | LineItemsSection.tsx 760 lines, 7 components            | Medium | Medium | ⬜ Pending |
+| 4   | SpendingPlanCharts.tsx 697 lines + unsafe casts         | Medium | Medium | ⬜ Pending |
+| 5   | Editable-cell + request-builder duplicated across tables| Medium | Medium | ⬜ Pending |
+
 ## Metrics
 
 - Files > 1000 lines: 0

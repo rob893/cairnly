@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button, Card, CardContent, Modal, Spinner } from '@heroui/react';
+import { Scale } from 'lucide-react';
 import { SpendingPlanFormModal } from './SpendingPlanFormModal';
 import { ApiErrorDisplay } from '../ApiErrorDisplay';
+import { EmptyState } from '../EmptyState';
 import { showErrorDetails } from '../../utils/environment';
 import { useSpendingPlans, useDeleteSpendingPlan, useUpdateSpendingPlan } from '../../hooks/spendingPlans';
 import type { SpendingPlan, CreateSpendingPlanRequest } from '../../types/spendingPlans';
@@ -31,15 +33,12 @@ export function SpendingPlansSection({ onCreate }: SpendingPlansSectionProps) {
           showDetails={showErrorDetails}
         />
       ) : spendingPlans.length === 0 ? (
-        <Card className="bg-surface border border-border">
-          <CardContent className="p-10 text-center space-y-3">
-            <p className="text-lg font-semibold">No spending plans yet</p>
-            <p className="text-sm text-muted">Create your first spending plan to start planning income and expenses.</p>
-            <div className="pt-2">
-              <Button onPress={onCreate}>New spending plan</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Scale className="size-5" />}
+          title="No spending plans yet"
+          subtitle="Create your first spending plan to start planning income and expenses."
+          cta={{ label: 'New spending plan', onPress: onCreate }}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {spendingPlans.map(spendingPlan => (

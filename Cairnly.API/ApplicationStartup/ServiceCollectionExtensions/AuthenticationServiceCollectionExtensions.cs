@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Cairnly.API.Constants;
 using Cairnly.API.Core;
+using Cairnly.API.Extensions;
 using Cairnly.API.Models.Settings;
 using Cairnly.API.Services.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,6 +46,13 @@ public static class AuthenticationServiceCollectionExtensions
         {
             throw new InvalidOperationException(
                 $"{ConfigurationKeys.Authentication}:{nameof(AuthenticationSettings.APISecret)} must be at least 64 bytes (512 bits) for HMAC-SHA512 token signing.");
+        }
+
+        if (config.GetEnvironment() != EnvironmentNames.Development &&
+            GoogleOAuthService.ResolveGoogleOAuthAudiences(authSettings).Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"{ConfigurationKeys.Authentication}:{nameof(AuthenticationSettings.GoogleOAuthAudiences)} must contain at least one audience or {nameof(AuthenticationSettings.GoogleOAuthClientId)} must be configured outside Development.");
         }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
