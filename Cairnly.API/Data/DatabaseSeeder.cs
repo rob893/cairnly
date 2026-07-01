@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cairnly.API.Constants;
+using Cairnly.API.Data.Seeding;
 using Cairnly.API.Extensions;
 using Cairnly.API.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Cairnly.API.Data;
@@ -23,6 +25,8 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
     private readonly RoleManager<Role> roleManager;
 
+    private readonly IConfiguration configuration;
+
     private readonly ILogger<DatabaseSeeder> logger;
 
     /// <summary>
@@ -31,16 +35,19 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
     /// <param name="context">The database context.</param>
     /// <param name="userManager">The Identity user manager.</param>
     /// <param name="roleManager">The Identity role manager.</param>
+    /// <param name="configuration">The application configuration.</param>
     /// <param name="logger">The logger.</param>
     public DatabaseSeeder(
         DataContext context,
         UserManager<User> userManager,
         RoleManager<Role> roleManager,
+        IConfiguration configuration,
         ILogger<DatabaseSeeder> logger)
     {
         this.context = context ?? throw new ArgumentNullException(nameof(context));
         this.userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         this.roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
+        this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -71,6 +78,8 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
             await FixSequenceAsync(this.context, "AspNetRoles", "Id", cancellationToken);
             await FixSequenceAsync(this.context, "AspNetUsers", "Id", cancellationToken);
+
+            await this.SeedLlmTestUserAsync(cancellationToken);
         }
     }
 
@@ -112,6 +121,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         this.context.Transactions.Clear();
         this.context.SpendingPlans.Clear();
         this.context.Tags.Clear();
+        this.context.AccountBalanceSnapshots.Clear();
         this.context.Categories.Clear();
         this.context.Accounts.Clear();
         this.context.UserPreferences.Clear();
@@ -145,117 +155,7 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
         // System category groups (parent categories) and their child categories. The parent
         // group has no icon; children carry an emoji. Each child inherits its group's kind.
-        var groups = new (string Group, CategoryKind Kind, (string Name, string Icon)[] Children)[]
-        {
-            ("Income", CategoryKind.Income,
-            [
-                ("Paychecks", "💵"),
-                ("Interest", "💸"),
-                ("Business Income", "💰"),
-                ("Other Income", "💰"),
-                ("Dividends & Capital Gains", "📈")
-            ]),
-            ("Gifts & Donations", CategoryKind.Expense,
-            [
-                ("Charity", "🎗"),
-                ("Gifts", "🎁")
-            ]),
-            ("Auto & Transport", CategoryKind.Expense,
-            [
-                ("Auto Payment", "🚗"),
-                ("Public Transit", "🚃"),
-                ("Gas", "⛽️"),
-                ("Auto Maintenance", "🔧"),
-                ("Parking & Tolls", "🏢"),
-                ("Taxi & Ride Shares", "🚕")
-            ]),
-            ("Housing", CategoryKind.Expense,
-            [
-                ("Mortgage", "🏠"),
-                ("Rent", "🏠"),
-                ("Home Improvement", "🔨")
-            ]),
-            ("Bills & Utilities", CategoryKind.Expense,
-            [
-                ("Garbage", "🗑"),
-                ("Water", "💧"),
-                ("Gas & Electric", "⚡️"),
-                ("Internet & Cable", "🌐"),
-                ("Phone", "📱")
-            ]),
-            ("Food & Dining", CategoryKind.Expense,
-            [
-                ("Groceries", "🍏"),
-                ("Restaurants & Bars", "🍽"),
-                ("Coffee Shops", "☕️")
-            ]),
-            ("Travel & Lifestyle", CategoryKind.Expense,
-            [
-                ("Travel & Vacation", "🏝"),
-                ("Entertainment & Recreation", "🎥"),
-                ("Personal", "👑"),
-                ("Pets", "🐶"),
-                ("Fun Money", "😜")
-            ]),
-            ("Shopping", CategoryKind.Expense,
-            [
-                ("Shopping", "🛍"),
-                ("Clothing", "👕"),
-                ("Furniture & Housewares", "🪑"),
-                ("Electronics", "🖥")
-            ]),
-            ("Children", CategoryKind.Expense,
-            [
-                ("Child Care", "👶"),
-                ("Child Activities", "⚽️")
-            ]),
-            ("Education", CategoryKind.Expense,
-            [
-                ("Student Loans", "🎓"),
-                ("Education", "🏫")
-            ]),
-            ("Health & Wellness", CategoryKind.Expense,
-            [
-                ("Medical", "💊"),
-                ("Dentist", "🦷"),
-                ("Fitness", "💪")
-            ]),
-            ("Financial", CategoryKind.Expense,
-            [
-                ("Loan Repayment", "💰"),
-                ("Financial & Legal Services", "🗄"),
-                ("Financial Fees", "🏦"),
-                ("Cash & ATM", "🏧"),
-                ("Insurance", "☂️"),
-                ("Taxes", "🏛️")
-            ]),
-            ("Other", CategoryKind.Expense,
-            [
-                ("Uncategorized", "❓"),
-                ("Check", "💸"),
-                ("Miscellaneous", "💲")
-            ]),
-            ("Business", CategoryKind.Expense,
-            [
-                ("Advertising & Promotion", "📣"),
-                ("Business Utilities & Communication", "📞"),
-                ("Employee Wages & Contract Labor", "💵"),
-                ("Business Travel & Meals", "🍴"),
-                ("Business Auto Expenses", "🚖"),
-                ("Business Insurance", "📁"),
-                ("Office Supplies & Expenses", "📎"),
-                ("Office Rent", "🏢"),
-                ("Postage & Shipping", "📦")
-            ]),
-            ("Transfers", CategoryKind.Transfer,
-            [
-                ("Transfer", "🔁"),
-                ("Credit Card Payment", "💳"),
-                ("Balance Adjustments", "⚖️"),
-                ("Buy", "➡️"),
-                ("Sell", "⬅️")
-            ])
-        };
+        var groups = SeedData.CategoryGroups;
 
         var userId = ApplicationSettings.SystemUserId;
         var categoryCount = 0;
@@ -279,12 +179,12 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
             };
 
             this.context.Categories.Add(parent);
-            categoryCount += 1 + children.Length;
+            categoryCount += 1 + children.Count;
         }
 
         this.logger.LogInformation(
             "Seeding {GroupCount} system category groups ({CategoryCount} categories)...",
-            groups.Length,
+            groups.Count,
             categoryCount);
 
         await this.context.SaveChangesAsync(cancellationToken);
@@ -317,50 +217,10 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
         await this.context.SaveChangesAsync(cancellationToken);
 
         // Income line items (all annual figures; the source has no per-income cadence).
-        var incomes = new (string Name, string Category, long Amount)[]
-        {
-            ("Interest and Dividends", "Dividends & Capital Gains", 300_000),
-            ("Microsoft W2", "Paychecks", 19_000_000),
-            ("Microsoft Perks+", "Other Income", 150_000),
-            ("Microsoft Bonus", "Paychecks", 3_800_000),
-            ("Microsoft Stock", "Paychecks", 6_000_000)
-        };
+        var incomes = SeedData.AdminIncomes;
 
         // Expense line items: amounts in integer minor units (cents). `Essential` drives the tag link.
-        var expenses = new (string Name, string? Description, long Amount, SpendingPlanCadence Cadence, string Category, bool Essential)[]
-        {
-            ("Taxable Brokerage", "Robinhood Account", 50_000, SpendingPlanCadence.Weekly, "Financial & Legal Services", false),
-            ("Mortgage, HOA, Utilities", "3026.83 for Mortgage/tax/insurance\n150 HOA\n~500 for utilities (power, gas, water, trash)", 400_000, SpendingPlanCadence.Monthly, "Mortgage", true),
-            ("Netflix", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Disney+", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Haircut", null, 5_000, SpendingPlanCadence.Monthly, "Personal", false),
-            ("Hulu", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Internet", null, 7_000, SpendingPlanCadence.Monthly, "Internet & Cable", true),
-            ("Phone", null, 9_500, SpendingPlanCadence.Monthly, "Phone", true),
-            ("WoW", null, 1_500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Amazon Prime", null, 14_000, SpendingPlanCadence.Annual, "Shopping", false),
-            ("Car Registration", "GA is super cheap lol", 2_000, SpendingPlanCadence.Annual, "Auto Maintenance", true),
-            ("Domain Names", "rwherber.com and knowones.com and derpcode and tidygal\nManaged through godaddy", 8_000, SpendingPlanCadence.Annual, "Miscellaneous", false),
-            ("Web Server Hosting", "Digital ocean VM", 2_900, SpendingPlanCadence.Monthly, "Miscellaneous", false),
-            ("YouTube Premium", null, 1_000, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Food (Groceries/Going Out)", null, 40_000, SpendingPlanCadence.Monthly, "Groceries", true),
-            ("Gas", null, 7_500, SpendingPlanCadence.Monthly, "Gas", true),
-            ("Car Insurance", null, 15_300, SpendingPlanCadence.Monthly, "Insurance", true),
-            ("401k", null, 2_300_000, SpendingPlanCadence.Annual, "Financial & Legal Services", true),
-            ("Federal Tax", "From 2024 tax return", 7_520_600, SpendingPlanCadence.Annual, "Taxes", true),
-            ("GA State Tax", "From 2024 tax return", 1_200_000, SpendingPlanCadence.Annual, "Taxes", true),
-            ("Amazon Fresh Membership", "Fresh Membership for free deliveries", 1_000, SpendingPlanCadence.Monthly, "Groceries", false),
-            ("Pet Insurance", null, 5_600, SpendingPlanCadence.Monthly, "Pets", false),
-            ("HBO Max", null, 500, SpendingPlanCadence.Monthly, "Entertainment & Recreation", false),
-            ("Pest Control", null, 35_200, SpendingPlanCadence.Annual, "Home Improvement", true),
-            ("Misc Spending", null, 15_000, SpendingPlanCadence.Weekly, "Miscellaneous", false),
-            ("Mortgage Additional Principal Payments", null, 100_000, SpendingPlanCadence.Monthly, "Mortgage", false),
-            ("House cleaning", null, 25_000, SpendingPlanCadence.Monthly, "Home Improvement", false),
-            ("Termite Bond", null, 35_000, SpendingPlanCadence.Annual, "Home Improvement", true),
-            ("OpenAI Sub", null, 2_000, SpendingPlanCadence.Monthly, "Miscellaneous", false),
-            ("HSA", null, 440_000, SpendingPlanCadence.Annual, "Medical", true),
-            ("Umbrella Insurance", null, 33_000, SpendingPlanCadence.Annual, "Insurance", true)
-        };
+        var expenses = SeedData.AdminExpenses;
 
         var spendingPlan = new SpendingPlan
         {
@@ -395,8 +255,8 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
         this.logger.LogInformation(
             "Seeding admin spending plan with {IncomeCount} incomes and {ExpenseCount} expenses...",
-            incomes.Length,
-            expenses.Length);
+            incomes.Count,
+            expenses.Count);
 
         this.context.SpendingPlans.Add(spendingPlan);
         await this.context.SaveChangesAsync(cancellationToken);
@@ -432,5 +292,60 @@ public sealed class DatabaseSeeder : IDatabaseSeeder
 
         await this.userManager.AddToRoleAsync(adminUser, UserRoleName.User);
         await this.userManager.AddToRoleAsync(adminUser, UserRoleName.Admin);
+    }
+
+    /// <summary>
+    /// Dev-only: seeds the LLM test user (credentials from <c>LLMSecrets</c> in appsettings.Local.json)
+    /// with multiple accounts, three years of transactions, balance snapshots, and spending plans.
+    /// </summary>
+    private async Task SeedLlmTestUserAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.configuration.GetEnvironment() != EnvironmentNames.Development)
+        {
+            return;
+        }
+
+        var username = this.configuration[ConfigurationKeys.LlmTestUserName];
+        var password = this.configuration[ConfigurationKeys.LlmTestPassword];
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            this.logger.LogInformation("LLMSecrets not configured; skipping LLM test user seed.");
+            return;
+        }
+
+        var normalizedUsername = username.ToUpperInvariant();
+        if (await this.context.Users.AnyAsync(u => u.NormalizedUserName == normalizedUsername, cancellationToken))
+        {
+            return;
+        }
+
+        var user = new User
+        {
+            UserName = username,
+            Email = $"{username}@example.com",
+            EmailConfirmed = true,
+            Created = DateTimeOffset.UtcNow,
+            LastPasswordChange = DateTimeOffset.UtcNow,
+            LastEmailChange = DateTimeOffset.UtcNow,
+            LastUsernameChange = DateTimeOffset.UtcNow
+        };
+
+        this.logger.LogInformation("Seeding LLM test user '{Username}'...", username);
+        var result = await this.userManager.CreateAsync(user, password);
+
+        if (!result.Succeeded)
+        {
+            this.logger.LogError("Failed to create LLM test user: {Errors}", string.Join(", ", result.Errors));
+            return;
+        }
+
+        await this.userManager.AddToRoleAsync(user, UserRoleName.User);
+
+        var categoryIdByName = await this.context.Categories
+            .Where(c => c.IsSystem && c.ParentId != null)
+            .ToDictionaryAsync(c => c.Name, c => c.Id, cancellationToken);
+
+        await LlmTestUserSeeder.SeedAsync(this.context, user.Id, categoryIdByName, this.logger, cancellationToken);
     }
 }

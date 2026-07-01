@@ -19,4 +19,8 @@ public static class ConfigurationKeys
     public const string Postgres = "Postgres";
 
     public const string KeyVaultUrl = "KeyVaultUrl";
+
+    public const string LlmTestUserName = "LLMSecrets:UIUserName";
+
+    public const string LlmTestPassword = "LLMSecrets:UIPassword";
 }
